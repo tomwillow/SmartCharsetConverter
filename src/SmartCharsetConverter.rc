@@ -1,0 +1,154 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// 中文(简体，中国) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG_MAIN DIALOGEX 0, 0, 489, 428
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "1. 设置文件过滤：",IDC_STATIC,18,12,66,8
+    CONTROL         "智能识别所有文本文件",IDC_RADIO_STRETEGY_SMART,"Button",BS_AUTORADIOBUTTON,30,30,96,10
+    CONTROL         "包含指定后缀：",IDC_CHECK_INCLUDE_TEXT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,42,66,72,10
+    EDITTEXT        IDC_EDIT_INCLUDE_TEXT,120,60,180,14,ES_AUTOHSCROLL
+    CONTROL         "排除指定后缀：",IDC_CHECK_EXCLUDE_TEXT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,42,84,72,10
+    EDITTEXT        IDC_EDIT_EXCLUDE_TEXT,120,84,180,14,ES_AUTOHSCROLL
+    CONTROL         "指定规则：",IDC_RADIO_STRETEGY_MANUAL,"Button",BS_AUTORADIOBUTTON,30,48,56,10
+    LTEXT           "2. 添加要转换的文件或文件夹：",IDC_STATIC,18,108,80,8
+    PUSHBUTTON      "添加文件",IDC_BUTTON_ADD_FILES,114,108,50,14
+    PUSHBUTTON      "添加文件夹",IDC_BUTTON_ADD_DIR,198,108,50,14
+    EDITTEXT        IDC_EDIT_OUTPUT_DIR,108,156,192,14,ES_AUTOHSCROLL
+    LTEXT           "3. 指定转出字符集：",IDC_STATIC,18,180,167,8
+    CONTROL         "UTF-8",IDC_RADIO_UTF8,"Button",BS_AUTORADIOBUTTON | WS_GROUP,30,198,61,10
+    CONTROL         "UTF-8 with BOM",IDC_RADIO_UTF8BOM,"Button",BS_AUTORADIOBUTTON,96,198,61,10
+    CONTROL         "GB18030",IDC_RADIO_GB18030,"Button",BS_AUTORADIOBUTTON,186,198,61,10
+    CONTROL         "其他",IDC_RADIO_OTHER,"Button",BS_AUTORADIOBUTTON,252,198,52,10
+    COMBOBOX        IDC_COMBO_OTHER_CHARSET,312,198,87,30,CBS_DROPDOWN | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "3. 选择转出位置：",IDC_STATIC,18,126,167,8
+    CONTROL         "转出到原文件",IDC_RADIO_TO_ORIGIN,"Button",BS_AUTORADIOBUTTON,30,144,64,10
+    CONTROL         "转出到文件夹：",IDC_RADIO_TO_DIR,"Button",BS_AUTORADIOBUTTON,30,162,72,10
+    PUSHBUTTON      "选择文件夹",IDC_BUTTON_SET_OUTPUT_DIR,306,156,50,14
+    GROUPBOX        "任务列表",IDC_STATIC,18,222,456,168
+    CONTROL         "",IDC_LISTVIEW,"SysListView32",LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,30,234,433,144
+    PUSHBUTTON      "开始转换",IDC_BUTTON_START,150,402,54,14
+    PUSHBUTTON      "清空列表",IDC_BUTTON_CLEAR,258,402,54,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DIALOG_MAIN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 482
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 420
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ICON1               ICON                    "Resource\\haruhi.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG_MAIN AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU_RIGHT MENU
+BEGIN
+    POPUP "右键"
+    BEGIN
+        MENUITEM "用记事本打开",                      ID_OPEN_WITH_NOTEPAD
+        MENUITEM "移除",                          ID_REMOVE_ITEM
+    END
+END
+
+#endif    // 中文(简体，中国) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
