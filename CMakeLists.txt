@@ -31,8 +31,8 @@ get_property(dirs DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 message(">>> include_dirs=${dirs}")
 
 # 添加uchardet库
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/uchardet)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/uchardet/src)
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/uchardet/uchardet)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/uchardet/uchardet/src)
 
 # 添加icu库
 set(ICU_DIR "" CACHE STRING "icu include dir. e.g: D:\\icu which has several directories: include, bin64, lib64")
