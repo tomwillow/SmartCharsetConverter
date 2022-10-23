@@ -8,6 +8,26 @@
 #include <memory>
 #include <functional>
 
+enum class CharsetCode
+{
+	UTF8,
+	UTF8BOM,
+	UTF16BE,
+	UTF16LE,
+	GB18030,
+	BIG5,
+	SHIFT_JS,
+	NOT_SUPPORTED
+};
+
+const char UTF8BOM_DATA[] = { 0xEF, 0xBB,0xBF };
+
+// CharsetCode转tstring的名字
+std::tstring to_tstring(CharsetCode code);
+
+// 编码集名字转CharsetCode。不含推测，只允许特定字符串出现。否则报assert
+CharsetCode ToCharsetCode(const std::tstring &name);
+
 struct Configuration
 {
 	enum class FilterMode { SMART, MANUAL };
@@ -32,8 +52,6 @@ struct Configuration
 	{
 		return charset <= OutputCharset::GB18030;
 	}
-
-	//static UINT ToWinCodePage(OutputCharset charset);
 };
 
 class Core

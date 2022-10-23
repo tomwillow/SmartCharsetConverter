@@ -26,10 +26,6 @@ include_directories(
 	${PROJECT_SOURCE_DIR}/src/Control
 )
 
-# 打印include目录情况
-get_property(dirs DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-message(">>> include_dirs=${dirs}")
-
 # 添加uchardet库
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/uchardet/uchardet)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/uchardet/uchardet/src)
@@ -47,6 +43,18 @@ include_directories(${ICU_DIR}/include)
 
 file(GLOB ICU_LIBS ${ICU_DIR}/lib64/*.lib)
 link_libraries(${ICU_LIBS})
+# icu添加完成
+
+find_package(boost)
+if (Boost_FOUND)
+	include_directories(${Boost_INCLUDE_DIR})
+else()
+	message(FATAL_ERROR "没找到boost")
+endif()
+
+# 打印include目录情况
+get_property(dirs DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+message(">>> include_dirs=${dirs}")
 
 # 目标exe
 add_executable(${PROJECT_NAME} 
@@ -58,8 +66,10 @@ add_executable(${PROJECT_NAME}
 # 添加.rc
 target_sources(${PROJECT_NAME} PRIVATE src/SmartCharsetConverter.rc)
 
+# 链接uchardet
 target_link_libraries(${PROJECT_NAME} libuchardet_static)
 
+# 完成后拷贝icu dll
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 	COMMAND 
 		${CMAKE_COMMAND} -E copy	# CMAKE_COMMAND 代表cmake.exe
