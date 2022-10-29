@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iostream>
 #include <memory>
+#include <cassert>
 
 using namespace std;
 
@@ -273,4 +274,47 @@ std::tistream& safeGetline(std::tistream& is, std::tstring& t)
 			t += c;
 		}
 	}
+}
+
+std::vector<std::tstring_view> Split(std::tstring_view s, const std::tstring &dep) noexcept
+{
+	std::vector<std::tstring_view> ans;
+	tstring::size_type beg = 0;
+	while (1)
+	{
+		// beg:  ""->npos " a"->1 "a"->0
+		beg = s.find_first_not_of(dep);
+		if (beg == string::npos)
+		{
+			// s == ""
+			break;
+		}
+		s = s.substr(beg);
+
+		// end:  "a "->1 "a"->npos
+		auto end = s.find_first_of(dep);
+		if (end == string::npos)
+		{
+			ans.push_back(s);
+			break;
+		}
+		ans.push_back(s.substr(0, end));
+		s = s.substr(end);
+	}
+	return ans;
+}
+
+
+void Split_UnitTest()
+{
+	assert(Split(TEXT(""), TEXT(" ")) == vector<tstring_view>{});
+	assert((Split(TEXT("a"), TEXT(" ")) == vector<tstring_view>{TEXT("a")}));
+	assert((Split(TEXT("  a  "), TEXT(" ")) == vector<tstring_view>{TEXT("a")}));
+	assert((Split(TEXT("  a"), TEXT(" ")) == vector<tstring_view>{TEXT("a")}));
+	assert((Split(TEXT("a  "), TEXT(" ")) == vector<tstring_view>{TEXT("a")}));
+	assert((Split(TEXT("a b c"), TEXT(" ")) == vector<tstring_view>{TEXT("a"), TEXT("b"), TEXT("c")}));
+	assert((Split(TEXT(" a b c"), TEXT(" ")) == vector<tstring_view>{TEXT("a"), TEXT("b"), TEXT("c")}));
+	assert((Split(TEXT("a b c "), TEXT(" ")) == vector<tstring_view>{TEXT("a"), TEXT("b"), TEXT("c")}));
+	assert((Split(TEXT(" a b c "), TEXT(" ")) == vector<tstring_view>{TEXT("a"), TEXT("b"), TEXT("c")}));
+	assert((Split(TEXT("a\tb c\t"), TEXT(" \t")) == vector<tstring_view>{TEXT("a"), TEXT("b"), TEXT("c")}));
 }

@@ -75,5 +75,6 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		${CMAKE_COMMAND} -E copy	# CMAKE_COMMAND 代表cmake.exe
 		${ICU_DIR}/bin64/icuuc71.dll
 		${ICU_DIR}/bin64/icuin71.dll
+		${ICU_DIR}/bin64/icudt71.dll
 		$<TARGET_FILE_DIR:${PROJECT_NAME}>
 )

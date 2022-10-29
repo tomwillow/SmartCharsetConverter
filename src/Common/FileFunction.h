@@ -77,7 +77,7 @@ std::vector<std::tstring> SplitPath(const std::tstring &s);
 std::vector<std::tstring> SplitFileName(const std::tstring &s);
 
 // 从完整路径得到 文件名+后缀，若本身不含正反斜杠，则返回自身
-std::tstring GetNameAndExt(std::tstring s);
+std::tstring GetNameAndExt(std::tstring s) noexcept;
 
 //e.g. ext="txt"
 std::tstring ChangeExtend(std::tstring fileName, std::tstring ext);
@@ -99,7 +99,7 @@ std::tstring FileSizeToTString(uint64_t fileSize);
 * @limitSize 限制大小。为0代表读完。不为0的话，最大读取limitSize大小。
 * @exception file_io_error 失败抛出异常
 */
-void ReadFileToBuffer(std::tstring fileName, std::unique_ptr<char[]> &buf, uint64_t &bufSize, uint64_t limitSize=0);
+std::tuple<std::unique_ptr<char[]>,uint64_t> ReadFileToBuffer(std::tstring fileName, uint64_t limitSize=0);
 
 //失败抛出file_io_error类型自定义异常
 void WriteFileFromBuffer(std::tstring fileName, const char buf[], uint64_t bufSize);

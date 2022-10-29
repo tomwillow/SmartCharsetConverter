@@ -11,6 +11,9 @@
 #include <stdexcept>
 #include <sstream>
 #include <set>
+#include <regex>
+
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.1 by Tom Willow");
 
 using namespace std;
 
@@ -33,12 +36,10 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	::SendMessage(m_hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 	::SendMessage(m_hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
 
-	SetWindowText(TEXT("智能编码集转换器 v0.1"));
+	SetWindowText(appTitle.c_str());
 
-	//
+	// 包含/排除指定后缀
 	SetFilterMode(core.GetConfig().filterMode);
-	static_cast<CButton>(GetDlgItem(IDC_CHECK_INCLUDE_TEXT)).SetCheck(core.GetConfig().enableIncludeRule);
-	static_cast<CButton>(GetDlgItem(IDC_CHECK_EXCLUDE_TEXT)).SetCheck(core.GetConfig().enableExcludeRule);
 	//GetDlgItem(IDC_EDIT_INCLUDE_TEXT).SetWindowTextW(core.GetConfig().includeRule);
 
 	// target
@@ -82,10 +83,7 @@ void DialogMain::SetFilterMode(Configuration::FilterMode mode)
 	CButton(GetDlgItem(IDC_RADIO_STRETEGY_SMART)).SetCheck(isSmart);
 	CButton(GetDlgItem(IDC_RADIO_STRETEGY_MANUAL)).SetCheck(!isSmart);
 
-	GetDlgItem(IDC_CHECK_INCLUDE_TEXT).EnableWindow(!isSmart);
 	GetDlgItem(IDC_EDIT_INCLUDE_TEXT).EnableWindow(!isSmart);
-	GetDlgItem(IDC_CHECK_EXCLUDE_TEXT).EnableWindow(!isSmart);
-	GetDlgItem(IDC_EDIT_EXCLUDE_TEXT).EnableWindow(!isSmart);
 }
 
 void DialogMain::SetOutputTarget(Configuration::OutputTarget outputTarget)
@@ -100,35 +98,45 @@ void DialogMain::SetOutputTarget(Configuration::OutputTarget outputTarget)
 	GetDlgItem(IDC_BUTTON_SET_OUTPUT_DIR).EnableWindow(!isToOrigin);
 }
 
-void DialogMain::SetOutputCharset(Configuration::OutputCharset charset)
+void DialogMain::SetOutputCharset(CharsetCode charset)
 {
 	core.SetOutputCharset(charset);
 	bool isNormalCharset = Configuration::IsNormalCharset(charset);
 
-	CButton(GetDlgItem(IDC_RADIO_UTF8)).SetCheck(charset == Configuration::OutputCharset::UTF8);
-	CButton(GetDlgItem(IDC_RADIO_UTF8BOM)).SetCheck(charset == Configuration::OutputCharset::UTF8BOM);
-	CButton(GetDlgItem(IDC_RADIO_GB18030)).SetCheck(charset == Configuration::OutputCharset::GB18030);
+	CButton(GetDlgItem(IDC_RADIO_UTF8)).SetCheck(charset == CharsetCode::UTF8);
+	CButton(GetDlgItem(IDC_RADIO_UTF8BOM)).SetCheck(charset == CharsetCode::UTF8BOM);
+	CButton(GetDlgItem(IDC_RADIO_GB18030)).SetCheck(charset == CharsetCode::GB18030);
 	CButton(GetDlgItem(IDC_RADIO_OTHER)).SetCheck(Configuration::IsNormalCharset(charset) == false);
 
 	GetDlgItem(IDC_COMBO_OTHER_CHARSET).EnableWindow(!isNormalCharset);
 
 }
 
-void DialogMain::AddItem(const std::tstring &filename)
+bool DialogMain::AddItem(const std::tstring &filename)
 {
-	auto count = listview.GetItemCount();
-	listview.AddItem(count, static_cast<int>(ListViewColumn::INDEX), to_tstring(count + 1).c_str());
-	listview.AddItem(count, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
-	listview.AddItem(count, static_cast<int>(ListViewColumn::FILESIZE), FileSizeToTString(GetFileSize(filename)).c_str());
-	listview.AddItem(count, static_cast<int>(ListViewColumn::ENCODING), core.GetEncodingStr(filename).c_str());
+	// 识别字符集
+	auto [charsetName, content, contentSize] = core.GetEncodingStr(filename);
 
-	unique_ptr<char[]> buf;
-	uint64_t bufSize;
-	ReadFileToBuffer(filename, buf, bufSize, 64);
+	try
+	{
+		auto count = listview.GetItemCount();
+		listview.AddItem(count, static_cast<int>(ListViewColumn::INDEX), to_tstring(count + 1).c_str());
+		listview.AddItem(count, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
+		listview.AddItem(count, static_cast<int>(ListViewColumn::FILESIZE), FileSizeToTString(GetFileSize(filename)).c_str());
 
-	// TODO 使用icu解码
+		listview.AddItem(count, static_cast<int>(ListViewColumn::ENCODING), charsetName.c_str());
 
-	listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE), to_tstring(buf.get()).c_str());
+		listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE), reinterpret_cast<wchar_t *>(content.get()));
+
+	}
+	catch (runtime_error &err)
+	{
+		// 如果AddItem之后出错，移除掉错误条目
+		listview.DeleteItem(listview.GetItemCount() - 1);
+		throw err;
+	}
+
+	return content != nullptr;
 }
 
 void DialogMain::AddItems(const std::vector<std::tstring> &filenames)
@@ -138,12 +146,12 @@ void DialogMain::AddItems(const std::vector<std::tstring> &filenames)
 	{
 		try
 		{
-			// 剔除重复的
+			// 如果重复了
 			if (listFileNames.find(filename) != listFileNames.end())
 			{
 				failed.push_back({ filename,TEXT("重复添加") });
+				continue;	// 不重复添加了
 			}
-
 			AddItem(filename);
 
 			listFileNames.insert(filename);
@@ -151,9 +159,6 @@ void DialogMain::AddItems(const std::vector<std::tstring> &filenames)
 		catch (runtime_error &e)
 		{
 			failed.push_back({ filename,to_tstring(e.what()) });
-
-			// 移除
-			listview.DeleteItem(listview.GetItemCount() - 1);
 		}
 	}
 
@@ -177,21 +182,7 @@ LRESULT DialogMain::OnBnClickedRadioStretegySmart(WORD /*wNotifyCode*/, WORD /*w
 
 LRESULT DialogMain::OnBnClickedRadioStretegyManual(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	SetFilterMode(Configuration::FilterMode::MANUAL);
-	return 0;
-}
-
-
-LRESULT DialogMain::OnBnClickedCheckIncludeText(WORD /*wNotifyCode*/, WORD wID/*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	core.EnableRule(true, static_cast<CButton>(GetDlgItem(wID)).GetCheck());
-	return 0;
-}
-
-
-LRESULT DialogMain::OnBnClickedCheckExcludeText(WORD /*wNotifyCode*/, WORD wID/*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	core.EnableRule(false, static_cast<CButton>(GetDlgItem(wID)).GetCheck());
+	SetFilterMode(Configuration::FilterMode::ONLY_SOME_EXTANT);
 	return 0;
 }
 
@@ -212,38 +203,79 @@ LRESULT DialogMain::OnBnClickedRadioToDir(WORD /*wNotifyCode*/, WORD /*wID*/, HW
 
 LRESULT DialogMain::OnBnClickedRadioUtf8(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	SetOutputCharset(Configuration::OutputCharset::UTF8);
+	SetOutputCharset(CharsetCode::UTF8);
 	return 0;
 }
 
 
 LRESULT DialogMain::OnBnClickedRadioUtf8bom(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	SetOutputCharset(Configuration::OutputCharset::UTF8BOM);
+	SetOutputCharset(CharsetCode::UTF8BOM);
 	return 0;
 }
 
 
 LRESULT DialogMain::OnBnClickedRadioGb18030(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	SetOutputCharset(Configuration::OutputCharset::GB18030);
+	SetOutputCharset(CharsetCode::GB18030);
 	return 0;
 }
 
 
 LRESULT DialogMain::OnBnClickedRadioOther(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	SetOutputCharset(Configuration::OutputCharset::OTHER_UNSPECIFIED);
+	//SetOutputCharset(Configuration::OutputCharset::OTHER_UNSPECIFIED);
 	return 0;
 }
 
 
-LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)try
 {
-	//
+	vector<pair<tstring, tstring>> dialogFilter;
+	if (core.GetConfig().filterMode == Configuration::FilterMode::SMART)
+	{
+		// 智能识别所有文本
 
-	TFileDialog dialog(*this, { {L"所有文件",L"*.*"}, { L"文本文件",L"*.txt" } }, true);
-	dialog.SetTitle(L"dkfjdk");
+		dialogFilter = { { L"所有文件*.*", L"*.*" } };
+	}
+	else
+	{
+		// 只包括指定后缀
+
+		// 后缀字符串
+		auto &extsStr = core.GetConfig().includeRule;
+
+		// 切分
+		auto exts = Split(extsStr, TEXT(" "));
+
+		// 如果为空
+		if (exts.empty())
+		{
+			throw runtime_error("指定的后缀无效。\r\n\r\n例子：*.h *.hpp *.c *.cpp *.txt");
+		}
+
+		// 逐个检查
+		tstring filterExtsStr;	// dialog的过滤器要求;分割
+		for (auto ext : exts)
+		{
+			tstring extStr(ext);
+			wstring pattern = TEXT(R"(\*\.\w+)");	// 匹配 *.xxx 的正则
+			wregex r(pattern);
+			wsmatch results;
+			if (regex_match(extStr, results, r) == false)
+			{
+				throw runtime_error("指定的后缀无效：" + to_string(extStr) + "。\r\n\r\n例子： * .h * .hpp * .c * .cpp * .txt");
+			}
+
+			filterExtsStr += extStr + TEXT(";");
+		}
+
+		// dialog过滤器
+		dialogFilter.push_back(make_pair(filterExtsStr, filterExtsStr));
+	}
+
+	// 打开文件对话框
+	TFileDialog dialog(*this, dialogFilter, true);
 	if (dialog.Open())
 	{
 		auto ans = dialog.GetResult();
@@ -251,6 +283,10 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
 		AddItems(ans);
 	}
 	return 0;
+}
+catch (runtime_error &err)
+{
+	MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
 }
 
 
@@ -261,7 +297,9 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 	TFolderBrowser folderBrowser(*this);
 	if (folderBrowser.Open(dir))
 	{
+		// 遍历指定目录
 		auto filenames = TraversalAllFileNames(dir);
+
 		AddItems(filenames);
 	}
 
@@ -269,11 +307,146 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 }
 
 
-LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL &bHandle /*bHandled*/)try
 {
-	// TODO: 在此添加控件通知处理程序代码
+	// 如果没有内容
+	if (listview.GetItemCount() == 0)
+	{
+		throw runtime_error("没有待转换的文件。");
+	}
+
+	// 检查输出目录
+	if (core.GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN)
+	{
+		if (core.GetConfig().outputDir.empty())
+		{
+			throw runtime_error("输出目录无效。");
+		}
+	}
+
+	vector<tstring> allOutputFileNames;	// 全部文件（成功失败均有）
+	vector<pair<tstring, tstring>> failed;	// 失败文件/失败原因
+	vector<tstring> succeed;	// 成功的文件
+
+	// 逐个转换
+	for (int i = 0; i < listview.GetItemCount(); ++i)
+	{
+		auto filename = listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME));
+		try
+		{
+			auto originCode = ToCharsetCode(listview.GetItemText(i, static_cast<int>(ListViewColumn::ENCODING)));
+			if (originCode == CharsetCode::UNKNOWN)
+			{
+				throw runtime_error("未探测出编码集");
+			}
+
+			auto targetCode = core.GetConfig().outputCharset;
+
+			// 计算目标文件名
+			auto outputFileName = filename;
+			if (core.GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN)
+			{
+				// 纯文件名
+				auto pureFileName = GetNameAndExt(outputFileName);
+
+				outputFileName = core.GetConfig().outputDir + TEXT("\\") + pureFileName;
+			}
+
+			// 加入到任务列表
+			allOutputFileNames.push_back(outputFileName);
+
+
+			auto filesize = GetFileSize(filename);
+
+			// 暂时不做分块转换 TODO
+
+			{
+				auto [raw, rawSize] = ReadFileToBuffer(filename);
+
+				// 根据BOM偏移
+				const char *rawStart = raw.get();
+
+				// 如果需要抹掉BOM，则把起始位置设置到BOM之后，确保UChar[]不带BOM
+				if (HasBom(originCode) && !HasBom(targetCode))
+				{
+					auto bomSize = BomSize(originCode);
+					rawStart += bomSize;
+					rawSize -= bomSize;
+				}
+
+				// 根据原编码得到Unicode字符串
+				auto [buf, bufSize] = Decode(rawStart, rawSize, originCode);
+
+				// 转到目标编码
+				auto [ret, retLen] = Encode(buf, bufSize, targetCode);
+
+				// 写入文件
+
+				FILE *fp = _tfopen(outputFileName.c_str(), TEXT("wb"));
+				unique_ptr<FILE, function<void(FILE *)>> upFile(fp, [](FILE *fp) { fclose(fp); });
+
+				// 如果需要额外加上BOM，先写入BOM
+				if (!HasBom(originCode) && HasBom(targetCode))
+				{
+					auto bomData = GetBomData(targetCode);
+
+					// 写入BOM
+					int wrote = fwrite(bomData, BomSize(targetCode), 1, fp);
+					if (wrote != 1)
+					{
+						throw runtime_error("写入失败：" + to_string(outputFileName));
+					}
+				}
+
+				// 写入正文
+				int wrote = fwrite(ret.get(), retLen, 1, fp);
+				if (wrote != 1)
+				{
+					throw runtime_error("写入失败：" + to_string(outputFileName));
+				}
+			}
+
+			// 这个文件成功了
+			succeed.push_back(filename);
+		}
+		catch (runtime_error &e)
+		{
+			// 这个文件失败了
+			failed.push_back({ filename,to_tstring(e.what()) });
+		}
+	}
+
+	// 已经完成处理
+
+	// 如果有失败的
+	if (failed.empty() == false)
+	{
+		tstringstream ss;
+		ss << TEXT("转换成功 ") << succeed.size() << TEXT(" 个文件。\r\n\r\n");
+		ss << TEXT("以下文件转换失败：\r\n");
+		for (auto &pr : failed)
+		{
+			ss << pr.first << TEXT(" 原因：") << pr.second << TEXT("\r\n");
+		}
+		MessageBox(ss.str().c_str(), TEXT("转换结果"), MB_OK | MB_ICONERROR);
+	}
+	else
+	{
+		// 全部成功之后
+		MessageBox(TEXT("转换完成！"), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
+	}
+
+	// 清空列表
+	OnBnClickedButtonClear(0, 0, 0, bHandle);
+
+	// 把转出的结果再次加载到列表中
+	AddItems(allOutputFileNames);
 
 	return 0;
+}
+catch (runtime_error &err)
+{
+	MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
 }
 
 
@@ -346,5 +519,23 @@ LRESULT DialogMain::OnRemoveItem(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
 		listview.DeleteItem(i);
 		listFileNames.erase(filename);
 	}
+	return 0;
+}
+
+
+LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl, BOOL & /*bHandled*/)
+{
+	// 取得字符串
+	tstring filterStr;
+
+	BSTR bstr = nullptr;
+	CEdit edit(hWndCtl);
+	edit.GetWindowTextW(bstr);
+	filterStr = bstr;
+	SysReleaseString(bstr);
+
+	// 直接写入
+	core.SetFilterRule(filterStr);
+
 	return 0;
 }

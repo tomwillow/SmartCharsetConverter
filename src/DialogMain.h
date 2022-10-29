@@ -49,10 +49,15 @@ public:
 
 	void SetOutputTarget(Configuration::OutputTarget outputTarget);
 
-	void SetOutputCharset(Configuration::OutputCharset charset);
+	void SetOutputCharset(CharsetCode charset);
 
-	void AddItem(const std::tstring &filename);
+	// 加入一个文件到列表。
+	// 如果出错，抛出异常。
+	// 如果没识别出字符集，返回false，但照常添加条目
+	bool AddItem(const std::tstring &filename);
 
+	// 加入多个文件到列表。
+	// 如果中途有加入失败的文件，会在最后弹一个对话框统一说明。
 	void AddItems(const std::vector<std::tstring> &filenames);
 
 	void OnClose();
@@ -63,8 +68,6 @@ public:
 
 		COMMAND_HANDLER(IDC_RADIO_STRETEGY_SMART, BN_CLICKED, OnBnClickedRadioStretegySmart)
 		COMMAND_HANDLER(IDC_RADIO_STRETEGY_MANUAL, BN_CLICKED, OnBnClickedRadioStretegyManual)
-		COMMAND_HANDLER(IDC_CHECK_INCLUDE_TEXT, BN_CLICKED, OnBnClickedCheckIncludeText)
-		COMMAND_HANDLER(IDC_CHECK_EXCLUDE_TEXT, BN_CLICKED, OnBnClickedCheckExcludeText)
 		COMMAND_HANDLER(IDC_RADIO_TO_ORIGIN, BN_CLICKED, OnBnClickedRadioToOrigin)
 		COMMAND_HANDLER(IDC_RADIO_TO_DIR, BN_CLICKED, OnBnClickedRadioToDir)
 		COMMAND_HANDLER(IDC_RADIO_UTF8, BN_CLICKED, OnBnClickedRadioUtf8)
@@ -80,11 +83,10 @@ public:
 		NOTIFY_HANDLER(IDC_LISTVIEW, NM_RCLICK, OnNMRclickListview)
 		COMMAND_ID_HANDLER(ID_OPEN_WITH_NOTEPAD, OnOpenWithNotepad)
 		COMMAND_ID_HANDLER(ID_REMOVE_ITEM, OnRemoveItem)
+		COMMAND_HANDLER(IDC_EDIT_INCLUDE_TEXT, EN_CHANGE, OnEnChangeEditIncludeText)
 	END_MSG_MAP()
 	LRESULT OnBnClickedRadioStretegySmart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnBnClickedRadioStretegyManual(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-	LRESULT OnBnClickedCheckIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-	LRESULT OnBnClickedCheckExcludeText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnBnClickedRadioToOrigin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnBnClickedRadioToDir(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnBnClickedRadioUtf8(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
@@ -100,4 +102,5 @@ public:
 	LRESULT OnNMRclickListview(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL & /*bHandled*/);
 	LRESULT OnOpenWithNotepad(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnRemoveItem(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 };

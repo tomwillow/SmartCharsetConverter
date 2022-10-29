@@ -17,6 +17,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hInstPrev,
 #endif
 	try
 {
+	Split_UnitTest();
 	InitCommonControls();
 	SupportHighDPI();
 

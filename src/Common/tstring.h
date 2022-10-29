@@ -8,10 +8,13 @@
 #include <tchar.h>
 
 #include <memory>
+#include <vector>
 
 #ifdef _UNICODE
 
 #define tstring wstring
+
+#define tstring_view wstring_view
 
 #define tios wios
 
@@ -40,6 +43,8 @@
 #else
 
 #define tstring string
+
+#define tstring_view string_view
 
 #define tios ios
 
@@ -93,3 +98,6 @@ std::string to_hex(std::string s);
 std::wstring to_hex(std::wstring s);
 
 std::tistream& safeGetline(std::tistream& is, std::tstring& t);
+
+std::vector<std::tstring_view> Split(std::tstring_view s, const std::tstring &dep) noexcept;
+void Split_UnitTest();
