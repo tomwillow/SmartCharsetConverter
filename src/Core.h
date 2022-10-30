@@ -56,7 +56,6 @@ struct Configuration
 
 	FilterMode filterMode;
 	OutputTarget outputTarget;
-	bool enableIncludeRule;
 	std::tstring includeRule, excludeRule;
 	std::tstring outputDir;
 	CharsetCode outputCharset;

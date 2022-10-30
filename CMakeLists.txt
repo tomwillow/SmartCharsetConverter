@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.11)
 
+# C++17
+set(CMAKE_CXX_STANDARD 17)
+
 project(SmartCharsetConverter)
 
 # 添加代码
@@ -78,3 +81,7 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 		${ICU_DIR}/bin64/icudt71.dll
 		$<TARGET_FILE_DIR:${PROJECT_NAME}>
 )
+
+# VS 设置 Subsystem 选项
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_MINSIZEREL "/SUBSYSTEM:WINDOWS")
