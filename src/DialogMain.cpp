@@ -6,6 +6,7 @@
 
 #ifdef _DEBUG
 #include <iostream>
+#include <cassert>
 #endif
 
 #include <stdexcept>
@@ -79,11 +80,26 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 void DialogMain::SetFilterMode(Configuration::FilterMode mode)
 {
 	core.SetFilterMode(mode);
-	bool isSmart = (mode == Configuration::FilterMode::SMART);
-	CButton(GetDlgItem(IDC_RADIO_STRETEGY_SMART)).SetCheck(isSmart);
-	CButton(GetDlgItem(IDC_RADIO_STRETEGY_MANUAL)).SetCheck(!isSmart);
 
-	GetDlgItem(IDC_EDIT_INCLUDE_TEXT).EnableWindow(!isSmart);
+	CButton(GetDlgItem(IDC_RADIO_STRETEGY_NO_FILTER)).SetCheck(false);
+	CButton(GetDlgItem(IDC_RADIO_STRETEGY_SMART)).SetCheck(false);
+	CButton(GetDlgItem(IDC_RADIO_STRETEGY_MANUAL)).SetCheck(false);
+	switch (mode)
+	{
+	case Configuration::FilterMode::NO_FILTER:
+		CButton(GetDlgItem(IDC_RADIO_STRETEGY_NO_FILTER)).SetCheck(true);
+		break;
+	case Configuration::FilterMode::SMART:
+		CButton(GetDlgItem(IDC_RADIO_STRETEGY_SMART)).SetCheck(true);
+		break;
+	case Configuration::FilterMode::ONLY_SOME_EXTANT:
+		CButton(GetDlgItem(IDC_RADIO_STRETEGY_MANUAL)).SetCheck(true);
+		break;
+	default:
+		assert(0);
+	}
+
+	GetDlgItem(IDC_EDIT_INCLUDE_TEXT).EnableWindow(mode == Configuration::FilterMode::ONLY_SOME_EXTANT);
 }
 
 void DialogMain::SetOutputTarget(Configuration::OutputTarget outputTarget)
@@ -115,7 +131,16 @@ void DialogMain::SetOutputCharset(CharsetCode charset)
 bool DialogMain::AddItem(const std::tstring &filename)
 {
 	// 识别字符集
-	auto [charsetName, content, contentSize] = core.GetEncodingStr(filename);
+	auto [charsetCode, content, contentSize] = core.GetEncoding(filename);
+
+	// 如果是智能模式，且没有识别出编码集，则忽略掉
+	if (core.GetConfig().filterMode == Configuration::FilterMode::SMART &&
+		charsetCode == CharsetCode::UNKNOWN)
+	{
+		return false;
+	}
+
+	auto charsetName = ToCharsetName(charsetCode);
 
 	try
 	{
@@ -128,6 +153,7 @@ bool DialogMain::AddItem(const std::tstring &filename)
 
 		listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE), reinterpret_cast<wchar_t *>(content.get()));
 
+		return true;
 	}
 	catch (runtime_error &err)
 	{
@@ -139,9 +165,10 @@ bool DialogMain::AddItem(const std::tstring &filename)
 	return content != nullptr;
 }
 
-void DialogMain::AddItems(const std::vector<std::tstring> &filenames)
+std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &filenames)
 {
 	vector<pair<tstring, tstring>> failed;
+	vector<tstring> ignored;
 	for (auto &filename : filenames)
 	{
 		try
@@ -152,9 +179,15 @@ void DialogMain::AddItems(const std::vector<std::tstring> &filenames)
 				failed.push_back({ filename,TEXT("重复添加") });
 				continue;	// 不重复添加了
 			}
-			AddItem(filename);
-
-			listFileNames.insert(filename);
+			bool ok = AddItem(filename);
+			if (!ok)
+			{
+				ignored.push_back(filename);
+			}
+			else
+			{
+				listFileNames.insert(filename);
+			}
 		}
 		catch (runtime_error &e)
 		{
@@ -171,7 +204,15 @@ void DialogMain::AddItems(const std::vector<std::tstring> &filenames)
 		}
 		MessageBox(info.c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
 	}
+	return ignored;
 }
+
+LRESULT DialogMain::OnBnClickedRadioStretegyNoFilter(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	SetFilterMode(Configuration::FilterMode::NO_FILTER);
+	return 0;
+}
+
 
 LRESULT DialogMain::OnBnClickedRadioStretegySmart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
@@ -262,16 +303,15 @@ void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstr
 LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)try
 {
 	vector<pair<tstring, tstring>> dialogFilter;
-	if (core.GetConfig().filterMode == Configuration::FilterMode::SMART)
+	switch (core.GetConfig().filterMode)
 	{
-		// 智能识别所有文本
-
+	case Configuration::FilterMode::NO_FILTER:
+	case Configuration::FilterMode::SMART:	// 智能识别文本
 		dialogFilter = { { L"所有文件*.*", L"*.*" } };
-	}
-	else
+		break;
+	case Configuration::FilterMode::ONLY_SOME_EXTANT:
 	{
 		// 只包括指定后缀
-
 		tstring filterExtsStr;	// dialog的过滤器要求;分割
 		CheckAndTraversalIncludeRule([&](const tstring &dotExt)
 			{
@@ -280,15 +320,27 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
 
 		// dialog过滤器
 		dialogFilter.push_back(make_pair(filterExtsStr, filterExtsStr));
+
+		break;
+	}
+	default:
+		assert(0);
 	}
 
 	// 打开文件对话框
 	TFileDialog dialog(*this, dialogFilter, true);
 	if (dialog.Open())
 	{
-		auto ans = dialog.GetResult();
+		auto filenames = dialog.GetResult();
 
-		AddItems(ans);
+		auto ignoredFileNames = AddItems(filenames);
+		if (!ignoredFileNames.empty())
+		{
+			tstringstream ss;
+			ss << to_tstring(ignoredFileNames.size()) << TEXT(" 个文件被判定为非文本文件。");
+			MessageBox(ss.str().c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
+			return 0;
+		}
 	}
 	return 0;
 }
@@ -304,18 +356,21 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 	// 存储遍历文件时要保留的后缀
 	vector<tstring> filterDotExts;
 
-	if (core.GetConfig().filterMode == Configuration::FilterMode::SMART)
+	switch (core.GetConfig().filterMode)
 	{
-		// 智能识别所有文本
-	}
-	else
-	{
+	case Configuration::FilterMode::NO_FILTER:
+		break;
+	case Configuration::FilterMode::SMART:	// 智能识别文本
+		break;
+	case Configuration::FilterMode::ONLY_SOME_EXTANT:
 		// 只包括指定后缀
-
 		CheckAndTraversalIncludeRule([&](const tstring &dotExt)
 			{
 				filterDotExts.push_back(dotExt);
 			});
+		break;
+	default:
+		assert(0);
 	}
 
 	tstring dir;
@@ -332,7 +387,14 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 			return 0;
 		}
 
-		AddItems(filenames);
+		auto ignoredFileNames = AddItems(filenames);
+		if (!ignoredFileNames.empty())
+		{
+			tstringstream ss;
+			ss << to_tstring(ignoredFileNames.size()) << TEXT(" 个文件被判定为非文本文件。");
+			MessageBox(ss.str().c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
+			return 0;
+		}
 	}
 
 	return 0;
@@ -587,19 +649,26 @@ LRESULT DialogMain::OnRemoveItem(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
 }
 
 
-LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl, BOOL & /*bHandled*/)
+LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl, BOOL & /*bHandled*/)try
 {
 	// 取得字符串
 	tstring filterStr;
 
 	BSTR bstr = nullptr;
 	CEdit edit(hWndCtl);
-	edit.GetWindowTextW(bstr);
+	bool ok = edit.GetWindowTextW(bstr);
+	if (!ok)
+		throw runtime_error("出错：内存不足。");
 	filterStr = bstr;
 	SysReleaseString(bstr);
 
 	// 直接写入
 	core.SetFilterRule(filterStr);
 
+	return 0;
+}
+catch (runtime_error &err)
+{
+	MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
 	return 0;
 }

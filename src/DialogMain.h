@@ -36,7 +36,7 @@ private:
 		TEXT_PIECE
 	};
 
-	std::unordered_set<std::tstring> listFileNames;
+	std::unordered_set<std::tstring> listFileNames; // 当前列表中的文件
 public:
 
 	enum { IDD = IDD_DIALOG_MAIN };
@@ -53,12 +53,13 @@ public:
 
 	// 加入一个文件到列表。
 	// 如果出错，抛出异常。
-	// 如果没识别出字符集，返回false，但照常添加条目
+	// 如果没识别出字符集，返回false。如果不是智能模式，那么照常添加条目，否则不添加。
 	bool AddItem(const std::tstring &filename);
 
 	// 加入多个文件到列表。
 	// 如果中途有加入失败的文件，会在最后弹一个对话框统一说明。
-	void AddItems(const std::vector<std::tstring> &filenames);
+	// 返回忽略掉的文件
+	std::vector<std::tstring> AddItems(const std::vector<std::tstring> &filenames);
 
 	void OnClose();
 
@@ -84,6 +85,7 @@ public:
 		COMMAND_ID_HANDLER(ID_OPEN_WITH_NOTEPAD, OnOpenWithNotepad)
 		COMMAND_ID_HANDLER(ID_REMOVE_ITEM, OnRemoveItem)
 		COMMAND_HANDLER(IDC_EDIT_INCLUDE_TEXT, EN_CHANGE, OnEnChangeEditIncludeText)
+		COMMAND_HANDLER(IDC_RADIO_STRETEGY_NO_FILTER, BN_CLICKED, OnBnClickedRadioStretegyNoFilter)
 	END_MSG_MAP()
 	LRESULT OnBnClickedRadioStretegySmart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnBnClickedRadioStretegyManual(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
@@ -106,4 +108,5 @@ public:
 	LRESULT OnOpenWithNotepad(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnRemoveItem(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnBnClickedRadioStretegyNoFilter(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 };

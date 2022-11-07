@@ -23,6 +23,7 @@ enum class CharsetCode
 	GB18030,
 	BIG5,
 	SHIFT_JS,
+	WINDOWS_1252,
 	NOT_SUPPORTED,
 	UNKNOWN
 
@@ -35,6 +36,8 @@ const char UTF16LEBOM_DATA[] = { 0xFF, 0xFE };
 const char UTF16BEBOM_DATA[] = { 0xFE, 0xFF };
 const char UTF32LEBOM_DATA[] = { 0xFF, 0xFE,0,0 };
 const char UTF32BEBOM_DATA[] = { 0xFE, 0xFF,0,0 };
+
+std::tstring ToCharsetName(CharsetCode code);
 
 // 编码集名字转CharsetCode。不含推测，只允许特定字符串出现。否则报assert
 CharsetCode ToCharsetCode(const std::tstring &name);
@@ -50,7 +53,7 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
 
 struct Configuration
 {
-	enum class FilterMode { SMART, ONLY_SOME_EXTANT };
+	enum class FilterMode { NO_FILTER, SMART, ONLY_SOME_EXTANT };
 	enum class OutputTarget { ORIGIN, TO_DIR };
 	static std::unordered_set<CharsetCode> normalCharset;
 
@@ -87,7 +90,7 @@ public:
 	void SetOutputDir(std::tstring outputDir);
 	void SetOutputCharset(CharsetCode outputCharset);
 
-	std::tuple<std::tstring, std::unique_ptr<UChar[]>, int> GetEncodingStr(std::tstring filename) const;
+	std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int> GetEncoding(std::tstring filename) const;
 
 private:
 	std::tstring iniFileName;

@@ -5,8 +5,9 @@
 #define IDD_DIALOG_MAIN                 101
 #define IDI_ICON1                       102
 #define IDR_MENU_RIGHT                  106
-#define IDC_RADIO_STRETEGY_SMART        1001
-#define IDC_RADIO_STRETEGY_MANUAL       1002
+#define IDC_RADIO_STRETEGY_NO_FILTER    1001
+#define IDC_RADIO_STRETEGY_SMART        1002
+#define IDC_RADIO_STRETEGY_MANUAL       1003
 #define IDC_EDIT_INCLUDE_TEXT           1004
 #define IDC_BUTTON_ADD_DIR              1010
 #define IDC_BUTTON_ADD_FILES            1011

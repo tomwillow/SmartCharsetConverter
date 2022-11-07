@@ -66,12 +66,18 @@ const doublemap<CharsetCode, tstring> charsetCodeMap = {
 	{CharsetCode::UTF16BE,TEXT("UTF-16BE")},
 	{CharsetCode::UTF16BEBOM,TEXT("UTF-16BE BOM")},
 	{CharsetCode::GB18030,TEXT("GB18030")},
+	{CharsetCode::WINDOWS_1252,TEXT("windows-1252")},
 	{CharsetCode::UNKNOWN,TEXT("未知")}
 };
 
 std::unordered_set<CharsetCode> Configuration::normalCharset = {
 	CharsetCode::UTF8,CharsetCode::UTF8BOM,CharsetCode::GB18030
 };
+
+std::tstring ToCharsetName(CharsetCode code)
+{
+	return charsetCodeMap[code];
+}
 
 CharsetCode ToCharsetCode(const std::tstring &name)
 {
@@ -247,7 +253,7 @@ void Core::SetOutputCharset(CharsetCode outputCharset)
 	WriteToIni();
 }
 
-std::tuple<std::tstring, std::unique_ptr<UChar[]>, int32_t> Core::GetEncodingStr(std::tstring filename) const
+std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std::tstring filename) const
 {
 	// 只读取100KB
 	auto [buf, bufSize] = ReadFileToBuffer(filename, 100 * KB);
@@ -314,10 +320,14 @@ std::tuple<std::tstring, std::unique_ptr<UChar[]>, int32_t> Core::GetEncodingStr
 	{
 		code = CharsetCode::GB18030;
 	}
+	else if (charset == "Windows-1252")
+	{
+		code = CharsetCode::WINDOWS_1252;
+	}
 	else if (charset == "")	// 没识别出来
 	{
 		code = CharsetCode::UNKNOWN;
-		return make_tuple(charsetCodeMap[code], nullptr, 0);
+		return make_tuple(code, nullptr, 0);
 	}
 	else
 	{
@@ -330,7 +340,7 @@ std::tuple<std::tstring, std::unique_ptr<UChar[]>, int32_t> Core::GetEncodingStr
 	// 根据uchardet得出的字符集解码
 	auto content = Decode(buf.get(), std::max(64ULL, bufSize), code);
 
-	return make_tuple(charsetCodeMap[code], std::move(get<0>(content)), get<1>(content));
+	return make_tuple(code, std::move(get<0>(content)), get<1>(content));
 }
 
 void Core::ReadFromIni()
