@@ -6,7 +6,9 @@
 #include <memory>
 #include <assert.h>
 
-#include<Shlobj.h>//选择文件夹对话框
+#include <commdlg.h>
+
+#include <Shlobj.h>//选择文件夹对话框
 #include <shellapi.h>//CommandLineToArgvW
 #pragma comment(lib,"Shell32.lib")
 
@@ -14,6 +16,10 @@
 #undef min
 
 using namespace std;
+
+// 文件对话框 存储文件列表字符串的缓冲长度。MAX_PATH是肯定不够的，选几个就超出了。
+// 据说nMaxFile虽然是DWORD类型，但只用了前2个字节，所以这里设成int16_t最大值
+const int TFileDialog_BUF_SIZE = 32767;
 
 std::unique_ptr<TCHAR[]> ToTCHARArray(const std::tstring &s)
 {
@@ -31,10 +37,10 @@ TFileDialog::TFileDialog(HWND hwndOwner)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = hwndOwner;
 
-	result = unique_ptr<TCHAR[]>(new TCHAR[MAX_PATH]);
+	result = unique_ptr<TCHAR[]>(new TCHAR[TFileDialog_BUF_SIZE]);
 	result[0] = TEXT('\0');
 	ofn.lpstrFile = result.get();
-	ofn.nMaxFile = MAX_PATH;
+	ofn.nMaxFile = TFileDialog_BUF_SIZE;
 
 	ofn.nFilterIndex = 1;
 	ofn.lpstrInitialDir = NULL;
@@ -82,6 +88,16 @@ bool TFileDialog::Open()
 	TCHAR originDir[1024];
 	GetCurrentDirectory(1024, originDir);
 	bool ok = ::GetOpenFileName(&ofn);
+	if (!ok)
+	{
+		auto err = CommDlgExtendedError();
+
+		if (err == 0x3003)	// FNERR_BUFFERTOOSMALL
+		{
+			throw runtime_error("文件选太多。少选一点试试。");
+		}
+	}
+
 	SetCurrentDirectory(originDir);
 	return ok;
 }

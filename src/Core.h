@@ -1,5 +1,7 @@
 #pragma once
 
+#include "doublemap.h"
+
 #include <tstring.h>
 
 // third-party lib
@@ -56,17 +58,22 @@ struct Configuration
 	enum class FilterMode { NO_FILTER, SMART, ONLY_SOME_EXTANT };
 	enum class OutputTarget { ORIGIN, TO_DIR };
 	static std::unordered_set<CharsetCode> normalCharset;
+	enum class LineBreaks { CRLF, LF, CR, EMPTY, MIX };
 
 	FilterMode filterMode;
 	OutputTarget outputTarget;
 	std::tstring includeRule, excludeRule;
 	std::tstring outputDir;
 	CharsetCode outputCharset;
+	bool enableConvertLineBreaks;
+	LineBreaks lineBreak;
 
 	Configuration() :
 		filterMode(FilterMode::SMART),
 		outputTarget(OutputTarget::ORIGIN),
-		outputCharset(CharsetCode::UTF8)
+		outputCharset(CharsetCode::UTF8),
+		lineBreak(LineBreaks::CRLF),
+		enableConvertLineBreaks(false)
 	{
 	}
 
@@ -75,6 +82,22 @@ struct Configuration
 		return normalCharset.find(charset) != normalCharset.end();
 	}
 };
+
+// 识别换行符
+Configuration::LineBreaks GetLineBreaks(const std::unique_ptr<UChar[]> &buf, int len);
+
+// 变更换行符
+void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::LineBreaks targetLineBreak);
+
+// LineBreaks类型到字符串的映射表
+const doublemap<Configuration::LineBreaks, std::tstring> lineBreaksMap = {
+	{Configuration::LineBreaks::CRLF,TEXT("CRLF")},
+	{Configuration::LineBreaks::LF,TEXT("LF")},
+	{Configuration::LineBreaks::CR,TEXT("CR")},
+	{Configuration::LineBreaks::EMPTY,TEXT("")},
+	{Configuration::LineBreaks::MIX,TEXT("混合")}
+};
+
 
 class Core
 {
@@ -89,7 +112,10 @@ public:
 	void SetOutputTarget(Configuration::OutputTarget outputTarget);
 	void SetOutputDir(std::tstring outputDir);
 	void SetOutputCharset(CharsetCode outputCharset);
+	void SetLineBreaks(Configuration::LineBreaks lineBreak);
+	void SetEnableConvertLineBreak(bool enableLineBreaks);
 
+	// 读取最大100KB字节，返回编码集，Unicode文本，文本长度
 	std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int> GetEncoding(std::tstring filename) const;
 
 private:

@@ -14,7 +14,7 @@
 #include <set>
 #include <regex>
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.1 by Tom Willow");
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.2 by Tom Willow");
 
 using namespace std;
 
@@ -39,6 +39,8 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	SetWindowText(appTitle.c_str());
 
+	BOOL bHandle = true;
+
 	// 包含/排除指定后缀
 	SetFilterMode(core.GetConfig().filterMode);
 	//GetDlgItem(IDC_EDIT_INCLUDE_TEXT).SetWindowTextW(core.GetConfig().includeRule);
@@ -49,6 +51,11 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	static_cast<CEdit>(GetDlgItem(IDC_EDIT_OUTPUT_DIR)).SetReadOnly(true);
 
 	SetOutputCharset(core.GetConfig().outputCharset);
+
+	// enable/disable line breaks
+	CButton(GetDlgItem(IDC_CHECK_CONVERT_RETURN)).SetCheck(core.GetConfig().enableConvertLineBreaks);
+	OnBnClickedCheckConvertReturn(0, 0, 0, bHandle);
+	CButton(GetDlgItem(IDC_RADIO_CRLF + static_cast<int>(core.GetConfig().lineBreak))).SetCheck(true);
 
 	// listview
 	listview.Attach(GetDlgItem(IDC_LISTVIEW));
@@ -67,8 +74,11 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	listview.AddColumn(TEXT("编码"), static_cast<int>(ListViewColumn::ENCODING));
 	listview.SetColumnWidth(3, 60);
 
+	listview.AddColumn(TEXT("换行符"), static_cast<int>(ListViewColumn::LINE_BREAK));
+	listview.SetColumnWidth(4, 60);
+
 	listview.AddColumn(TEXT("文本片段"), static_cast<int>(ListViewColumn::TEXT_PIECE));
-	listview.SetColumnWidth(4, 200);
+	listview.SetColumnWidth(5, 200);
 
 	setlocale(LC_CTYPE, "");
 
@@ -150,6 +160,9 @@ bool DialogMain::AddItem(const std::tstring &filename)
 		listview.AddItem(count, static_cast<int>(ListViewColumn::FILESIZE), FileSizeToTString(GetFileSize(filename)).c_str());
 
 		listview.AddItem(count, static_cast<int>(ListViewColumn::ENCODING), charsetName.c_str());
+
+		auto lineBreak = GetLineBreaks(content, contentSize);
+		listview.AddItem(count, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreaksMap[lineBreak].c_str());
 
 		listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE), reinterpret_cast<wchar_t *>(content.get()));
 
@@ -391,7 +404,7 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 		if (!ignoredFileNames.empty())
 		{
 			tstringstream ss;
-			ss << to_tstring(ignoredFileNames.size()) << TEXT(" 个文件被判定为非文本文件。");
+			ss << to_tstring(ignoredFileNames.size()) << TEXT(" 个文件被判定为非文本文件或者没有探测出字符集。");
 			MessageBox(ss.str().c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
 			return 0;
 		}
@@ -456,14 +469,47 @@ LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, H
 				throw runtime_error("未探测出编码集");
 			}
 
-			// 编码不一样才转换，否则复制过去
-			if (originCode != targetCode)
+			// 取出原换行符
+			auto originLineBreak = lineBreaksMap[listview.GetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK))];
+
+			do
 			{
+				// 如果原编码和目标编码一样，且不变更换行符
+				if (originCode == targetCode)
+				{
+					// 如果不变更换行符，或者前后换行符一样
+					if (core.GetConfig().enableConvertLineBreaks == false || core.GetConfig().lineBreak == originLineBreak)
+					{
+						// 那么只需要考虑是否原位转换，原位转换的话什么也不做，否则复制过去
+
+						// 如果不是原位置转换，复制过去
+						if (core.GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR)
+						{
+							bool ok = CopyFile(filename.c_str(), outputFileName.c_str(), false);
+							if (!ok)
+							{
+								throw runtime_error("写入失败：" + to_string(outputFileName));
+							}
+						}
+						else
+						{
+							// 原位转换，什么也不做
+							break;
+						}
+
+						// 不会到达这里
+					}
+
+					// 要变更换行符，且前后换行符不一样
+				}
+
+				// 前后编码不一样
 				auto filesize = GetFileSize(filename);
 
 				// 暂时不做分块转换 TODO
 
 				{
+					// 读二进制
 					auto [raw, rawSize] = ReadFileToBuffer(filename);
 
 					// 根据BOM偏移
@@ -478,10 +524,16 @@ LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, H
 					}
 
 					// 根据原编码得到Unicode字符串
-					auto [buf, bufSize] = Decode(rawStart, rawSize, originCode);
+					auto [buf, bufLen] = Decode(rawStart, rawSize, originCode);
+
+					// 如果需要转换换行符
+					if (core.GetConfig().enableConvertLineBreaks && core.GetConfig().lineBreak != originLineBreak)
+					{
+						ChangeLineBreaks(buf, bufLen, core.GetConfig().lineBreak);
+					}
 
 					// 转到目标编码
-					auto [ret, retLen] = Encode(buf, bufSize, targetCode);
+					auto [ret, retLen] = Encode(buf, bufLen, targetCode);
 
 					// 写入文件
 
@@ -508,21 +560,8 @@ LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, H
 						throw runtime_error("写入失败：" + to_string(outputFileName));
 					}
 				}
-			}
-			else
-			{
-				// 编码一样
 
-				// 如果不是原位置转换，复制过去
-				if (core.GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR)
-				{
-					bool ok = CopyFile(filename.c_str(), outputFileName.c_str(), false);
-					if (!ok)
-					{
-						throw runtime_error("写入失败：" + to_string(outputFileName));
-					}
-				}
-			}
+			} while (0);
 
 			// 这个文件成功了
 			succeed.push_back(filename);
@@ -670,5 +709,45 @@ LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/
 catch (runtime_error &err)
 {
 	MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
+	return 0;
+}
+
+LRESULT DialogMain::OnNMClickSyslink1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL & /*bHandled*/)
+{
+	HINSTANCE r = ShellExecute(NULL, L"open", L"http://github.com/tomwillow", NULL, NULL, SW_SHOWNORMAL);
+
+	return 0;
+}
+
+LRESULT DialogMain::OnBnClickedCheckConvertReturn(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	bool enableLineBreaks = CButton(GetDlgItem(IDC_CHECK_CONVERT_RETURN)).GetCheck();
+	core.SetEnableConvertLineBreak(enableLineBreaks);
+
+	CButton(GetDlgItem(IDC_RADIO_CRLF)).EnableWindow(enableLineBreaks);
+	CButton(GetDlgItem(IDC_RADIO_LF)).EnableWindow(enableLineBreaks);
+	CButton(GetDlgItem(IDC_RADIO_CR)).EnableWindow(enableLineBreaks);
+
+	return 0;
+}
+
+LRESULT DialogMain::OnBnClickedRadioCrlf(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	core.SetLineBreaks(Configuration::LineBreaks::CRLF);
+
+	return 0;
+}
+
+LRESULT DialogMain::OnBnClickedRadioLf(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	core.SetLineBreaks(Configuration::LineBreaks::LF);
+
+	return 0;
+}
+
+LRESULT DialogMain::OnBnClickedRadioCr(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	core.SetLineBreaks(Configuration::LineBreaks::CR);
+
 	return 0;
 }

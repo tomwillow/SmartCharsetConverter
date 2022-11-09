@@ -5,8 +5,6 @@
 #include <unicode/ucnv.h>
 
 #include <stdexcept>
-#include <unordered_map>
-#include <cassert>
 
 #ifdef _DEBUG
 #include <iostream>
@@ -14,46 +12,6 @@
 
 #undef min
 #undef max
-
-// 双向map，支持双向查表操作
-template <typename T1, typename T2>
-class doublemap
-{
-public:
-	doublemap(std::initializer_list<std::pair<T1, T2>> &&lst)
-	{
-		for (std::pair<T1, T2> pr : lst)
-		{
-			assert(has(pr.first) == false);
-			insert(std::forward<std::pair<T1, T2>>(pr));
-		}
-	}
-
-	bool has(const T1 &t1)const
-	{
-		return t1ToT2.find(t1) != t1ToT2.end();
-	}
-
-	void insert(std::pair<T1, T2> &&pr)
-	{
-		t1ToT2.insert(pr);
-		t2ToT1.insert(std::pair<T2, T1>{pr.second, pr.first});
-	}
-
-	const T2 &operator[](const T1 &t1) const
-	{
-		return t1ToT2.at(t1);
-	}
-
-	const T1 &operator[](const T2 &t2) const
-	{
-		return t2ToT1.at(t2);
-	}
-
-private:
-	std::unordered_map<T1, T2> t1ToT2;
-	std::unordered_map<T2, T1> t2ToT1;
-};
 
 using namespace std;
 
@@ -139,6 +97,20 @@ std::string ToICUCharsetName(CharsetCode code)
 	return to_string(charsetCodeMap[code]);
 }
 
+void DealWithUCNVError(UErrorCode err)
+{
+	switch (err)
+	{
+	case U_ZERO_ERROR:
+		break;
+	case U_AMBIGUOUS_ALIAS_WARNING:	// windows-1252 时会出这个，暂时忽略
+		break;
+	default:
+		throw runtime_error("ucnv出错。code=" + to_string(err));
+		break;
+	}
+}
+
 // 根据code的字符集解码字符串
 tuple<unique_ptr<UChar[]>, int> Decode(const char *str, size_t len, CharsetCode code)
 {
@@ -149,20 +121,14 @@ tuple<unique_ptr<UChar[]>, int> Decode(const char *str, size_t len, CharsetCode 
 
 	// 打开转换器
 	UConverter *conv = ucnv_open(to_string(icuCharsetName).c_str(), &err);
-	if (err != U_ZERO_ERROR)
-	{
-		throw runtime_error("ucnv出错。code=" + to_string(err));
-	}
+	DealWithUCNVError(err);
 
 	size_t cap = len + 1;
 	unique_ptr<UChar[]> target(new UChar[cap]);
 
 	// 解码
 	int retLen = ucnv_toUChars(conv, target.get(), cap, str, len, &err);
-	if (err != U_ZERO_ERROR)
-	{
-		throw runtime_error("ucnv出错。code=" + to_string(err));
-	}
+	DealWithUCNVError(err);
 
 	ucnv_close(conv);
 
@@ -178,23 +144,142 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
 
 	// 打开转换器
 	UConverter *conv = ucnv_open(to_string(icuCharsetName).c_str(), &err);
-	if (err != U_ZERO_ERROR)
-	{
-		throw runtime_error("ucnv出错。code=" + to_string(err));
-	}
+	DealWithUCNVError(err);
 
 	size_t cap = bufSize * sizeof(UChar) + 2;
 	unique_ptr<char[]> target(new char[cap]);
 
 	// 解码
 	int retLen = ucnv_fromUChars(conv, target.get(), cap, buf.get(), bufSize, &err);
-	if (err != U_ZERO_ERROR)
-	{
-		throw runtime_error("ucnv出错。code=" + to_string(err));
-	}
+	DealWithUCNVError(err);
 
 	ucnv_close(conv);
 	return make_tuple(std::move(target), retLen);
+}
+
+Configuration::LineBreaks GetLineBreaks(const unique_ptr<UChar[]> &buf, int len)
+{
+	Configuration::LineBreaks ans = Configuration::LineBreaks::EMPTY;
+	for (int i = 0; i < len; )
+	{
+		UChar &c = buf.get()[i];
+		if (c == UChar(u'\r'))
+		{
+			// \r\n
+			if (i < len && buf.get()[i + 1] == UChar(u'\n'))
+			{
+				if (ans == Configuration::LineBreaks::EMPTY)
+				{
+					ans = Configuration::LineBreaks::CRLF;
+				}
+				else
+				{
+					if (ans != Configuration::LineBreaks::CRLF)
+					{
+						ans = Configuration::LineBreaks::MIX;
+						return ans;
+					}
+				}
+				i += 2;
+				continue;
+			}
+
+			// \r
+			if (ans == Configuration::LineBreaks::EMPTY)
+			{
+				ans = Configuration::LineBreaks::CR;
+			}
+			else
+			{
+				if (ans != Configuration::LineBreaks::CR)
+				{
+					ans = Configuration::LineBreaks::MIX;
+					return ans;
+				}
+			}
+			i++;
+			continue;
+		}
+
+		// \n
+		if (c == UChar(u'\n'))
+		{
+			if (ans == Configuration::LineBreaks::EMPTY)
+			{
+				ans = Configuration::LineBreaks::LF;
+			}
+			else
+			{
+				if (ans != Configuration::LineBreaks::LF)
+				{
+					ans = Configuration::LineBreaks::MIX;
+					return ans;
+				}
+			}
+			i++;
+			continue;
+		}
+
+		i++;
+	}
+	return ans;
+}
+
+void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::LineBreaks targetLineBreak)
+{
+	vector<UChar> out;
+	out.reserve(len);
+
+	vector<UChar> lineBreak;
+	switch (targetLineBreak)
+	{
+	case Configuration::LineBreaks::CRLF:
+		lineBreak = { u'\r',u'\n' };
+		break;
+	case Configuration::LineBreaks::LF:
+		lineBreak = { u'\n' };
+		break;
+	case Configuration::LineBreaks::CR:
+		lineBreak = { u'\r' };
+		break;
+	}
+
+	for (int i = 0; i < len; )
+	{
+		UChar &c = buf.get()[i];
+		if (c == UChar(u'\r'))
+		{
+			// \r\n
+			if (i < len && buf.get()[i + 1] == UChar(u'\n'))
+			{
+				out.insert(out.end(), lineBreak.begin(), lineBreak.end());
+				i += 2;
+				continue;
+			}
+
+			// \r
+			out.insert(out.end(), lineBreak.begin(), lineBreak.end());
+			i ++;
+			continue;
+		}
+
+		if (c == UChar(u'\n'))
+		{
+			out.insert(out.end(), lineBreak.begin(), lineBreak.end());
+			i++;
+			continue;
+		}
+
+		out.push_back(c);
+		i++;
+	}
+
+	int outLen = out.size();
+	buf.reset(new UChar[outLen]);
+	memcpy(buf.get(), out.data(), out.size() * sizeof(UChar));
+	len = outLen;
+
+	return;
 }
 
 Core::Core(std::tstring iniFileName) :iniFileName(iniFileName)
@@ -251,6 +336,17 @@ void Core::SetOutputCharset(CharsetCode outputCharset)
 {
 	config.outputCharset = outputCharset;
 	WriteToIni();
+}
+
+void Core::SetLineBreaks(Configuration::LineBreaks lineBreak)
+{
+	config.lineBreak = lineBreak;
+	WriteToIni();
+}
+
+void Core::SetEnableConvertLineBreak(bool enableLineBreaks)
+{
+	config.enableConvertLineBreaks = enableLineBreaks;
 }
 
 std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std::tstring filename) const
