@@ -58,7 +58,8 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	CButton(GetDlgItem(IDC_RADIO_CRLF + static_cast<int>(core.GetConfig().lineBreak))).SetCheck(true);
 
 	// listview
-	listview.Attach(GetDlgItem(IDC_LISTVIEW));
+	listview.SubclassWindow(GetDlgItem(IDC_LISTVIEW));	// 必须用SubclassWindow传入句柄，才能让MSG_MAP生效
+
 	listview.ModifyStyle(0, LVS_REPORT);
 	listview.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 
@@ -79,6 +80,9 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	listview.AddColumn(TEXT("文本片段"), static_cast<int>(ListViewColumn::TEXT_PIECE));
 	listview.SetColumnWidth(5, 200);
+
+	// 启用拖放
+	::DragAcceptFiles(listview, true);
 
 	setlocale(LC_CTYPE, "");
 

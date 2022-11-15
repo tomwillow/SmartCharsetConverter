@@ -28,8 +28,6 @@
 #define IDC_RADIO_LF                    1054
 #define IDC_RADIO_CR                    1055
 #define IDC_SYSLINK1                    1057
-#define ID_40001                        40001
-#define ID_40002                        40002
 #define ID_OPEN_WITH_NOTEPAD            40003
 #define ID_REMOVE_ITEM                  40004
 
