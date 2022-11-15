@@ -21,9 +21,9 @@ public:
 
 	std::tstring GetItemText(int nItem, int nSubItem) const;
 
-	LRESULT OnDropFiles(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL &bHandled)
+	LRESULT OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 	{
-		MessageBeep(0);
+		SendMessage(GetParent(), uMsg, wParam, lParam);
 		return 0;
 	}
 };

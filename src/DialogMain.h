@@ -60,6 +60,8 @@ public:
 	// 加入多个文件到列表。
 	// 如果中途有加入失败的文件，会在最后弹一个对话框统一说明。
 	// 返回忽略掉的文件
+	// 添加失败的文件会弹窗
+	// @exception 不抛异常
 	std::vector<std::tstring> AddItems(const std::vector<std::tstring> &filenames);
 
 	void OnClose();
@@ -92,6 +94,8 @@ public:
 		COMMAND_HANDLER(IDC_RADIO_CRLF, BN_CLICKED, OnBnClickedRadioCrlf)
 		COMMAND_HANDLER(IDC_RADIO_LF, BN_CLICKED, OnBnClickedRadioLf)
 		COMMAND_HANDLER(IDC_RADIO_CR, BN_CLICKED, OnBnClickedRadioCr)
+
+		MESSAGE_HANDLER(WM_DROPFILES, OnDropFiles)
 	END_MSG_MAP()
 	LRESULT OnBnClickedRadioStretegySmart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnBnClickedRadioStretegyManual(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
@@ -120,4 +124,6 @@ public:
 	LRESULT OnBnClickedRadioCrlf(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnBnClickedRadioLf(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnBnClickedRadioCr(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+
+	LRESULT OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 };

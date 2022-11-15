@@ -14,6 +14,9 @@
 #include <set>
 #include <regex>
 
+#undef min
+#undef max
+
 const std::tstring appTitle = TEXT("智能编码集转换器 v0.2 by Tom Willow");
 
 using namespace std;
@@ -182,37 +185,81 @@ bool DialogMain::AddItem(const std::tstring &filename)
 	return content != nullptr;
 }
 
-std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &filenames)
+std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &pathes)
 {
-	vector<pair<tstring, tstring>> failed;
-	vector<tstring> ignored;
-	for (auto &filename : filenames)
+	// 存储遍历文件时要保留的后缀
+	vector<tstring> filterDotExts;
+
+	switch (core.GetConfig().filterMode)
 	{
-		try
-		{
-			// 如果重复了
-			if (listFileNames.find(filename) != listFileNames.end())
+	case Configuration::FilterMode::NO_FILTER:
+		break;
+	case Configuration::FilterMode::SMART:	// 智能识别文本
+		break;
+	case Configuration::FilterMode::ONLY_SOME_EXTANT:
+		// 只包括指定后缀
+		CheckAndTraversalIncludeRule([&](const tstring &dotExt)
 			{
-				failed.push_back({ filename,TEXT("重复添加") });
-				continue;	// 不重复添加了
-			}
-			bool ok = AddItem(filename);
-			if (!ok)
-			{
-				ignored.push_back(filename);
-			}
-			else
-			{
-				listFileNames.insert(filename);
-			}
-		}
-		catch (runtime_error &e)
-		{
-			failed.push_back({ filename,to_tstring(e.what()) });
-		}
+				filterDotExts.push_back(dotExt);
+			});
+		break;
+	default:
+		assert(0);
 	}
 
-	if (failed.empty() == false)
+	vector<pair<tstring, tstring>> failed;	// 失败的文件
+	vector<tstring> ignored; // 忽略的文件
+	for (auto &path : pathes)
+	{
+		auto DealFile = [&](const std::tstring &filename)
+		{
+			try
+			{
+				// 如果重复了
+				if (listFileNames.find(filename) != listFileNames.end())
+				{
+					failed.push_back({ filename,TEXT("重复添加") });
+					return;	// 不重复添加了
+				}
+				bool ok = AddItem(filename);
+				if (!ok)
+				{
+					ignored.push_back(filename);
+				}
+				else
+				{
+					listFileNames.insert(filename);
+				}
+			}
+			catch (runtime_error &e)
+			{
+				failed.push_back({ path,to_tstring(e.what()) });
+			}
+		};
+
+		// 如果是目录
+		if (IsFolder(path))
+		{
+			// 遍历指定目录
+			auto filenames = TraversalAllFileNames(path, filterDotExts);
+
+			if (filenames.empty())
+			{
+				ignored.insert(ignored.end(), filenames.begin(), filenames.end());
+				break;
+			}
+
+			for (auto &filename : filenames)
+			{
+				DealFile(filename);
+			}
+			continue;
+		}
+
+		DealFile(path);
+	}
+
+	if (!failed.empty())
 	{
 		tstring info = TEXT("以下文件添加失败：\r\n");
 		for (auto &pr : failed)
@@ -220,6 +267,28 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 			info += pr.first + TEXT(" 原因：") + pr.second + TEXT("\r\n");
 		}
 		MessageBox(info.c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+	}
+
+	if (!ignored.empty())
+	{
+		tstringstream ss;
+		ss << to_tstring(ignored.size()) << TEXT(" 个文件被判定为非文本文件或者没有探测出字符集：\r\n");
+
+		int count = 0;
+		for (auto &filename:ignored)
+		{
+			ss << filename << TEXT("\r\n");
+			count++;
+
+			if (count >= 5)
+			{
+				ss << TEXT("......等");
+				break;
+			}
+		}
+
+		MessageBox(ss.str().c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
+		return ignored;
 	}
 	return ignored;
 }
@@ -350,14 +419,7 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
 	{
 		auto filenames = dialog.GetResult();
 
-		auto ignoredFileNames = AddItems(filenames);
-		if (!ignoredFileNames.empty())
-		{
-			tstringstream ss;
-			ss << to_tstring(ignoredFileNames.size()) << TEXT(" 个文件被判定为非文本文件。");
-			MessageBox(ss.str().c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
-			return 0;
-		}
+		AddItems(filenames);
 	}
 	return 0;
 }
@@ -370,48 +432,12 @@ catch (runtime_error &err)
 
 LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)try
 {
-	// 存储遍历文件时要保留的后缀
-	vector<tstring> filterDotExts;
-
-	switch (core.GetConfig().filterMode)
-	{
-	case Configuration::FilterMode::NO_FILTER:
-		break;
-	case Configuration::FilterMode::SMART:	// 智能识别文本
-		break;
-	case Configuration::FilterMode::ONLY_SOME_EXTANT:
-		// 只包括指定后缀
-		CheckAndTraversalIncludeRule([&](const tstring &dotExt)
-			{
-				filterDotExts.push_back(dotExt);
-			});
-		break;
-	default:
-		assert(0);
-	}
-
 	static tstring dir;	// 可用于赋予TFolderBrowser初始路径
 
 	TFolderBrowser folderBrowser(*this);
 	if (folderBrowser.Open(dir))
 	{
-		// 遍历指定目录
-		auto filenames = TraversalAllFileNames(dir, filterDotExts);
-
-		if (filenames.empty())
-		{
-			MessageBox((TEXT("指定的目录没有符合的文件：") + dir).c_str(), TEXT("提示"), MB_OK | MB_ICONERROR);
-			return 0;
-		}
-
-		auto ignoredFileNames = AddItems(filenames);
-		if (!ignoredFileNames.empty())
-		{
-			tstringstream ss;
-			ss << to_tstring(ignoredFileNames.size()) << TEXT(" 个文件被判定为非文本文件或者没有探测出字符集。");
-			MessageBox(ss.str().c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
-			return 0;
-		}
+		AddItems({ dir });
 	}
 
 	return 0;
@@ -752,6 +778,26 @@ LRESULT DialogMain::OnBnClickedRadioLf(WORD /*wNotifyCode*/, WORD /*wID*/, HWND 
 LRESULT DialogMain::OnBnClickedRadioCr(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
 	core.SetLineBreaks(Configuration::LineBreaks::CR);
+
+	return 0;
+}
+
+LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+{
+	HDROP hDrop = reinterpret_cast<HDROP>(wParam);
+
+	vector<tstring> ret;
+	UINT nFileNum = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0); // 拖拽文件个数
+	TCHAR strFileName[MAX_PATH];
+	for (UINT i = 0; i < nFileNum; i++)
+	{
+		DragQueryFile(hDrop, i, strFileName, MAX_PATH);//获得拖曳的文件名
+		ret.push_back(strFileName);
+	}
+	DragFinish(hDrop);      //释放hDrop
+
+	// 添加文件
+	AddItems(ret);
 
 	return 0;
 }
