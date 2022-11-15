@@ -390,7 +390,7 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 		assert(0);
 	}
 
-	tstring dir;
+	static tstring dir;	// 可用于赋予TFolderBrowser初始路径
 
 	TFolderBrowser folderBrowser(*this);
 	if (folderBrowser.Open(dir))
