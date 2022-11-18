@@ -17,7 +17,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.2 by Tom Willow");
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.3 by Tom Willow");
 
 using namespace std;
 
@@ -275,7 +275,7 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 		ss << to_tstring(ignored.size()) << TEXT(" 个文件被判定为非文本文件或者没有探测出字符集：\r\n");
 
 		int count = 0;
-		for (auto &filename:ignored)
+		for (auto &filename : ignored)
 		{
 			ss << filename << TEXT("\r\n");
 			count++;
@@ -725,13 +725,16 @@ LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/
 
 	BSTR bstr = nullptr;
 	CEdit edit(hWndCtl);
-	bool ok = edit.GetWindowTextW(bstr);
-	if (!ok)
-		throw runtime_error("出错：内存不足。");
-	filterStr = bstr;
-	SysReleaseString(bstr);
+	if (edit.GetWindowTextLengthW() != 0)
+	{
+		bool ok = edit.GetWindowTextW(bstr);
+		if (!ok)
+			throw runtime_error("出错：内存不足。");
+		filterStr = bstr;
+		SysReleaseString(bstr);
+	}
 
-	// 直接写入
+	// 保存到core
 	core.SetFilterRule(filterStr);
 
 	return 0;
