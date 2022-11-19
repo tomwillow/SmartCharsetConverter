@@ -55,13 +55,19 @@ public:
 	// 加入一个文件到列表。
 	// 如果出错，抛出异常。
 	// 如果没识别出字符集，返回false。如果不是智能模式，那么照常添加条目，否则不添加。
-	bool AddItem(const std::tstring &filename);
+	/*
+	* @exception io_error_ignore 按照配置忽略掉这个文件
+	*/
+	void AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts);
 
 	// 加入多个文件到列表。
 	// 如果中途有加入失败的文件，会在最后弹一个对话框统一说明。
 	// 返回忽略掉的文件
 	// 添加失败的文件会弹窗
-	// @exception 不抛异常
+	//
+	/*
+	* @exception runtime_error
+	*/
 	std::vector<std::tstring> AddItems(const std::vector<std::tstring> &filenames);
 
 	void OnClose();

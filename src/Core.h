@@ -48,7 +48,9 @@ bool HasBom(CharsetCode code);
 const char *GetBomData(CharsetCode code);
 int BomSize(CharsetCode code);
 
-// 根据code的字符集解码字符串
+/* 根据code的字符集解码字符串
+* @exception runtime_error ucnv出错。code
+*/
 std::tuple<std::unique_ptr<UChar[]>, int> Decode(const char *str, size_t len, CharsetCode code);
 
 std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, uint64_t bufSize, CharsetCode targetCode);
@@ -116,6 +118,10 @@ public:
 	void SetEnableConvertLineBreak(bool enableLineBreaks);
 
 	// 读取最大100KB字节，返回编码集，Unicode文本，文本长度
+	/*
+	* @exception file_io_error 读文件失败
+	* @exception runtime_error ucnv出错。code
+	*/
 	std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int> GetEncoding(std::tstring filename) const;
 
 private:

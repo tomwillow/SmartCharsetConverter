@@ -97,6 +97,9 @@ std::string ToICUCharsetName(CharsetCode code)
 	return to_string(charsetCodeMap[code]);
 }
 
+/*
+* @exception runtime_error ucnv出错。code
+*/
 void DealWithUCNVError(UErrorCode err)
 {
 	switch (err)
@@ -111,7 +114,6 @@ void DealWithUCNVError(UErrorCode err)
 	}
 }
 
-// 根据code的字符集解码字符串
 tuple<unique_ptr<UChar[]>, int> Decode(const char *str, size_t len, CharsetCode code)
 {
 	// 从code转换到icu的字符集名称

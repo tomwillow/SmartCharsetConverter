@@ -445,6 +445,12 @@ std::tuple<std::unique_ptr<char[]>, uint64_t> ReadFileToBuffer(std::tstring file
 
 	unique_ptr<char[]> buf = make_unique<char[]>(bufSize);
 
+	// 如果是空文件，就不用读了
+	if (bufSize == 0)
+	{
+		return make_tuple(std::move(buf), bufSize);
+	}
+
 	FILE *fp = _tfopen(fileName.c_str(), TEXT("rb"));
 	if (fp == nullptr)
 		throw file_io_error(to_string(TEXT("\"") + fileName + TEXT("\"") + TEXT(" can't open.")).c_str(), fileName);

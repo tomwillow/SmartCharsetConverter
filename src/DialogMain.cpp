@@ -145,16 +145,37 @@ void DialogMain::SetOutputCharset(CharsetCode charset)
 
 }
 
-bool DialogMain::AddItem(const std::tstring &filename)
+class io_error_ignore : public std::runtime_error
 {
+public:
+	io_error_ignore() :runtime_error("ignored") {}
+};
+
+void DialogMain::AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts)
+{
+	// 如果是只包括指定后缀的模式，且文件后缀不符合，则忽略掉，且不提示
+	if (core.GetConfig().filterMode == Configuration::FilterMode::ONLY_SOME_EXTANT &&
+		filterDotExts.find(TEXT(".") + GetExtend(filename)) == filterDotExts.end())
+	{
+		return;
+	}
+
+	// 如果重复了
+	if (listFileNames.find(filename) != listFileNames.end())
+	{
+		throw runtime_error("重复添加");
+		return;	// 不重复添加了
+	}
+
 	// 识别字符集
 	auto [charsetCode, content, contentSize] = core.GetEncoding(filename);
 
-	// 如果是智能模式，且没有识别出编码集，则忽略掉
+	// 如果是智能模式，且没有识别出编码集，则忽略掉，但要提示
 	if (core.GetConfig().filterMode == Configuration::FilterMode::SMART &&
 		charsetCode == CharsetCode::UNKNOWN)
 	{
-		return false;
+		throw io_error_ignore();
+		return;
 	}
 
 	auto charsetName = ToCharsetName(charsetCode);
@@ -173,7 +194,10 @@ bool DialogMain::AddItem(const std::tstring &filename)
 
 		listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE), reinterpret_cast<wchar_t *>(content.get()));
 
-		return true;
+		// 成功添加
+		listFileNames.insert(filename);
+
+		return;
 	}
 	catch (runtime_error &err)
 	{
@@ -181,14 +205,12 @@ bool DialogMain::AddItem(const std::tstring &filename)
 		listview.DeleteItem(listview.GetItemCount() - 1);
 		throw err;
 	}
-
-	return content != nullptr;
 }
 
 std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &pathes)
 {
-	// 存储遍历文件时要保留的后缀
-	vector<tstring> filterDotExts;
+	// 后缀
+	unordered_set<tstring> filterDotExts;
 
 	switch (core.GetConfig().filterMode)
 	{
@@ -200,7 +222,7 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 		// 只包括指定后缀
 		CheckAndTraversalIncludeRule([&](const tstring &dotExt)
 			{
-				filterDotExts.push_back(dotExt);
+				filterDotExts.insert(dotExt);
 			});
 		break;
 	default:
@@ -209,54 +231,40 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 
 	vector<pair<tstring, tstring>> failed;	// 失败的文件
 	vector<tstring> ignored; // 忽略的文件
+
+	auto AddItemNoException = [&](const std::tstring &filename)
+	{
+		try
+		{
+			AddItem(filename, filterDotExts);
+		}
+		catch (io_error_ignore)
+		{
+			ignored.push_back(filename);
+		}
+		catch (runtime_error &e)
+		{
+			failed.push_back({ filename, to_tstring(e.what())});
+		}
+	};
+
 	for (auto &path : pathes)
 	{
-		auto DealFile = [&](const std::tstring &filename)
-		{
-			try
-			{
-				// 如果重复了
-				if (listFileNames.find(filename) != listFileNames.end())
-				{
-					failed.push_back({ filename,TEXT("重复添加") });
-					return;	// 不重复添加了
-				}
-				bool ok = AddItem(filename);
-				if (!ok)
-				{
-					ignored.push_back(filename);
-				}
-				else
-				{
-					listFileNames.insert(filename);
-				}
-			}
-			catch (runtime_error &e)
-			{
-				failed.push_back({ path,to_tstring(e.what()) });
-			}
-		};
-
 		// 如果是目录
 		if (IsFolder(path))
 		{
 			// 遍历指定目录
-			auto filenames = TraversalAllFileNames(path, filterDotExts);
-
-			if (filenames.empty())
-			{
-				ignored.insert(ignored.end(), filenames.begin(), filenames.end());
-				break;
-			}
+			auto filenames = TraversalAllFileNames(path);
 
 			for (auto &filename : filenames)
 			{
-				DealFile(filename);
+				AddItemNoException(filename);
 			}
 			continue;
 		}
 
-		DealFile(path);
+		// 如果是文件
+		AddItemNoException(path);
 	}
 
 	if (!failed.empty())
@@ -272,7 +280,7 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 	if (!ignored.empty())
 	{
 		tstringstream ss;
-		ss << to_tstring(ignored.size()) << TEXT(" 个文件被判定为非文本文件或者没有探测出字符集：\r\n");
+		ss << to_tstring(ignored.size()) << TEXT(" 个文件被判定为非文本文件、为空文件、或者没有探测出字符集：\r\n");
 
 		int count = 0;
 		for (auto &filename : ignored)
@@ -785,7 +793,7 @@ LRESULT DialogMain::OnBnClickedRadioCr(WORD /*wNotifyCode*/, WORD /*wID*/, HWND 
 	return 0;
 }
 
-LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)try
 {
 	HDROP hDrop = reinterpret_cast<HDROP>(wParam);
 
@@ -802,5 +810,10 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
 	// 添加文件
 	AddItems(ret);
 
+	return 0;
+}
+catch (runtime_error &e)
+{
+	MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
 	return 0;
 }
