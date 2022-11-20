@@ -17,7 +17,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.3 by Tom Willow");
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.31 by Tom Willow");
 
 using namespace std;
 
@@ -755,7 +755,7 @@ catch (runtime_error &err)
 
 LRESULT DialogMain::OnNMClickSyslink1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL & /*bHandled*/)
 {
-	HINSTANCE r = ShellExecute(NULL, L"open", L"http://github.com/tomwillow", NULL, NULL, SW_SHOWNORMAL);
+	HINSTANCE r = ShellExecute(NULL, L"open", L"https://github.com/tomwillow/SmartCharsetConverter/releases", NULL, NULL, SW_SHOWNORMAL);
 
 	return 0;
 }
