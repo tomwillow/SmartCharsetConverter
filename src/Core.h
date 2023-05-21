@@ -26,6 +26,7 @@ enum class CharsetCode
 	BIG5,
 	SHIFT_JS,
 	WINDOWS_1252,
+	ISO_8859_1,
 	NOT_SUPPORTED,
 	UNKNOWN
 

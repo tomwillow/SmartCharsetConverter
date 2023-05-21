@@ -24,7 +24,8 @@ const doublemap<CharsetCode, tstring> charsetCodeMap = {
 	{CharsetCode::UTF16BE,TEXT("UTF-16BE")},
 	{CharsetCode::UTF16BEBOM,TEXT("UTF-16BE BOM")},
 	{CharsetCode::GB18030,TEXT("GB18030")},
-	{CharsetCode::WINDOWS_1252,TEXT("windows-1252")},
+	{CharsetCode::WINDOWS_1252,TEXT("WINDOWS-1252")},
+	{CharsetCode::ISO_8859_1,TEXT("ISO-8859-1")},
 	{CharsetCode::UNKNOWN,TEXT("未知")}
 };
 
@@ -418,9 +419,13 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 	{
 		code = CharsetCode::GB18030;
 	}
-	else if (charset == "Windows-1252")
+	else if (charset == "WINDOWS-1252")
 	{
 		code = CharsetCode::WINDOWS_1252;
+	}
+	else if (charset == "ISO-8859-1")
+	{
+		code = CharsetCode::ISO_8859_1;
 	}
 	else if (charset == "")	// 没识别出来
 	{
