@@ -17,6 +17,8 @@
 #include <chrono>
 #include <string>
 #include <unordered_set>
+#include <thread>
+#include <atomic>
 
 class DialogMain :public CDialogImpl<DialogMain>
 {
@@ -38,11 +40,16 @@ private:
 	};
 
 	std::unordered_set<std::tstring> listFileNames; // 当前列表中的文件
+
+	std::thread thConvert;
+	std::atomic<bool> doCancel;
 public:
 
 	enum { IDD = IDD_DIALOG_MAIN };
 
 	DialogMain();
+
+	~DialogMain();
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 
@@ -60,15 +67,18 @@ public:
 	*/
 	void AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts);
 
-	// 加入多个文件到列表。
-	// 如果中途有加入失败的文件，会在最后弹一个对话框统一说明。
-	// 返回忽略掉的文件
-	// 添加失败的文件会弹窗
-	//
-	/*
+	/* 
+	* 加入多个文件到列表。
+	* 如果中途有加入失败的文件，会在最后弹一个对话框统一说明。
+	* 返回忽略掉的文件
+	* 添加失败的文件会弹窗
 	* @exception runtime_error
 	*/
 	std::vector<std::tstring> AddItems(const std::vector<std::tstring> &filenames);
+
+	void AddItemsNoThrow(const std::vector<std::tstring> &filenames);
+
+	void StartConvert();
 
 	void OnClose();
 

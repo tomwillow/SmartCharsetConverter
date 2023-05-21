@@ -25,6 +25,14 @@ DialogMain::DialogMain() :core(TEXT("SmartCharsetConverter.ini"))
 {
 }
 
+DialogMain::~DialogMain()
+{
+	if (thConvert.joinable())
+	{
+		thConvert.join();
+	}
+}
+
 
 void DialogMain::OnClose()
 {
@@ -197,6 +205,9 @@ void DialogMain::AddItem(const std::tstring &filename, const std::unordered_set<
 		// 成功添加
 		listFileNames.insert(filename);
 
+		// listview滚动到最下面
+		listview.SelectItem(count);
+
 		return;
 	}
 	catch (runtime_error &err)
@@ -244,7 +255,7 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 		}
 		catch (runtime_error &e)
 		{
-			failed.push_back({ filename, to_tstring(e.what())});
+			failed.push_back({ filename, to_tstring(e.what()) });
 		}
 	};
 
@@ -258,14 +269,24 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 
 			for (auto &filename : filenames)
 			{
+				if (doCancel)
+				{
+					goto AddItemsAbort;
+				}
 				AddItemNoException(filename);
 			}
 			continue;
 		}
 
 		// 如果是文件
+		if (doCancel)
+		{
+			goto AddItemsAbort;
+		}
 		AddItemNoException(path);
 	}
+
+	AddItemsAbort:
 
 	if (!failed.empty())
 	{
@@ -298,166 +319,62 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 		MessageBox(ss.str().c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
 		return ignored;
 	}
+
+	cout << "Exit: AddItems" << endl;
 	return ignored;
 }
 
-LRESULT DialogMain::OnBnClickedRadioStretegyNoFilter(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames)
 {
-	SetFilterMode(Configuration::FilterMode::NO_FILTER);
-	return 0;
-}
-
-
-LRESULT DialogMain::OnBnClickedRadioStretegySmart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	SetFilterMode(Configuration::FilterMode::SMART);
-	return 0;
-}
-
-
-LRESULT DialogMain::OnBnClickedRadioStretegyManual(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	SetFilterMode(Configuration::FilterMode::ONLY_SOME_EXTANT);
-	return 0;
-}
-
-
-LRESULT DialogMain::OnBnClickedRadioToOrigin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	SetOutputTarget(Configuration::OutputTarget::ORIGIN);
-	return 0;
-}
-
-
-LRESULT DialogMain::OnBnClickedRadioToDir(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	SetOutputTarget(Configuration::OutputTarget::TO_DIR);
-	return 0;
-}
-
-
-LRESULT DialogMain::OnBnClickedRadioUtf8(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	SetOutputCharset(CharsetCode::UTF8);
-	return 0;
-}
-
-
-LRESULT DialogMain::OnBnClickedRadioUtf8bom(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	SetOutputCharset(CharsetCode::UTF8BOM);
-	return 0;
-}
-
-
-LRESULT DialogMain::OnBnClickedRadioGb18030(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	SetOutputCharset(CharsetCode::GB18030);
-	return 0;
-}
-
-
-LRESULT DialogMain::OnBnClickedRadioOther(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	//SetOutputCharset(Configuration::OutputCharset::OTHER_UNSPECIFIED);
-	return 0;
-}
-
-void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstring &dotExt)> fn)
-{
-	// 后缀字符串
-	auto &extsStr = core.GetConfig().includeRule;
-
-	// 切分
-	auto exts = Split(extsStr, TEXT(" "));
-
-	// 如果为空
-	if (exts.empty())
+	if (thConvert.joinable())
 	{
-		throw runtime_error("指定的后缀无效。\r\n\r\n例子：*.h *.hpp *.c *.cpp *.txt");
+		thConvert.join();
 	}
 
-	// 逐个检查
-	for (auto ext : exts)
-	{
-		tstring extStr(ext);
-		wstring pattern = TEXT(R"(\*(\.\w+))");	// 匹配 *.xxx 的正则
-		wregex r(pattern);
-		wsmatch results;
-		if (regex_match(extStr, results, r) == false)
+	thConvert = thread([&](const std::vector<std::tstring> &filenames)
 		{
-			throw runtime_error("指定的后缀无效：" + to_string(extStr) + "。\r\n\r\n例子： * .h * .hpp * .c * .cpp * .txt");
-		}
-
-		fn(results.str(1));
-	}
-
-}
-
-LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)try
-{
-	vector<pair<tstring, tstring>> dialogFilter;
-	switch (core.GetConfig().filterMode)
-	{
-	case Configuration::FilterMode::NO_FILTER:
-	case Configuration::FilterMode::SMART:	// 智能识别文本
-		dialogFilter = { { L"所有文件*.*", L"*.*" } };
-		break;
-	case Configuration::FilterMode::ONLY_SOME_EXTANT:
-	{
-		// 只包括指定后缀
-		tstring filterExtsStr;	// dialog的过滤器要求;分割
-		CheckAndTraversalIncludeRule([&](const tstring &dotExt)
+			try
 			{
-				filterExtsStr += TEXT("*") + dotExt + TEXT(";");
-			});
+				vector<pair<int, bool>> restore;
+				for (auto id = IDC_RADIO_STRETEGY_SMART; id <= IDC_RADIO_CR; ++id)
+				{
+					if (::GetDlgItem(m_hWnd, id) != NULL)
+					{
+						auto wnd = GetDlgItem(id);
+						if (wnd.IsWindowEnabled())
+						{
+							restore.push_back({ id, true });
+							wnd.EnableWindow(false);
+						}
+					}
+				}
 
-		// dialog过滤器
-		dialogFilter.push_back(make_pair(filterExtsStr, filterExtsStr));
+				//
+				GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("取消"));
+				GetDlgItem(IDC_BUTTON_START).EnableWindow(true);
 
-		break;
-	}
-	default:
-		assert(0);
-	}
+				AddItems(filenames);
 
-	// 打开文件对话框
-	TFileDialog dialog(*this, dialogFilter, true);
-	if (dialog.Open())
-	{
-		auto filenames = dialog.GetResult();
+				for (auto &pr : restore)
+				{
+					auto wnd = GetDlgItem(pr.first);
+					wnd.EnableWindow(pr.second);
+				}
 
-		AddItems(filenames);
-	}
-	return 0;
-}
-catch (runtime_error &err)
-{
-	MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
-	return 0;
-}
+				GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
 
-
-LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)try
-{
-	static tstring dir;	// 可用于赋予TFolderBrowser初始路径
-
-	TFolderBrowser folderBrowser(*this);
-	if (folderBrowser.Open(dir))
-	{
-		AddItems({ dir });
-	}
-
-	return 0;
-}
-catch (runtime_error &err)
-{
-	MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
-	return 0;
+				cout << "Exit: AddItemsNoThrow thread" << endl;
+			}
+			catch (runtime_error &e)
+			{
+				MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+				return 0;
+			}
+		}, filenames);
 }
 
 
-LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL &bHandle /*bHandled*/)try
+void DialogMain::StartConvert()try
 {
 	// 如果没有内容
 	if (listview.GetItemCount() == 0)
@@ -639,16 +556,189 @@ LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, H
 	}
 
 	// 清空列表
+	BOOL bHandle = false;
 	OnBnClickedButtonClear(0, 0, 0, bHandle);
 
 	// 把转出的结果再次加载到列表中
 	AddItems(allOutputFileNames);
+
+	return;
+}
+catch (runtime_error &err)
+{
+	MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
+	return;
+}
+
+LRESULT DialogMain::OnBnClickedRadioStretegyNoFilter(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	SetFilterMode(Configuration::FilterMode::NO_FILTER);
+	return 0;
+}
+
+
+LRESULT DialogMain::OnBnClickedRadioStretegySmart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	SetFilterMode(Configuration::FilterMode::SMART);
+	return 0;
+}
+
+
+LRESULT DialogMain::OnBnClickedRadioStretegyManual(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	SetFilterMode(Configuration::FilterMode::ONLY_SOME_EXTANT);
+	return 0;
+}
+
+
+LRESULT DialogMain::OnBnClickedRadioToOrigin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	SetOutputTarget(Configuration::OutputTarget::ORIGIN);
+	return 0;
+}
+
+
+LRESULT DialogMain::OnBnClickedRadioToDir(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	SetOutputTarget(Configuration::OutputTarget::TO_DIR);
+	return 0;
+}
+
+
+LRESULT DialogMain::OnBnClickedRadioUtf8(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	SetOutputCharset(CharsetCode::UTF8);
+	return 0;
+}
+
+
+LRESULT DialogMain::OnBnClickedRadioUtf8bom(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	SetOutputCharset(CharsetCode::UTF8BOM);
+	return 0;
+}
+
+
+LRESULT DialogMain::OnBnClickedRadioGb18030(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	SetOutputCharset(CharsetCode::GB18030);
+	return 0;
+}
+
+
+LRESULT DialogMain::OnBnClickedRadioOther(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+{
+	//SetOutputCharset(Configuration::OutputCharset::OTHER_UNSPECIFIED);
+	return 0;
+}
+
+void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstring &dotExt)> fn)
+{
+	// 后缀字符串
+	auto &extsStr = core.GetConfig().includeRule;
+
+	// 切分
+	auto exts = Split(extsStr, TEXT(" "));
+
+	// 如果为空
+	if (exts.empty())
+	{
+		throw runtime_error("指定的后缀无效。\r\n\r\n例子：*.h *.hpp *.c *.cpp *.txt");
+	}
+
+	// 逐个检查
+	for (auto ext : exts)
+	{
+		tstring extStr(ext);
+		wstring pattern = TEXT(R"(\*(\.\w+))");	// 匹配 *.xxx 的正则
+		wregex r(pattern);
+		wsmatch results;
+		if (regex_match(extStr, results, r) == false)
+		{
+			throw runtime_error("指定的后缀无效：" + to_string(extStr) + "。\r\n\r\n例子： * .h * .hpp * .c * .cpp * .txt");
+		}
+
+		fn(results.str(1));
+	}
+
+}
+
+LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)try
+{
+	vector<pair<tstring, tstring>> dialogFilter;
+	switch (core.GetConfig().filterMode)
+	{
+	case Configuration::FilterMode::NO_FILTER:
+	case Configuration::FilterMode::SMART:	// 智能识别文本
+		dialogFilter = { { L"所有文件*.*", L"*.*" } };
+		break;
+	case Configuration::FilterMode::ONLY_SOME_EXTANT:
+	{
+		// 只包括指定后缀
+		tstring filterExtsStr;	// dialog的过滤器要求;分割
+		CheckAndTraversalIncludeRule([&](const tstring &dotExt)
+			{
+				filterExtsStr += TEXT("*") + dotExt + TEXT(";");
+			});
+
+		// dialog过滤器
+		dialogFilter.push_back(make_pair(filterExtsStr, filterExtsStr));
+
+		break;
+	}
+	default:
+		assert(0);
+	}
+
+	// 打开文件对话框
+	TFileDialog dialog(*this, dialogFilter, true);
+	if (dialog.Open())
+	{
+		auto filenames = dialog.GetResult();
+
+		AddItems(filenames);
+	}
+	return 0;
+}
+catch (runtime_error &err)
+{
+	MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
+	return 0;
+}
+
+
+LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)try
+{
+	static tstring dir;	// 可用于赋予TFolderBrowser初始路径
+
+	TFolderBrowser folderBrowser(*this);
+	if (folderBrowser.Open(dir))
+	{
+		AddItems({ dir });
+	}
 
 	return 0;
 }
 catch (runtime_error &err)
 {
 	MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
+	return 0;
+}
+
+
+LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL &bHandle /*bHandled*/)
+{
+	if (thConvert.joinable())
+	{
+		// 
+		doCancel = true;
+		thConvert.join();
+	}
+	else
+	{
+		doCancel = false;
+		thConvert = thread(&DialogMain::StartConvert, this);
+	}
 	return 0;
 }
 
@@ -807,8 +897,9 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
 	}
 	DragFinish(hDrop);      //释放hDrop
 
+
 	// 添加文件
-	AddItems(ret);
+	AddItemsNoThrow(ret);
 
 	return 0;
 }
