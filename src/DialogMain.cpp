@@ -17,7 +17,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.31 by Tom Willow");
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.4 by Tom Willow");
 
 using namespace std;
 
@@ -320,7 +320,9 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 		return ignored;
 	}
 
+#ifndef NDEBUG
 	cout << "Exit: AddItems" << endl;
+#endif
 	return ignored;
 }
 
@@ -363,7 +365,9 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames)
 
 				GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
 
+#ifndef NDEBUG
 				cout << "Exit: AddItemsNoThrow thread" << endl;
+#endif
 			}
 			catch (runtime_error &e)
 			{

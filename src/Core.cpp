@@ -149,12 +149,27 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
 	UConverter *conv = ucnv_open(to_string(icuCharsetName).c_str(), &err);
 	DealWithUCNVError(err);
 
-	size_t cap = bufSize * sizeof(UChar) + 2;
-	unique_ptr<char[]> target(new char[cap]);
+	size_t destCap = bufSize * sizeof(UChar) + 2;
+	unique_ptr<char[]> target(new char[destCap]);
 
 	// 解码
-	int retLen = ucnv_fromUChars(conv, target.get(), cap, buf.get(), bufSize, &err);
-	DealWithUCNVError(err);
+	int retLen;
+	while (1)
+	{
+		err = U_ZERO_ERROR;
+		retLen = ucnv_fromUChars(conv, target.get(), destCap, buf.get(), bufSize, &err);
+		if (err == U_BUFFER_OVERFLOW_ERROR)
+		{
+			destCap = retLen  + 6; // 增加一个尾后0的大小：utf-8 单个字符最大占用字节数
+			target.reset(new char[destCap]);
+			continue;
+		}
+		DealWithUCNVError(err);
+		if (err == U_ZERO_ERROR)
+		{
+			break;
+		}
+	}
 
 	ucnv_close(conv);
 	return make_tuple(std::move(target), retLen);
@@ -262,7 +277,7 @@ void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::Li
 
 			// \r
 			out.insert(out.end(), lineBreak.begin(), lineBreak.end());
-			i ++;
+			i++;
 			continue;
 		}
 
