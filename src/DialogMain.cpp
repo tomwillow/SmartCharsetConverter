@@ -286,7 +286,7 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 		AddItemNoException(path);
 	}
 
-	AddItemsAbort:
+AddItemsAbort:
 
 	if (!failed.empty())
 	{
@@ -431,36 +431,47 @@ void DialogMain::StartConvert()try
 			// 取出原换行符
 			auto originLineBreak = lineBreaksMap[listview.GetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK))];
 
-			do
+			// 返回原字符集和目标字符集的条件为不需要转换的情形
+			auto CharsetNeedNotConvert = [&]()->bool
 			{
-				// 如果原编码和目标编码一样
-				if (originCode == targetCode)
+				// 原编码和目标编码一样
+				if (originCode == targetCode)return true;
+
+				// 原来是空文件，且目标编码不需要写入BOM
+				if (originCode == CharsetCode::EMPTY && !HasBom(targetCode)) return true;
+				return false;
+			};
+
+			// 判断不需要转换的条件，或者是需要复制的情形，直接不转换或者复制
+			// 返回true则不需要实际转换了
+			auto CheckNothingOrCopy = [&]()->bool
+			{
+				if (CharsetNeedNotConvert() &&
+					// 不转换换行符，或者新换行符和原来的换行符一样
+					(core.GetConfig().enableConvertLineBreaks == false || core.GetConfig().lineBreak == originLineBreak))
 				{
-					// 如果不变更换行符，或者前后换行符一样
-					if (core.GetConfig().enableConvertLineBreaks == false || core.GetConfig().lineBreak == originLineBreak)
+					// 那么只需要考虑是否原位转换，原位转换的话什么也不做，否则复制过去
+
+					// 如果不是原位置转换，复制过去
+					if (core.GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR)
 					{
-						// 那么只需要考虑是否原位转换，原位转换的话什么也不做，否则复制过去
-
-						// 如果不是原位置转换，复制过去
-						if (core.GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR)
+						bool ok = CopyFile(filename.c_str(), outputFileName.c_str(), false);
+						if (!ok)
 						{
-							bool ok = CopyFile(filename.c_str(), outputFileName.c_str(), false);
-							if (!ok)
-							{
-								throw runtime_error("写入失败：" + to_string(outputFileName));
-							}
+							throw runtime_error("写入失败：" + to_string(outputFileName));
 						}
-						else
-						{
-							// 原位转换，什么也不做
-							break;
-						}
-
-						// 不会到达这里
 					}
 
-					// 要变更换行符，且前后换行符不一样
+					// 原位转换，什么也不做
+					return true;
 				}
+
+				return false;
+			};
+
+			do
+			{
+				if (CheckNothingOrCopy()) break;
 
 				// 前后编码不一样
 				auto filesize = GetFileSize(filename);
@@ -513,7 +524,7 @@ void DialogMain::StartConvert()try
 
 					// 写入正文
 					size_t wrote = fwrite(ret.get(), retLen, 1, fp);
-					if (wrote != 1)
+					if (retLen!=0 && wrote != 1)
 					{
 						throw runtime_error("写入失败：" + to_string(outputFileName));
 					}
