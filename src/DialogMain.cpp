@@ -17,7 +17,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.4 by Tom Willow");
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.41 by Tom Willow");
 
 using namespace std;
 
@@ -337,6 +337,7 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames)
 		{
 			try
 			{
+				// 遍历控件，如果是启用状态，那么设置为disable，并在restore中记下，留待日后恢复
 				vector<pair<int, bool>> restore;
 				for (auto id = IDC_RADIO_STRETEGY_SMART; id <= IDC_RADIO_CR; ++id)
 				{
@@ -351,23 +352,30 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames)
 					}
 				}
 
-				//
+				// 开始按钮text变更为“取消”，并额外enable，用于让用户按“取消”
 				GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("取消"));
 				GetDlgItem(IDC_BUTTON_START).EnableWindow(true);
 
-				AddItems(filenames);
+				// 使用RTTI的手法记下恢复事件
+				unique_ptr<void, function<void(void *)>> deferRestore(reinterpret_cast<void *>(1), [&](void *)
+					{
+						for (auto &pr : restore)
+						{
+							auto wnd = GetDlgItem(pr.first);
+							wnd.EnableWindow(pr.second);
+						}
 
-				for (auto &pr : restore)
-				{
-					auto wnd = GetDlgItem(pr.first);
-					wnd.EnableWindow(pr.second);
-				}
-
-				GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
+						GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
 
 #ifndef NDEBUG
-				cout << "Exit: AddItemsNoThrow thread" << endl;
+						cout << "Exit: AddItemsNoThrow thread" << endl;
 #endif
+
+					});
+
+				AddItems(filenames);
+
+
 			}
 			catch (runtime_error &e)
 			{
