@@ -301,7 +301,7 @@ AddItemsAbort:
 	if (!ignored.empty())
 	{
 		tstringstream ss;
-		ss << to_tstring(ignored.size()) << TEXT(" 个文件被判定为非文本文件、为空文件、或者没有探测出字符集：\r\n");
+		ss << to_tstring(ignored.size()) << TEXT(" 个文件被判定为非文本文件、或者没有探测出字符集：\r\n");
 
 		int count = 0;
 		for (auto &filename : ignored)
@@ -530,7 +530,7 @@ void DialogMain::StartConvert()try
 
 					// 写入正文
 					size_t wrote = fwrite(ret.get(), retLen, 1, fp);
-					if (retLen!=0 && wrote != 1)
+					if (retLen != 0 && wrote != 1)
 					{
 						throw runtime_error("写入失败：" + to_string(outputFileName));
 					}
@@ -754,11 +754,9 @@ LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, H
 		doCancel = true;
 		thConvert.join();
 	}
-	else
-	{
-		doCancel = false;
-		thConvert = thread(&DialogMain::StartConvert, this);
-	}
+
+	doCancel = false;
+	thConvert = thread(&DialogMain::StartConvert, this);
 	return 0;
 }
 
