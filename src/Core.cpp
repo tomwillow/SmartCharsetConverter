@@ -17,6 +17,9 @@ using namespace std;
 
 // 字符集code到名称的映射表
 const doublemap<CharsetCode, tstring> charsetCodeMap = {
+	{CharsetCode::UNKNOWN,TEXT("未知")},
+	{CharsetCode::EMPTY,TEXT("空")},
+	{CharsetCode::NOT_SUPPORTED,TEXT("不支持")},
 	{CharsetCode::UTF8,TEXT("UTF-8")},
 	{CharsetCode::UTF8BOM,TEXT("UTF-8 BOM")},
 	{CharsetCode::UTF16LE,TEXT("UTF-16LE")},
@@ -25,8 +28,7 @@ const doublemap<CharsetCode, tstring> charsetCodeMap = {
 	{CharsetCode::UTF16BEBOM,TEXT("UTF-16BE BOM")},
 	{CharsetCode::GB18030,TEXT("GB18030")},
 	{CharsetCode::WINDOWS_1252,TEXT("WINDOWS-1252")},
-	{CharsetCode::ISO_8859_1,TEXT("ISO-8859-1")},
-	{CharsetCode::UNKNOWN,TEXT("未知")}
+	{CharsetCode::ISO_8859_1,TEXT("ISO-8859-1")}
 };
 
 std::unordered_set<CharsetCode> Configuration::normalCharset = {
@@ -117,6 +119,11 @@ void DealWithUCNVError(UErrorCode err)
 
 tuple<unique_ptr<UChar[]>, int> Decode(const char *str, size_t len, CharsetCode code)
 {
+	if (code == CharsetCode::EMPTY)
+	{
+		return { nullptr, 0 };
+	}
+
 	// 从code转换到icu的字符集名称
 	auto icuCharsetName = ToICUCharsetName(code);
 
@@ -372,6 +379,11 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 	// 只读取100KB
 	auto [buf, bufSize] = ReadFileToBuffer(filename, 100 * KB);
 
+	if (bufSize == 0)
+	{
+		return { CharsetCode::EMPTY, nullptr, 0 };
+	}
+
 	// 用uchardet判定字符集
 	uchardet_reset(det.get());
 	int ret = uchardet_handle_data(det.get(), buf.get(), bufSize);
@@ -386,7 +398,8 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 
 	uchardet_data_end(det.get());
 
-	auto charset = string(uchardet_get_charset(det.get()));
+	// 得到uchardet的识别结果
+	string charset = string(uchardet_get_charset(det.get()));
 
 	// filter
 	CharsetCode code;

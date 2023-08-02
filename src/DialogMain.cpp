@@ -433,7 +433,7 @@ void DialogMain::StartConvert()try
 
 			do
 			{
-				// 如果原编码和目标编码一样，且不变更换行符
+				// 如果原编码和目标编码一样
 				if (originCode == targetCode)
 				{
 					// 如果不变更换行符，或者前后换行符一样
@@ -495,7 +495,6 @@ void DialogMain::StartConvert()try
 					auto [ret, retLen] = Encode(buf, bufLen, targetCode);
 
 					// 写入文件
-
 					FILE *fp = _tfopen(outputFileName.c_str(), TEXT("wb"));
 					unique_ptr<FILE, function<void(FILE *)>> upFile(fp, [](FILE *fp) { fclose(fp); });
 

@@ -16,6 +16,9 @@
 
 enum class CharsetCode
 {
+	UNKNOWN,
+	EMPTY,
+	NOT_SUPPORTED,
 	UTF8,
 	UTF8BOM,
 	UTF16BE,
@@ -26,14 +29,12 @@ enum class CharsetCode
 	BIG5,
 	SHIFT_JS,
 	WINDOWS_1252,
-	ISO_8859_1,
-	NOT_SUPPORTED,
-	UNKNOWN
+	ISO_8859_1
 
 	// 添加字符集需要同步修改：charsetCodeMap ToICUCharsetName
 };
 
-// bom 字符
+// bom串
 const char UTF8BOM_DATA[] = { 0xEF, 0xBB,0xBF };
 const char UTF16LEBOM_DATA[] = { 0xFF, 0xFE };
 const char UTF16BEBOM_DATA[] = { 0xFE, 0xFF };
@@ -49,13 +50,23 @@ bool HasBom(CharsetCode code);
 const char *GetBomData(CharsetCode code);
 int BomSize(CharsetCode code);
 
-/* 根据code的字符集解码字符串
+/** 
+* @brief 根据code的字符集解码字符串为unicode
+* @return 字符串指针，文本长度
 * @exception runtime_error ucnv出错。code
 */
 std::tuple<std::unique_ptr<UChar[]>, int> Decode(const char *str, size_t len, CharsetCode code);
 
+/**
+* @brief 把unicode串编码为指定字符集
+* @return 字符串指针，文本长度
+* @exception runtime_error ucnv出错。code
+*/
 std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, uint64_t bufSize, CharsetCode targetCode);
 
+/**
+* @brief 配置信息
+*/
 struct Configuration
 {
 	enum class FilterMode { NO_FILTER, SMART, ONLY_SOME_EXTANT };
@@ -118,8 +129,9 @@ public:
 	void SetLineBreaks(Configuration::LineBreaks lineBreak);
 	void SetEnableConvertLineBreak(bool enableLineBreaks);
 
-	// 读取最大100KB字节，返回编码集，Unicode文本，文本长度
-	/*
+	// 
+	/**
+	* @brief 读取最大100KB字节，返回编码集，Unicode文本，文本长度
 	* @exception file_io_error 读文件失败
 	* @exception runtime_error ucnv出错。code
 	*/
