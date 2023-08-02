@@ -142,7 +142,7 @@ void DealWithUCNVError(UErrorCode err)
 	}
 }
 
-tuple<unique_ptr<UChar[]>, int> Decode(const char *str, size_t len, CharsetCode code)
+tuple<unique_ptr<UChar[]>, int> Decode(const char *str, int len, CharsetCode code)
 {
 	if (code == CharsetCode::EMPTY)
 	{
@@ -158,7 +158,7 @@ tuple<unique_ptr<UChar[]>, int> Decode(const char *str, size_t len, CharsetCode 
 	UConverter *conv = ucnv_open(to_string(icuCharsetName).c_str(), &err);
 	DealWithUCNVError(err);
 
-	size_t cap = len + 1;
+	int32_t cap = len + 1;
 	unique_ptr<UChar[]> target(new UChar[cap]);
 
 	// 解码
@@ -170,7 +170,7 @@ tuple<unique_ptr<UChar[]>, int> Decode(const char *str, size_t len, CharsetCode 
 	return make_tuple<unique_ptr<UChar[]>, int32_t>(std::move(target), std::move(retLen));
 }
 
-std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, uint64_t bufSize, CharsetCode targetCode)
+std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, int bufSize, CharsetCode targetCode)
 {
 	// 从code转换到icu的字符集名称
 	auto icuCharsetName = ToICUCharsetName(targetCode);
@@ -181,7 +181,7 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
 	UConverter *conv = ucnv_open(to_string(icuCharsetName).c_str(), &err);
 	DealWithUCNVError(err);
 
-	size_t destCap = bufSize * sizeof(UChar) + 2;
+	int32_t destCap = bufSize * sizeof(UChar) + 2;
 	unique_ptr<char[]> target(new char[destCap]);
 
 	// 解码
@@ -324,7 +324,12 @@ void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::Li
 		i++;
 	}
 
-	int outLen = out.size();
+	if (out.size() >= std::numeric_limits<int>::max())
+	{
+		throw runtime_error("生成文件大小超出限制");
+	}
+
+	int outLen = static_cast<int>(out.size());
 	buf.reset(new UChar[outLen]);
 	memcpy(buf.get(), out.data(), out.size() * sizeof(UChar));
 	len = outLen;
@@ -407,6 +412,11 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 	if (bufSize == 0)
 	{
 		return { CharsetCode::EMPTY, nullptr, 0 };
+	}
+
+	if (bufSize >= std::numeric_limits<int>::max())
+	{
+		throw runtime_error("文件大小超出限制");
 	}
 
 	// 用uchardet判定字符集
@@ -494,7 +504,7 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 	}
 
 	// 根据uchardet得出的字符集解码
-	auto content = Decode(buf.get(), std::max(64ULL, bufSize), code);
+	auto content = Decode(buf.get(), std::max(64, static_cast<int>(bufSize)), code);
 
 	return make_tuple(code, std::move(get<0>(content)), get<1>(content));
 }

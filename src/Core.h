@@ -35,11 +35,11 @@ enum class CharsetCode
 };
 
 // bom串
-const char UTF8BOM_DATA[] = { 0xEF, 0xBB,0xBF };
-const char UTF16LEBOM_DATA[] = { 0xFF, 0xFE };
-const char UTF16BEBOM_DATA[] = { 0xFE, 0xFF };
-const char UTF32LEBOM_DATA[] = { 0xFF, 0xFE,0,0 };
-const char UTF32BEBOM_DATA[] = { 0xFE, 0xFF,0,0 };
+const char UTF8BOM_DATA[] = { '\xEF', '\xBB','\xBF'};
+const char UTF16LEBOM_DATA[] = { '\xFF', '\xFE'};
+const char UTF16BEBOM_DATA[] = { '\xFE', '\xFF'};
+const char UTF32LEBOM_DATA[] = { '\xFF', '\xFE','\x0','\x0'};
+const char UTF32BEBOM_DATA[] = { '\xFE', '\xFF','\x0','\x0'};
 
 std::tstring ToCharsetName(CharsetCode code);
 
@@ -60,14 +60,14 @@ CharsetCode CheckBom(char *buf, int bufSize);
 * @return 字符串指针，文本长度
 * @exception runtime_error ucnv出错。code
 */
-std::tuple<std::unique_ptr<UChar[]>, int> Decode(const char *str, size_t len, CharsetCode code);
+std::tuple<std::unique_ptr<UChar[]>, int> Decode(const char *str, int len, CharsetCode code);
 
 /**
 * @brief 把unicode串编码为指定字符集
 * @return 字符串指针，文本长度
 * @exception runtime_error ucnv出错。code
 */
-std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, uint64_t bufSize, CharsetCode targetCode);
+std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, int bufSize, CharsetCode targetCode);
 
 /**
 * @brief 配置信息

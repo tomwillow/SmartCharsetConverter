@@ -333,7 +333,7 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames)
 		thConvert.join();
 	}
 
-	thConvert = thread([&](const std::vector<std::tstring> &filenames)
+	thConvert = thread([&](const std::vector<std::tstring> &filenames) noexcept
 		{
 			try
 			{
@@ -372,8 +372,8 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames)
 			catch (runtime_error &e)
 			{
 				MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
-				return 0;
 			}
+			return;
 		}, filenames);
 }
 
@@ -482,6 +482,11 @@ void DialogMain::StartConvert()try
 					// 读二进制
 					auto [raw, rawSize] = ReadFileToBuffer(filename);
 
+					if (rawSize >= std::numeric_limits<int>::max())
+					{
+						throw runtime_error("文件大小超出限制");
+					}
+
 					// 根据BOM偏移
 					const char *rawStart = raw.get();
 
@@ -494,7 +499,7 @@ void DialogMain::StartConvert()try
 					}
 
 					// 根据原编码得到Unicode字符串
-					auto [buf, bufLen] = Decode(rawStart, rawSize, originCode);
+					auto [buf, bufLen] = Decode(rawStart, static_cast<int>(rawSize), originCode);
 
 					// 如果需要转换换行符
 					if (core.GetConfig().enableConvertLineBreaks && core.GetConfig().lineBreak != originLineBreak)
@@ -506,7 +511,8 @@ void DialogMain::StartConvert()try
 					auto [ret, retLen] = Encode(buf, bufLen, targetCode);
 
 					// 写入文件
-					FILE *fp = _tfopen(outputFileName.c_str(), TEXT("wb"));
+					FILE *fp = nullptr;
+					errno_t err = _tfopen_s(&fp, outputFileName.c_str(), TEXT("wb"));
 					unique_ptr<FILE, function<void(FILE *)>> upFile(fp, [](FILE *fp) { fclose(fp); });
 
 					// 如果需要额外加上BOM，先写入BOM
