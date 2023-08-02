@@ -85,6 +85,31 @@ int BomSize(CharsetCode code)
 	return 0;
 }
 
+CharsetCode CheckBom(char *buf, int bufSize)
+{
+	if (bufSize >= sizeof(UTF8BOM_DATA) && memcmp(buf, UTF8BOM_DATA, sizeof(UTF8BOM_DATA)) == 0)
+	{
+		return CharsetCode::UTF8BOM;
+	}
+	if (bufSize >= sizeof(UTF16LEBOM_DATA) && memcmp(buf, UTF16LEBOM_DATA, sizeof(UTF16LEBOM_DATA)) == 0)
+	{
+		return CharsetCode::UTF8BOM;
+	}
+	if (bufSize >= sizeof(UTF16BEBOM_DATA) && memcmp(buf, UTF16BEBOM_DATA, sizeof(UTF16BEBOM_DATA)) == 0)
+	{
+		return CharsetCode::UTF8BOM;
+	}
+	if (bufSize >= sizeof(UTF32LEBOM_DATA) && memcmp(buf, UTF32LEBOM_DATA, sizeof(UTF32LEBOM_DATA)) == 0)
+	{
+		return CharsetCode::UTF8BOM;
+	}
+	if (bufSize >= sizeof(UTF32BEBOM_DATA) && memcmp(buf, UTF32BEBOM_DATA, sizeof(UTF32BEBOM_DATA)) == 0)
+	{
+		return CharsetCode::UTF8BOM;
+	}
+	return CharsetCode::UNKNOWN;
+}
+
 
 std::string ToICUCharsetName(CharsetCode code)
 {
@@ -410,7 +435,7 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 	else if (charset == "UTF-8")
 	{
 		// 区分有无BOM
-		if (bufSize > sizeof(UTF8BOM_DATA) && memcmp(buf.get(), UTF8BOM_DATA, sizeof(UTF8BOM_DATA)) == 0)
+		if (bufSize >= sizeof(UTF8BOM_DATA) && memcmp(buf.get(), UTF8BOM_DATA, sizeof(UTF8BOM_DATA)) == 0)
 		{
 			code = CharsetCode::UTF8BOM;
 		}
@@ -422,7 +447,7 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 	else if (charset == "UTF-16LE")
 	{
 		// 区分有无BOM
-		if (bufSize > sizeof(UTF16LEBOM_DATA) && memcmp(buf.get(), UTF16LEBOM_DATA, sizeof(UTF16LEBOM_DATA)) == 0)
+		if (bufSize >= sizeof(UTF16LEBOM_DATA) && memcmp(buf.get(), UTF16LEBOM_DATA, sizeof(UTF16LEBOM_DATA)) == 0)
 		{
 			code = CharsetCode::UTF16LEBOM;
 		}
@@ -434,7 +459,7 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 	else if (charset == "UTF-16BE")
 	{
 		// 区分有无BOM
-		if (bufSize > sizeof(UTF16BEBOM_DATA) && memcmp(buf.get(), UTF16BEBOM_DATA, sizeof(UTF16BEBOM_DATA)) == 0)
+		if (bufSize >= sizeof(UTF16BEBOM_DATA) && memcmp(buf.get(), UTF16BEBOM_DATA, sizeof(UTF16BEBOM_DATA)) == 0)
 		{
 			code = CharsetCode::UTF16BEBOM;
 		}

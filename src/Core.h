@@ -50,6 +50,11 @@ bool HasBom(CharsetCode code);
 const char *GetBomData(CharsetCode code);
 int BomSize(CharsetCode code);
 
+/**
+* @brief 返回buf的开头是否符合某种BOM，如果都不符合返回UNKNOWN
+*/
+CharsetCode CheckBom(char *buf, int bufSize);
+
 /** 
 * @brief 根据code的字符集解码字符串为unicode
 * @return 字符串指针，文本长度
