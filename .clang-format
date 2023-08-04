@@ -1,0 +1,20 @@
+---
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+
+# 访问说明符(public、private等)的偏移
+AccessModifierOffset: -4
+
+# 禁用include重排序
+SortIncludes: false
+---
+Language: Cpp
+# Force pointers to the type for C++.
+DerivePointerAlignment: false
+PointerAlignment: Right
+ColumnLimit: 120
+---
+Language: Proto
+# Don't format .proto files.
+DisableFormat: true

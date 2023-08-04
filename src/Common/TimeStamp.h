@@ -5,15 +5,13 @@
 #include <chrono>
 
 #ifdef WIN32
-#define LOCALTIME_R(pTM, pTimeT)  localtime_s(pTM, pTimeT)
+#define LOCALTIME_R(pTM, pTimeT) localtime_s(pTM, pTimeT)
 #else
-#define LOCALTIME_R(tm, ti)  localtime_r(ti, tm)
+#define LOCALTIME_R(tm, ti) localtime_r(ti, tm)
 #endif
 //#define localtime static_assert("localtime is not thread-safe. considering LOCALTIME_R")
 
-template <typename T>
-class TimeDuration
-{
+template <typename T> class TimeDuration {
 public:
     TimeDuration() {}
 
@@ -21,9 +19,7 @@ private:
     std::chrono::duration<T> d;
 };
 
-
-class TimeStamp
-{
+class TimeStamp {
 public:
     using selected_clock = std::chrono::system_clock;
 
@@ -41,8 +37,8 @@ public:
 
     std::tstring ToTString() const;
 
-static TimeStamp now();
+    static TimeStamp now();
+
 private:
     selected_clock::time_point tp;
-
 };

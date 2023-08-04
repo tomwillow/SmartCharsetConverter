@@ -14,31 +14,24 @@
 SingleApplication single;
 if (single.IsRunning(TEXT("AppTitle")))
 {
-	throw runtime_error("只能同时运行一个实例！");
+        throw runtime_error("只能同时运行一个实例！");
 }
 
 */
-class SingleApplication
-{
+class SingleApplication {
 public:
-	~SingleApplication()
-	{
-		ReleaseMutex(mutex);
-	}
+    ~SingleApplication() { ReleaseMutex(mutex); }
 
-	bool IsRunning(const std::tstring& mutex_name)
-	{
-		mutex = OpenMutex(MUTEX_ALL_ACCESS, 0, mutex_name.c_str());
-		if (nullptr == mutex)
-		{
-			mutex = CreateMutex(0, 0, mutex_name.c_str());
-			return false;
-		}
-		else
-		{
-			return true;
-		}
-	}
+    bool IsRunning(const std::tstring &mutex_name) {
+        mutex = OpenMutex(MUTEX_ALL_ACCESS, 0, mutex_name.c_str());
+        if (nullptr == mutex) {
+            mutex = CreateMutex(0, 0, mutex_name.c_str());
+            return false;
+        } else {
+            return true;
+        }
+    }
+
 private:
-	HANDLE mutex;
+    HANDLE mutex;
 };

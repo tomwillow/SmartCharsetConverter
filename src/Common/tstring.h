@@ -4,7 +4,7 @@
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <windows.h>//TEXT macro
+#include <windows.h> //TEXT macro
 #include <tchar.h>
 
 #include <memory>
@@ -72,32 +72,34 @@
 
 #endif
 
-void MyWideCharToMultiByte(const wchar_t *wsrc, int wsrcSize, std::unique_ptr<char[]> &dest, int &destSize, UINT codePage = CP_ACP);
-void MyMultiByteToWideChar(const char *src, int srcSize, std::unique_ptr<wchar_t[]> &dest, int &destSize, UINT codePage = CP_ACP);
+void MyWideCharToMultiByte(const wchar_t *wsrc, int wsrcSize, std::unique_ptr<char[]> &dest, int &destSize,
+                           UINT codePage = CP_ACP);
+void MyMultiByteToWideChar(const char *src, int srcSize, std::unique_ptr<wchar_t[]> &dest, int &destSize,
+                           UINT codePage = CP_ACP);
 
 std::wstring string_to_wstring(const std::string &str);
 std::string wstring_to_string(const std::wstring &wstr);
 
-std::string to_string(const std::wstring& ws);
-std::string to_string(const std::string& s);
+std::string to_string(const std::wstring &ws);
+std::string to_string(const std::string &s);
 
-std::wstring to_wstring(const std::string& s);
-std::wstring to_wstring(const std::wstring& s);
+std::wstring to_wstring(const std::string &s);
+std::wstring to_wstring(const std::wstring &s);
 
-void tolower(std::string& s);
-void toupper(std::string& s);
+void tolower(std::string &s);
+void toupper(std::string &s);
 
-std::string to_utf8(const std::wstring& wstr);
-std::string to_utf8(const std::string& str);
+std::string to_utf8(const std::wstring &wstr);
+std::string to_utf8(const std::string &str);
 
-std::string utf8_to_string(const std::string& str);
-std::wstring utf8_to_wstring(const std::string& str);
+std::string utf8_to_string(const std::string &str);
+std::wstring utf8_to_wstring(const std::string &str);
 
 std::string to_hex(const char *buf, int bufSize);
 std::string to_hex(std::string s);
 std::wstring to_hex(std::wstring s);
 
-std::tistream& safeGetline(std::tistream& is, std::tstring& t);
+std::tistream &safeGetline(std::tistream &is, std::tstring &t);
 
 std::vector<std::tstring_view> Split(std::tstring_view s, const std::tstring &dep) noexcept;
 void Split_UnitTest();
