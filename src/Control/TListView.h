@@ -2,11 +2,11 @@
 
 #include <tstring.h>
 
-#include <atlbase.h>        // »ù±¾µÄATLÀà
-#include <atlwin.h>         // ATL´°¿ÚÀà
-#include <atlapp.h>     // WTL Ö÷¿ò¼Ü´°¿ÚÀà
+#include <atlbase.h>        // åŸºæœ¬çš„ATLç±»
+#include <atlwin.h>         // ATLçª—å£ç±»
+#include <atlapp.h>     // WTL ä¸»æ¡†æ¶çª—å£ç±»
 #include <atlctrls.h>
-#include <atlcrack.h>   // WTL ÔöÇ¿µÄÏûÏ¢ºê
+#include <atlcrack.h>   // WTL å¢å¼ºçš„æ¶ˆæ¯å®
 
 #include <vector>
 

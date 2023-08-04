@@ -8,8 +8,8 @@ using namespace std;
 #define TICKS_PER_SECOND 10000000
 #define EPOCH_DIFFERENCE 11644473600LL
 
-// WindowsÊ±¼ä´Ó1601-01-01T00£º00£º00Z¿ªÊ¼¡£ÀëUNIX/LinuxÊ±¼ä(1970-01-01T00£º00£º00Z)»¹ÓÐ11644473600Ãë¡£WindowsÊ±¼äÎª100ÄÉÃë¡£
-// Òò´Ë£¬´ÓUNIXÊ±¼ä»ñµÃÃëµÄº¯ÊýÈçÏÂËùÊ¾
+// Windowsæ—¶é—´ä»Ž1601-01-01T00ï¼š00ï¼š00Zå¼€å§‹ã€‚ç¦»UNIX/Linuxæ—¶é—´(1970-01-01T00ï¼š00ï¼š00Z)è¿˜æœ‰11644473600ç§’ã€‚Windowsæ—¶é—´ä¸º100çº³ç§’ã€‚
+// å› æ­¤ï¼Œä»ŽUNIXæ—¶é—´èŽ·å¾—ç§’çš„å‡½æ•°å¦‚ä¸‹æ‰€ç¤º
 time_t convertWindowsTimeToUnixTime(long long input) {
     long long temp;
     temp = input / TICKS_PER_SECOND; //convert from 100ns intervals to seconds;

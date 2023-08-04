@@ -22,27 +22,27 @@ private:
 
 extern LogRecord logRecord;
 
-// Ö¸Õë
+// æŒ‡é’ˆ
 inline LogRecord &operator<<(LogRecord &logRecord, void *p)
 {
 	logRecord.AddBuffer(std::to_tstring((INT_PTR)p));
 	return logRecord;
 }
 
-// ¾ä±ú
+// å¥æŸ„
 LogRecord &operator<<(LogRecord &logRecord, HWND hWnd);
 
-// Ê±¼ä´Á
+// æ—¶é—´æˆ³
 LogRecord &operator<<(LogRecord &logRecord, TimeStamp timeStamp);
 
-// ¿í×Ö·û´®
+// å®½å­—ç¬¦ä¸²
 inline LogRecord &operator<<(LogRecord &logRecord, const wchar_t s[])
 {
 	logRecord.AddBuffer(to_tstring(s));
 	return logRecord;
 }
 
-// ansi×Ö·û´®
+// ansiå­—ç¬¦ä¸²
 inline LogRecord &operator<<(LogRecord &logRecord, const char s[])
 {
 	logRecord.AddBuffer(to_tstring(s));

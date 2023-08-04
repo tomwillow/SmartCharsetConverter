@@ -15,11 +15,11 @@
 
 using namespace std;
 
-// ×Ö·û¼¯codeµ½Ãû³ÆµÄÓ³Éä±í
+// å­—ç¬¦é›†codeåˆ°åç§°çš„æ˜ å°„è¡¨
 const doublemap<CharsetCode, tstring> charsetCodeMap = {
-	{CharsetCode::UNKNOWN,TEXT("Î´Öª")},
-	{CharsetCode::EMPTY,TEXT("¿Õ")},
-	{CharsetCode::NOT_SUPPORTED,TEXT("²»Ö§³Ö")},
+	{CharsetCode::UNKNOWN,TEXT("æœªçŸ¥")},
+	{CharsetCode::EMPTY,TEXT("ç©º")},
+	{CharsetCode::NOT_SUPPORTED,TEXT("ä¸æ”¯æŒ")},
 	{CharsetCode::UTF8,TEXT("UTF-8")},
 	{CharsetCode::UTF8BOM,TEXT("UTF-8 BOM")},
 	{CharsetCode::UTF16LE,TEXT("UTF-16LE")},
@@ -126,7 +126,7 @@ std::string ToICUCharsetName(CharsetCode code)
 }
 
 /*
-* @exception runtime_error ucnv³ö´í¡£code
+* @exception runtime_error ucnvå‡ºé”™ã€‚code
 */
 void DealWithUCNVError(UErrorCode err)
 {
@@ -134,10 +134,10 @@ void DealWithUCNVError(UErrorCode err)
 	{
 	case U_ZERO_ERROR:
 		break;
-	case U_AMBIGUOUS_ALIAS_WARNING:	// windows-1252 Ê±»á³öÕâ¸ö£¬ÔİÊ±ºöÂÔ
+	case U_AMBIGUOUS_ALIAS_WARNING:	// windows-1252 æ—¶ä¼šå‡ºè¿™ä¸ªï¼Œæš‚æ—¶å¿½ç•¥
 		break;
 	default:
-		throw runtime_error("ucnv³ö´í¡£code=" + to_string(err));
+		throw runtime_error("ucnvå‡ºé”™ã€‚code=" + to_string(err));
 		break;
 	}
 }
@@ -149,19 +149,19 @@ tuple<unique_ptr<UChar[]>, int> Decode(const char *str, int len, CharsetCode cod
 		return { nullptr, 0 };
 	}
 
-	// ´Ócode×ª»»µ½icuµÄ×Ö·û¼¯Ãû³Æ
+	// ä»codeè½¬æ¢åˆ°icuçš„å­—ç¬¦é›†åç§°
 	auto icuCharsetName = ToICUCharsetName(code);
 
 	UErrorCode err = U_ZERO_ERROR;
 
-	// ´ò¿ª×ª»»Æ÷
+	// æ‰“å¼€è½¬æ¢å™¨
 	UConverter *conv = ucnv_open(to_string(icuCharsetName).c_str(), &err);
 	DealWithUCNVError(err);
 
 	int32_t cap = len + 1;
 	unique_ptr<UChar[]> target(new UChar[cap]);
 
-	// ½âÂë
+	// è§£ç 
 	int retLen = ucnv_toUChars(conv, target.get(), cap, str, len, &err);
 	DealWithUCNVError(err);
 
@@ -172,19 +172,19 @@ tuple<unique_ptr<UChar[]>, int> Decode(const char *str, int len, CharsetCode cod
 
 std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, int bufSize, CharsetCode targetCode)
 {
-	// ´Ócode×ª»»µ½icuµÄ×Ö·û¼¯Ãû³Æ
+	// ä»codeè½¬æ¢åˆ°icuçš„å­—ç¬¦é›†åç§°
 	auto icuCharsetName = ToICUCharsetName(targetCode);
 
 	UErrorCode err = U_ZERO_ERROR;
 
-	// ´ò¿ª×ª»»Æ÷
+	// æ‰“å¼€è½¬æ¢å™¨
 	UConverter *conv = ucnv_open(to_string(icuCharsetName).c_str(), &err);
 	DealWithUCNVError(err);
 
 	int32_t destCap = bufSize * sizeof(UChar) + 2;
 	unique_ptr<char[]> target(new char[destCap]);
 
-	// ½âÂë
+	// è§£ç 
 	int retLen;
 	while (1)
 	{
@@ -192,7 +192,7 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
 		retLen = ucnv_fromUChars(conv, target.get(), destCap, buf.get(), bufSize, &err);
 		if (err == U_BUFFER_OVERFLOW_ERROR)
 		{
-			destCap = retLen  + 6; // Ôö¼ÓÒ»¸öÎ²ºó0µÄ´óĞ¡£ºutf-8 µ¥¸ö×Ö·û×î´óÕ¼ÓÃ×Ö½ÚÊı
+			destCap = retLen  + 6; // å¢åŠ ä¸€ä¸ªå°¾å0çš„å¤§å°ï¼šutf-8 å•ä¸ªå­—ç¬¦æœ€å¤§å ç”¨å­—èŠ‚æ•°
 			target.reset(new char[destCap]);
 			continue;
 		}
@@ -326,7 +326,7 @@ void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::Li
 
 	if (out.size() >= std::numeric_limits<int>::max())
 	{
-		throw runtime_error("Éú³ÉÎÄ¼ş´óĞ¡³¬³öÏŞÖÆ");
+		throw runtime_error("ç”Ÿæˆæ–‡ä»¶å¤§å°è¶…å‡ºé™åˆ¶");
 	}
 
 	int outLen = static_cast<int>(out.size());
@@ -339,10 +339,10 @@ void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::Li
 
 Core::Core(std::tstring iniFileName) :iniFileName(iniFileName)
 {
-	// ¶Áini
+	// è¯»ini
 	ReadFromIni();
 
-	// ³õÊ¼»¯uchardet
+	// åˆå§‹åŒ–uchardet
 	det = unique_ptr<uchardet, std::function<void(uchardet *)>>(uchardet_new(), [](uchardet *det) { uchardet_delete(det); });
 
 	//UErrorCode err;
@@ -406,7 +406,7 @@ void Core::SetEnableConvertLineBreak(bool enableLineBreaks)
 
 std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std::tstring filename) const
 {
-	// Ö»¶ÁÈ¡100KB
+	// åªè¯»å–100KB
 	auto [buf, bufSize] = ReadFileToBuffer(filename, 100 * KB);
 
 	if (bufSize == 0)
@@ -416,10 +416,10 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 
 	if (bufSize >= std::numeric_limits<int>::max())
 	{
-		throw runtime_error("ÎÄ¼ş´óĞ¡³¬³öÏŞÖÆ");
+		throw runtime_error("æ–‡ä»¶å¤§å°è¶…å‡ºé™åˆ¶");
 	}
 
-	// ÓÃuchardetÅĞ¶¨×Ö·û¼¯
+	// ç”¨uchardetåˆ¤å®šå­—ç¬¦é›†
 	uchardet_reset(det.get());
 	int ret = uchardet_handle_data(det.get(), buf.get(), bufSize);
 	switch (ret)
@@ -433,7 +433,7 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 
 	uchardet_data_end(det.get());
 
-	// µÃµ½uchardetµÄÊ¶±ğ½á¹û
+	// å¾—åˆ°uchardetçš„è¯†åˆ«ç»“æœ
 	string charset = string(uchardet_get_charset(det.get()));
 
 	// filter
@@ -444,7 +444,7 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 	}
 	else if (charset == "UTF-8")
 	{
-		// Çø·ÖÓĞÎŞBOM
+		// åŒºåˆ†æœ‰æ— BOM
 		if (bufSize >= sizeof(UTF8BOM_DATA) && memcmp(buf.get(), UTF8BOM_DATA, sizeof(UTF8BOM_DATA)) == 0)
 		{
 			code = CharsetCode::UTF8BOM;
@@ -456,7 +456,7 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 	}
 	else if (charset == "UTF-16LE")
 	{
-		// Çø·ÖÓĞÎŞBOM
+		// åŒºåˆ†æœ‰æ— BOM
 		if (bufSize >= sizeof(UTF16LEBOM_DATA) && memcmp(buf.get(), UTF16LEBOM_DATA, sizeof(UTF16LEBOM_DATA)) == 0)
 		{
 			code = CharsetCode::UTF16LEBOM;
@@ -468,7 +468,7 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 	}
 	else if (charset == "UTF-16BE")
 	{
-		// Çø·ÖÓĞÎŞBOM
+		// åŒºåˆ†æœ‰æ— BOM
 		if (bufSize >= sizeof(UTF16BEBOM_DATA) && memcmp(buf.get(), UTF16BEBOM_DATA, sizeof(UTF16BEBOM_DATA)) == 0)
 		{
 			code = CharsetCode::UTF16BEBOM;
@@ -490,20 +490,20 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 	{
 		code = CharsetCode::ISO_8859_1;
 	}
-	else if (charset == "")	// Ã»Ê¶±ğ³öÀ´
+	else if (charset == "")	// æ²¡è¯†åˆ«å‡ºæ¥
 	{
 		code = CharsetCode::UNKNOWN;
 		return make_tuple(code, nullptr, 0);
 	}
 	else
 	{
-		string info = "Ôİ²»Ö§³Ö£º";
+		string info = "æš‚ä¸æ”¯æŒï¼š";
 		info += charset;
-		info += "£¬ÇëÁªÏµ×÷Õß¡£";
+		info += "ï¼Œè¯·è”ç³»ä½œè€…ã€‚";
 		throw runtime_error(info);
 	}
 
-	// ¸ù¾İuchardetµÃ³öµÄ×Ö·û¼¯½âÂë
+	// æ ¹æ®uchardetå¾—å‡ºçš„å­—ç¬¦é›†è§£ç 
 	auto content = Decode(buf.get(), std::max(64, static_cast<int>(bufSize)), code);
 
 	return make_tuple(code, std::move(get<0>(content)), get<1>(content));

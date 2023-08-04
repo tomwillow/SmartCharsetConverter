@@ -2,7 +2,7 @@
 
 using namespace std;
 
-// 根据错误码返回对应的错误信息
+// 鏍规嵁閿欒鐮佽繑鍥炲搴旂殑閿欒淇℃伅
 std::tstring GetLastErrorString(DWORD errorCode)
 {
 	TCHAR* lpMsgBuf = nullptr;

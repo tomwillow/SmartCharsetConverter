@@ -33,51 +33,51 @@ std::wstring string_to_wstring(const std::string& str)
 
 void MyWideCharToMultiByte(const wchar_t *wsrc, int wsrcSize, std::unique_ptr<char[]> &dest, int &destSize, UINT codePage)
 {
-	// È¡µÃ´óĞ¡
+	// å–å¾—å¤§å°
 	destSize = WideCharToMultiByte(codePage, 0, wsrc, wsrcSize, NULL, 0, NULL, NULL);
-	if (destSize == 0) // ´óĞ¡Îª0»òÕßÊ§°Ü£¬·µ»Ø¿Õ´®
+	if (destSize == 0) // å¤§å°ä¸º0æˆ–è€…å¤±è´¥ï¼Œè¿”å›ç©ºä¸²
 	{
 		dest.reset(nullptr);
 		return;
 	}
 
-	// ·ÖÅä¿Õ¼ä
+	// åˆ†é…ç©ºé—´
 	dest.reset(new char[destSize]);
 
-	// ½øĞĞ×ª»»
+	// è¿›è¡Œè½¬æ¢
 	WideCharToMultiByte(codePage, 0, wsrc, wsrcSize, dest.get(),destSize, NULL, NULL);
 }
 
 void MyMultiByteToWideChar(const char *src, int srcSize, std::unique_ptr<wchar_t[]> &dest, int &destSize, UINT codePage)
 {
-	// È¡µÃ´óĞ¡
+	// å–å¾—å¤§å°
 	destSize = MultiByteToWideChar(codePage, 0, src, srcSize, NULL, 0);
-	if (destSize == 0) // ´óĞ¡Îª0»òÕßÊ§°Ü£¬·µ»Ø¿Õ´®
+	if (destSize == 0) // å¤§å°ä¸º0æˆ–è€…å¤±è´¥ï¼Œè¿”å›ç©ºä¸²
 	{
 		dest.reset(nullptr);
 		return;
 	}
 
-	// ·ÖÅä¿Õ¼ä
+	// åˆ†é…ç©ºé—´
 	dest.reset(new wchar_t[destSize]);
 
-	// ½øĞĞ×ª»»
+	// è¿›è¡Œè½¬æ¢
 	MultiByteToWideChar(codePage, 0, src, srcSize, dest.get(), destSize);
 }
 
 std::string wstring_to_string(const std::wstring& wstr)
 {
-	// È¡µÃ´óĞ¡
+	// å–å¾—å¤§å°
 	int nLen = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
-	if (nLen == 0) // ´óĞ¡Îª0»òÕßÊ§°Ü£¬·µ»Ø¿Õ´®
+	if (nLen == 0) // å¤§å°ä¸º0æˆ–è€…å¤±è´¥ï¼Œè¿”å›ç©ºä¸²
 		return std::string("");
 
-	// ·ÖÅä¿Õ¼ä
+	// åˆ†é…ç©ºé—´
 	unique_ptr<char[]> 	buf = unique_ptr<char[]>(new char[nLen]);
 
-	// ½øĞĞ×ª»»
+	// è¿›è¡Œè½¬æ¢
 	nLen = WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, buf.get(), nLen, NULL, NULL);
-	if (nLen == 0) // ´óĞ¡Îª0»òÕßÊ§°Ü£¬·µ»Ø¿Õ´®
+	if (nLen == 0) // å¤§å°ä¸º0æˆ–è€…å¤±è´¥ï¼Œè¿”å›ç©ºä¸²
 		return std::string("");
 
 	return std::string(buf.get());
@@ -115,17 +115,17 @@ void toupper(std::string& s)
 
 std::string to_utf8(const std::wstring& wstr)
 {
-	// È¡µÃ´óĞ¡
+	// å–å¾—å¤§å°
 	int nLen = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, NULL, 0, NULL, NULL);
-	if (nLen == 0) // ´óĞ¡Îª0»òÕßÊ§°Ü£¬·µ»Ø¿Õ´®
+	if (nLen == 0) // å¤§å°ä¸º0æˆ–è€…å¤±è´¥ï¼Œè¿”å›ç©ºä¸²
 		return std::string("");
 
-	// ·ÖÅä¿Õ¼ä
+	// åˆ†é…ç©ºé—´
 	unique_ptr<char[]> 	buf = unique_ptr<char[]>(new char[nLen]);
 
-	// ½øĞĞ×ª»»
+	// è¿›è¡Œè½¬æ¢
 	nLen = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, buf.get(), nLen, NULL, NULL);
-	if (nLen == 0) // ´óĞ¡Îª0»òÕßÊ§°Ü£¬·µ»Ø¿Õ´®
+	if (nLen == 0) // å¤§å°ä¸º0æˆ–è€…å¤±è´¥ï¼Œè¿”å›ç©ºä¸²
 		return std::string("");
 
 	return std::string(buf.get());
@@ -135,7 +135,7 @@ std::string to_utf8(const std::string& str)
 {
 	int nwLen = MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
 	unique_ptr<wchar_t[]> pwBuf(new wchar_t[nwLen]);
-	MultiByteToWideChar(CP_ACP, 0, str.c_str(), str.length(), pwBuf.get(), nwLen);
+	MultiByteToWideChar(CP_ACP, 0, str.c_str(), static_cast<int>(str.length()), pwBuf.get(), nwLen);
 
 	int nLen = WideCharToMultiByte(CP_UTF8, 0, pwBuf.get(), -1, NULL, NULL, NULL, NULL);
 	unique_ptr<char[]> pBuf(new char[nLen]);
@@ -149,7 +149,7 @@ std::string utf8_to_string(const std::string& str)
 	int nwLen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
 	wchar_t* pwBuf = new wchar_t[nwLen + 1];
 	memset(pwBuf, 0, nwLen * 2 + 2);
-	MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.length(), pwBuf, nwLen);
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.length()), pwBuf, nwLen);
 
 	int nLen = WideCharToMultiByte(CP_ACP, 0, pwBuf, -1, NULL, NULL, NULL, NULL);
 	char* pBuf = new char[nLen + 1];
@@ -168,7 +168,7 @@ std::wstring utf8_to_wstring(const std::string& str)
 	int nwLen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
 	wchar_t* pwBuf = new wchar_t[nwLen + 1];
 	memset(pwBuf, 0, nwLen * 2 + 2);
-	MultiByteToWideChar(CP_UTF8, 0, str.c_str(), str.size(), pwBuf, nwLen);
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), pwBuf, nwLen);
 
 	std::wstring ret = pwBuf;
 	delete[]pwBuf;
@@ -176,7 +176,7 @@ std::wstring utf8_to_wstring(const std::string& str)
 	return ret;
 }
 
-// Î´²âÊÔ
+// æœªæµ‹è¯•
 void FixEndLine(std::tstring& s)
 {
 	tstring temp;

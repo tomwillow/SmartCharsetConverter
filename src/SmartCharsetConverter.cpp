@@ -1,4 +1,4 @@
-﻿#include <ControlStyle.h>
+#include <ControlStyle.h>
 
 #include "DialogMain.h"
 

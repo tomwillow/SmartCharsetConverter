@@ -2,7 +2,7 @@
 
 void PopupMenu(HWND hParent, int menu_id)
 {
-	//µ¯³öÓÒ¼ü²Ëµ¥
+	//ÂµÂ¯Â³Ã¶Ã“Ã’Â¼Ã¼Â²Ã‹ÂµÂ¥
 	HMENU hMenu = LoadMenu(GetModuleHandle(NULL), MAKEINTRESOURCE(menu_id));
 	hMenu = GetSubMenu(hMenu, 0);
 	POINT pt;

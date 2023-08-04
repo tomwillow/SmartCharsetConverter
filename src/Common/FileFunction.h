@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "tstring.h"
 #include <vector>

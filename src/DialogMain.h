@@ -7,11 +7,11 @@
 #include <tstring.h>
 #include <TListView.h>
 
-#include <atlbase.h>        // »ù±¾µÄATLÀà
-#include <atlwin.h>         // ATL´°¿ÚÀà
-#include <atlapp.h>     // WTL Ö÷¿ò¼Ü´°¿ÚÀà
+#include <atlbase.h>        // åŸºæœ¬çš„ATLç±»
+#include <atlwin.h>         // ATLçª—å£ç±»
+#include <atlapp.h>     // WTL ä¸»æ¡†æ¶çª—å£ç±»
 #include <atlctrls.h>  
-#include <atlcrack.h>   // WTL ÔöÇ¿µÄÏûÏ¢ºê
+#include <atlcrack.h>   // WTL å¢å¼ºçš„æ¶ˆæ¯å®
 
 #include <vector>
 #include <chrono>
@@ -39,7 +39,7 @@ private:
 		TEXT_PIECE
 	};
 
-	std::unordered_set<std::tstring> listFileNames; // µ±Ç°ÁĞ±íÖĞµÄÎÄ¼ş
+	std::unordered_set<std::tstring> listFileNames; // å½“å‰åˆ—è¡¨ä¸­çš„æ–‡ä»¶
 
 	std::thread thConvert;
 	std::atomic<bool> doCancel;
@@ -59,19 +59,19 @@ public:
 
 	void SetOutputCharset(CharsetCode charset);
 
-	// ¼ÓÈëÒ»¸öÎÄ¼şµ½ÁĞ±í¡£
-	// Èç¹û³ö´í£¬Å×³öÒì³£¡£
-	// Èç¹ûÃ»Ê¶±ğ³ö×Ö·û¼¯£¬·µ»Øfalse¡£Èç¹û²»ÊÇÖÇÄÜÄ£Ê½£¬ÄÇÃ´ÕÕ³£Ìí¼ÓÌõÄ¿£¬·ñÔò²»Ìí¼Ó¡£
+	// åŠ å…¥ä¸€ä¸ªæ–‡ä»¶åˆ°åˆ—è¡¨ã€‚
+	// å¦‚æœå‡ºé”™ï¼ŒæŠ›å‡ºå¼‚å¸¸ã€‚
+	// å¦‚æœæ²¡è¯†åˆ«å‡ºå­—ç¬¦é›†ï¼Œè¿”å›falseã€‚å¦‚æœä¸æ˜¯æ™ºèƒ½æ¨¡å¼ï¼Œé‚£ä¹ˆç…§å¸¸æ·»åŠ æ¡ç›®ï¼Œå¦åˆ™ä¸æ·»åŠ ã€‚
 	/*
-	* @exception io_error_ignore °´ÕÕÅäÖÃºöÂÔµôÕâ¸öÎÄ¼ş
+	* @exception io_error_ignore æŒ‰ç…§é…ç½®å¿½ç•¥æ‰è¿™ä¸ªæ–‡ä»¶
 	*/
 	void AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts);
 
 	/* 
-	* ¼ÓÈë¶à¸öÎÄ¼şµ½ÁĞ±í¡£
-	* Èç¹ûÖĞÍ¾ÓĞ¼ÓÈëÊ§°ÜµÄÎÄ¼ş£¬»áÔÚ×îºóµ¯Ò»¸ö¶Ô»°¿òÍ³Ò»ËµÃ÷¡£
-	* ·µ»ØºöÂÔµôµÄÎÄ¼ş
-	* Ìí¼ÓÊ§°ÜµÄÎÄ¼ş»áµ¯´°
+	* åŠ å…¥å¤šä¸ªæ–‡ä»¶åˆ°åˆ—è¡¨ã€‚
+	* å¦‚æœä¸­é€”æœ‰åŠ å…¥å¤±è´¥çš„æ–‡ä»¶ï¼Œä¼šåœ¨æœ€åå¼¹ä¸€ä¸ªå¯¹è¯æ¡†ç»Ÿä¸€è¯´æ˜ã€‚
+	* è¿”å›å¿½ç•¥æ‰çš„æ–‡ä»¶
+	* æ·»åŠ å¤±è´¥çš„æ–‡ä»¶ä¼šå¼¹çª—
 	* @exception runtime_error
 	*/
 	std::vector<std::tstring> AddItems(const std::vector<std::tstring> &filenames);

@@ -8,13 +8,13 @@
 #include <Windows.h>
 
 /*
-·À¶à¿ªÀà
+é˜²å¤šå¼€ç±»
 
-ÓÃ·¨£º
+ç”¨æ³•ï¼š
 SingleApplication single;
 if (single.IsRunning(TEXT("AppTitle")))
 {
-	throw runtime_error("Ö»ÄÜÍ¬Ê±ÔËĞĞÒ»¸öÊµÀı£¡");
+	throw runtime_error("åªèƒ½åŒæ—¶è¿è¡Œä¸€ä¸ªå®ä¾‹ï¼");
 }
 
 */

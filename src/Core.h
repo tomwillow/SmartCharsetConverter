@@ -31,10 +31,10 @@ enum class CharsetCode
 	WINDOWS_1252,
 	ISO_8859_1
 
-	// Ìí¼Ó×Ö·û¼¯ĞèÒªÍ¬²½ĞŞ¸Ä£ºcharsetCodeMap ToICUCharsetName
+	// æ·»åŠ å­—ç¬¦é›†éœ€è¦åŒæ­¥ä¿®æ”¹ï¼šcharsetCodeMap ToICUCharsetName
 };
 
-// bom´®
+// bomä¸²
 const char UTF8BOM_DATA[] = { '\xEF', '\xBB','\xBF'};
 const char UTF16LEBOM_DATA[] = { '\xFF', '\xFE'};
 const char UTF16BEBOM_DATA[] = { '\xFE', '\xFF'};
@@ -43,7 +43,7 @@ const char UTF32BEBOM_DATA[] = { '\xFE', '\xFF','\x0','\x0'};
 
 std::tstring ToCharsetName(CharsetCode code);
 
-// ±àÂë¼¯Ãû×Ö×ªCharsetCode¡£²»º¬ÍÆ²â£¬Ö»ÔÊĞíÌØ¶¨×Ö·û´®³öÏÖ¡£·ñÔò±¨assert
+// ç¼–ç é›†åå­—è½¬CharsetCodeã€‚ä¸å«æ¨æµ‹ï¼Œåªå…è®¸ç‰¹å®šå­—ç¬¦ä¸²å‡ºç°ã€‚å¦åˆ™æŠ¥assert
 CharsetCode ToCharsetCode(const std::tstring &name);
 
 bool HasBom(CharsetCode code);
@@ -51,26 +51,26 @@ const char *GetBomData(CharsetCode code);
 int BomSize(CharsetCode code);
 
 /**
-* @brief ·µ»ØbufµÄ¿ªÍ·ÊÇ·ñ·ûºÏÄ³ÖÖBOM£¬Èç¹û¶¼²»·ûºÏ·µ»ØUNKNOWN
+* @brief è¿”å›bufçš„å¼€å¤´æ˜¯å¦ç¬¦åˆæŸç§BOMï¼Œå¦‚æœéƒ½ä¸ç¬¦åˆè¿”å›UNKNOWN
 */
 CharsetCode CheckBom(char *buf, int bufSize);
 
 /** 
-* @brief ¸ù¾İcodeµÄ×Ö·û¼¯½âÂë×Ö·û´®Îªunicode
-* @return ×Ö·û´®Ö¸Õë£¬ÎÄ±¾³¤¶È
-* @exception runtime_error ucnv³ö´í¡£code
+* @brief æ ¹æ®codeçš„å­—ç¬¦é›†è§£ç å­—ç¬¦ä¸²ä¸ºunicode
+* @return å­—ç¬¦ä¸²æŒ‡é’ˆï¼Œæ–‡æœ¬é•¿åº¦
+* @exception runtime_error ucnvå‡ºé”™ã€‚code
 */
 std::tuple<std::unique_ptr<UChar[]>, int> Decode(const char *str, int len, CharsetCode code);
 
 /**
-* @brief °Ñunicode´®±àÂëÎªÖ¸¶¨×Ö·û¼¯
-* @return ×Ö·û´®Ö¸Õë£¬ÎÄ±¾³¤¶È
-* @exception runtime_error ucnv³ö´í¡£code
+* @brief æŠŠunicodeä¸²ç¼–ç ä¸ºæŒ‡å®šå­—ç¬¦é›†
+* @return å­—ç¬¦ä¸²æŒ‡é’ˆï¼Œæ–‡æœ¬é•¿åº¦
+* @exception runtime_error ucnvå‡ºé”™ã€‚code
 */
 std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, int bufSize, CharsetCode targetCode);
 
 /**
-* @brief ÅäÖÃĞÅÏ¢
+* @brief é…ç½®ä¿¡æ¯
 */
 struct Configuration
 {
@@ -102,19 +102,19 @@ struct Configuration
 	}
 };
 
-// Ê¶±ğ»»ĞĞ·û
+// è¯†åˆ«æ¢è¡Œç¬¦
 Configuration::LineBreaks GetLineBreaks(const std::unique_ptr<UChar[]> &buf, int len);
 
-// ±ä¸ü»»ĞĞ·û
+// å˜æ›´æ¢è¡Œç¬¦
 void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::LineBreaks targetLineBreak);
 
-// LineBreaksÀàĞÍµ½×Ö·û´®µÄÓ³Éä±í
+// LineBreaksç±»å‹åˆ°å­—ç¬¦ä¸²çš„æ˜ å°„è¡¨
 const doublemap<Configuration::LineBreaks, std::tstring> lineBreaksMap = {
 	{Configuration::LineBreaks::CRLF,TEXT("CRLF")},
 	{Configuration::LineBreaks::LF,TEXT("LF")},
 	{Configuration::LineBreaks::CR,TEXT("CR")},
 	{Configuration::LineBreaks::EMPTY,TEXT("")},
-	{Configuration::LineBreaks::MIX,TEXT("»ìºÏ")}
+	{Configuration::LineBreaks::MIX,TEXT("æ··åˆ")}
 };
 
 
@@ -136,9 +136,9 @@ public:
 
 	// 
 	/**
-	* @brief ¶ÁÈ¡×î´ó100KB×Ö½Ú£¬·µ»Ø±àÂë¼¯£¬UnicodeÎÄ±¾£¬ÎÄ±¾³¤¶È
-	* @exception file_io_error ¶ÁÎÄ¼şÊ§°Ü
-	* @exception runtime_error ucnv³ö´í¡£code
+	* @brief è¯»å–æœ€å¤§100KBå­—èŠ‚ï¼Œè¿”å›ç¼–ç é›†ï¼ŒUnicodeæ–‡æœ¬ï¼Œæ–‡æœ¬é•¿åº¦
+	* @exception file_io_error è¯»æ–‡ä»¶å¤±è´¥
+	* @exception runtime_error ucnvå‡ºé”™ã€‚code
 	*/
 	std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int> GetEncoding(std::tstring filename) const;
 

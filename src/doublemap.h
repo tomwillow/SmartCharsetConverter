@@ -2,7 +2,7 @@
 #include <unordered_map>
 #include <cassert>
 
-// Ë«Ïòmap£¬Ö§³ÖË«Ïò²é±í²Ù×÷
+// åŒå‘mapï¼Œæ”¯æŒåŒå‘æŸ¥è¡¨æ“ä½œ
 template <typename T1, typename T2>
 class doublemap
 {

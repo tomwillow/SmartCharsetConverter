@@ -17,7 +17,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("ÖÇÄÜ±àÂë¼¯×ª»»Æ÷ v0.41 by Tom Willow");
+const std::tstring appTitle = TEXT("æ™ºèƒ½ç¼–ç é›†è½¬æ¢å™¨ v0.41 by Tom Willow");
 
 using namespace std;
 
@@ -41,9 +41,9 @@ void DialogMain::OnClose()
 
 BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
-	// ÉèÖÃ´°¿ÚµÄ´óĞ¡Í¼±ê
-	// ´óÍ¼±ê£º°´ÏÂalt+tab¼üÇĞ»»´°¿ÚÊ±¶ÔÓ¦µÄÍ¼±ê
-	// Ğ¡Í¼±ê£º¾ÍÊÇ´°¿Ú×óÉÏ½Ç¶ÔÓ¦µÄÄÇ¸öÍ¼±ê
+	// è®¾ç½®çª—å£çš„å¤§å°å›¾æ ‡
+	// å¤§å›¾æ ‡ï¼šæŒ‰ä¸‹alt+tabé”®åˆ‡æ¢çª—å£æ—¶å¯¹åº”çš„å›¾æ ‡
+	// å°å›¾æ ‡ï¼šå°±æ˜¯çª—å£å·¦ä¸Šè§’å¯¹åº”çš„é‚£ä¸ªå›¾æ ‡
 	HICON hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1));
 	::SendMessage(m_hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 	::SendMessage(m_hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
@@ -52,7 +52,7 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	BOOL bHandle = true;
 
-	// °üº¬/ÅÅ³ıÖ¸¶¨ºó×º
+	// åŒ…å«/æ’é™¤æŒ‡å®šåç¼€
 	SetFilterMode(core.GetConfig().filterMode);
 	//GetDlgItem(IDC_EDIT_INCLUDE_TEXT).SetWindowTextW(core.GetConfig().includeRule);
 
@@ -69,30 +69,30 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	CButton(GetDlgItem(IDC_RADIO_CRLF + static_cast<int>(core.GetConfig().lineBreak))).SetCheck(true);
 
 	// listview
-	listview.SubclassWindow(GetDlgItem(IDC_LISTVIEW));	// ±ØĞëÓÃSubclassWindow´«Èë¾ä±ú£¬²ÅÄÜÈÃMSG_MAPÉúĞ§
+	listview.SubclassWindow(GetDlgItem(IDC_LISTVIEW));	// å¿…é¡»ç”¨SubclassWindowä¼ å…¥å¥æŸ„ï¼Œæ‰èƒ½è®©MSG_MAPç”Ÿæ•ˆ
 
 	listview.ModifyStyle(0, LVS_REPORT);
 	listview.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 
-	listview.AddColumn(TEXT("ĞòºÅ"), static_cast<int>(ListViewColumn::INDEX));
+	listview.AddColumn(TEXT("åºå·"), static_cast<int>(ListViewColumn::INDEX));
 	listview.SetColumnWidth(0, 40);
 
-	listview.AddColumn(TEXT("ÎÄ¼şÃû"), static_cast<int>(ListViewColumn::FILENAME));
+	listview.AddColumn(TEXT("æ–‡ä»¶å"), static_cast<int>(ListViewColumn::FILENAME));
 	listview.SetColumnWidth(1, 300);
 
-	listview.AddColumn(TEXT("´óĞ¡"), static_cast<int>(ListViewColumn::FILESIZE));
+	listview.AddColumn(TEXT("å¤§å°"), static_cast<int>(ListViewColumn::FILESIZE));
 	listview.SetColumnWidth(2, 60);
 
-	listview.AddColumn(TEXT("±àÂë"), static_cast<int>(ListViewColumn::ENCODING));
+	listview.AddColumn(TEXT("ç¼–ç "), static_cast<int>(ListViewColumn::ENCODING));
 	listview.SetColumnWidth(3, 60);
 
-	listview.AddColumn(TEXT("»»ĞĞ·û"), static_cast<int>(ListViewColumn::LINE_BREAK));
+	listview.AddColumn(TEXT("æ¢è¡Œç¬¦"), static_cast<int>(ListViewColumn::LINE_BREAK));
 	listview.SetColumnWidth(4, 60);
 
-	listview.AddColumn(TEXT("ÎÄ±¾Æ¬¶Î"), static_cast<int>(ListViewColumn::TEXT_PIECE));
+	listview.AddColumn(TEXT("æ–‡æœ¬ç‰‡æ®µ"), static_cast<int>(ListViewColumn::TEXT_PIECE));
 	listview.SetColumnWidth(5, 200);
 
-	// ÆôÓÃÍÏ·Å
+	// å¯ç”¨æ‹–æ”¾
 	::DragAcceptFiles(listview, true);
 
 	setlocale(LC_CTYPE, "");
@@ -161,24 +161,24 @@ public:
 
 void DialogMain::AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts)
 {
-	// Èç¹ûÊÇÖ»°üÀ¨Ö¸¶¨ºó×ºµÄÄ£Ê½£¬ÇÒÎÄ¼şºó×º²»·ûºÏ£¬ÔòºöÂÔµô£¬ÇÒ²»ÌáÊ¾
+	// å¦‚æœæ˜¯åªåŒ…æ‹¬æŒ‡å®šåç¼€çš„æ¨¡å¼ï¼Œä¸”æ–‡ä»¶åç¼€ä¸ç¬¦åˆï¼Œåˆ™å¿½ç•¥æ‰ï¼Œä¸”ä¸æç¤º
 	if (core.GetConfig().filterMode == Configuration::FilterMode::ONLY_SOME_EXTANT &&
 		filterDotExts.find(TEXT(".") + GetExtend(filename)) == filterDotExts.end())
 	{
 		return;
 	}
 
-	// Èç¹ûÖØ¸´ÁË
+	// å¦‚æœé‡å¤äº†
 	if (listFileNames.find(filename) != listFileNames.end())
 	{
-		throw runtime_error("ÖØ¸´Ìí¼Ó");
-		return;	// ²»ÖØ¸´Ìí¼ÓÁË
+		throw runtime_error("é‡å¤æ·»åŠ ");
+		return;	// ä¸é‡å¤æ·»åŠ äº†
 	}
 
-	// Ê¶±ğ×Ö·û¼¯
+	// è¯†åˆ«å­—ç¬¦é›†
 	auto [charsetCode, content, contentSize] = core.GetEncoding(filename);
 
-	// Èç¹ûÊÇÖÇÄÜÄ£Ê½£¬ÇÒÃ»ÓĞÊ¶±ğ³ö±àÂë¼¯£¬ÔòºöÂÔµô£¬µ«ÒªÌáÊ¾
+	// å¦‚æœæ˜¯æ™ºèƒ½æ¨¡å¼ï¼Œä¸”æ²¡æœ‰è¯†åˆ«å‡ºç¼–ç é›†ï¼Œåˆ™å¿½ç•¥æ‰ï¼Œä½†è¦æç¤º
 	if (core.GetConfig().filterMode == Configuration::FilterMode::SMART &&
 		charsetCode == CharsetCode::UNKNOWN)
 	{
@@ -202,17 +202,17 @@ void DialogMain::AddItem(const std::tstring &filename, const std::unordered_set<
 
 		listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE), reinterpret_cast<wchar_t *>(content.get()));
 
-		// ³É¹¦Ìí¼Ó
+		// æˆåŠŸæ·»åŠ 
 		listFileNames.insert(filename);
 
-		// listview¹ö¶¯µ½×îÏÂÃæ
+		// listviewæ»šåŠ¨åˆ°æœ€ä¸‹é¢
 		listview.SelectItem(count);
 
 		return;
 	}
 	catch (runtime_error &err)
 	{
-		// Èç¹ûAddItemÖ®ºó³ö´í£¬ÒÆ³ıµô´íÎóÌõÄ¿
+		// å¦‚æœAddItemä¹‹åå‡ºé”™ï¼Œç§»é™¤æ‰é”™è¯¯æ¡ç›®
 		listview.DeleteItem(listview.GetItemCount() - 1);
 		throw err;
 	}
@@ -220,17 +220,17 @@ void DialogMain::AddItem(const std::tstring &filename, const std::unordered_set<
 
 std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &pathes)
 {
-	// ºó×º
+	// åç¼€
 	unordered_set<tstring> filterDotExts;
 
 	switch (core.GetConfig().filterMode)
 	{
 	case Configuration::FilterMode::NO_FILTER:
 		break;
-	case Configuration::FilterMode::SMART:	// ÖÇÄÜÊ¶±ğÎÄ±¾
+	case Configuration::FilterMode::SMART:	// æ™ºèƒ½è¯†åˆ«æ–‡æœ¬
 		break;
 	case Configuration::FilterMode::ONLY_SOME_EXTANT:
-		// Ö»°üÀ¨Ö¸¶¨ºó×º
+		// åªåŒ…æ‹¬æŒ‡å®šåç¼€
 		CheckAndTraversalIncludeRule([&](const tstring &dotExt)
 			{
 				filterDotExts.insert(dotExt);
@@ -240,8 +240,8 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 		assert(0);
 	}
 
-	vector<pair<tstring, tstring>> failed;	// Ê§°ÜµÄÎÄ¼ş
-	vector<tstring> ignored; // ºöÂÔµÄÎÄ¼ş
+	vector<pair<tstring, tstring>> failed;	// å¤±è´¥çš„æ–‡ä»¶
+	vector<tstring> ignored; // å¿½ç•¥çš„æ–‡ä»¶
 
 	auto AddItemNoException = [&](const std::tstring &filename)
 	{
@@ -261,10 +261,10 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 
 	for (auto &path : pathes)
 	{
-		// Èç¹ûÊÇÄ¿Â¼
+		// å¦‚æœæ˜¯ç›®å½•
 		if (IsFolder(path))
 		{
-			// ±éÀúÖ¸¶¨Ä¿Â¼
+			// éå†æŒ‡å®šç›®å½•
 			auto filenames = TraversalAllFileNames(path);
 
 			for (auto &filename : filenames)
@@ -278,7 +278,7 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 			continue;
 		}
 
-		// Èç¹ûÊÇÎÄ¼ş
+		// å¦‚æœæ˜¯æ–‡ä»¶
 		if (doCancel)
 		{
 			goto AddItemsAbort;
@@ -290,10 +290,10 @@ AddItemsAbort:
 
 	if (!failed.empty())
 	{
-		tstring info = TEXT("ÒÔÏÂÎÄ¼şÌí¼ÓÊ§°Ü£º\r\n");
+		tstring info = TEXT("ä»¥ä¸‹æ–‡ä»¶æ·»åŠ å¤±è´¥ï¼š\r\n");
 		for (auto &pr : failed)
 		{
-			info += pr.first + TEXT(" Ô­Òò£º") + pr.second + TEXT("\r\n");
+			info += pr.first + TEXT(" åŸå› ï¼š") + pr.second + TEXT("\r\n");
 		}
 		MessageBox(info.c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
 	}
@@ -301,7 +301,7 @@ AddItemsAbort:
 	if (!ignored.empty())
 	{
 		tstringstream ss;
-		ss << to_tstring(ignored.size()) << TEXT(" ¸öÎÄ¼ş±»ÅĞ¶¨Îª·ÇÎÄ±¾ÎÄ¼ş¡¢»òÕßÃ»ÓĞÌ½²â³ö×Ö·û¼¯£º\r\n");
+		ss << to_tstring(ignored.size()) << TEXT(" ä¸ªæ–‡ä»¶è¢«åˆ¤å®šä¸ºéæ–‡æœ¬æ–‡ä»¶ã€æˆ–è€…æ²¡æœ‰æ¢æµ‹å‡ºå­—ç¬¦é›†ï¼š\r\n");
 
 		int count = 0;
 		for (auto &filename : ignored)
@@ -311,12 +311,12 @@ AddItemsAbort:
 
 			if (count >= 5)
 			{
-				ss << TEXT("......µÈ");
+				ss << TEXT("......ç­‰");
 				break;
 			}
 		}
 
-		MessageBox(ss.str().c_str(), TEXT("ÌáÊ¾"), MB_OK | MB_ICONINFORMATION);
+		MessageBox(ss.str().c_str(), TEXT("æç¤º"), MB_OK | MB_ICONINFORMATION);
 		return ignored;
 	}
 
@@ -337,7 +337,7 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames)
 		{
 			try
 			{
-				// ±éÀú¿Ø¼ş£¬Èç¹ûÊÇÆôÓÃ×´Ì¬£¬ÄÇÃ´ÉèÖÃÎªdisable£¬²¢ÔÚrestoreÖĞ¼ÇÏÂ£¬Áô´ıÈÕºó»Ö¸´
+				// éå†æ§ä»¶ï¼Œå¦‚æœæ˜¯å¯ç”¨çŠ¶æ€ï¼Œé‚£ä¹ˆè®¾ç½®ä¸ºdisableï¼Œå¹¶åœ¨restoreä¸­è®°ä¸‹ï¼Œç•™å¾…æ—¥åæ¢å¤
 				vector<pair<int, bool>> restore;
 				for (auto id = IDC_RADIO_STRETEGY_SMART; id <= IDC_RADIO_CR; ++id)
 				{
@@ -352,11 +352,11 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames)
 					}
 				}
 
-				// ¿ªÊ¼°´Å¥text±ä¸üÎª¡°È¡Ïû¡±£¬²¢¶îÍâenable£¬ÓÃÓÚÈÃÓÃ»§°´¡°È¡Ïû¡±
-				GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("È¡Ïû"));
+				// å¼€å§‹æŒ‰é’®textå˜æ›´ä¸ºâ€œå–æ¶ˆâ€ï¼Œå¹¶é¢å¤–enableï¼Œç”¨äºè®©ç”¨æˆ·æŒ‰â€œå–æ¶ˆâ€
+				GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("å–æ¶ˆ"));
 				GetDlgItem(IDC_BUTTON_START).EnableWindow(true);
 
-				// Ê¹ÓÃRTTIµÄÊÖ·¨¼ÇÏÂ»Ö¸´ÊÂ¼ş
+				// ä½¿ç”¨RTTIçš„æ‰‹æ³•è®°ä¸‹æ¢å¤äº‹ä»¶
 				unique_ptr<void, function<void(void *)>> deferRestore(reinterpret_cast<void *>(1), [&](void *)
 					{
 						for (auto &pr : restore)
@@ -365,7 +365,7 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames)
 							wnd.EnableWindow(pr.second);
 						}
 
-						GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("¿ªÊ¼×ª»»"));
+						GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("å¼€å§‹è½¬æ¢"));
 
 #ifndef NDEBUG
 						cout << "Exit: AddItemsNoThrow thread" << endl;
@@ -388,89 +388,89 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames)
 
 void DialogMain::StartConvert()try
 {
-	// Èç¹ûÃ»ÓĞÄÚÈİ
+	// å¦‚æœæ²¡æœ‰å†…å®¹
 	if (listview.GetItemCount() == 0)
 	{
-		throw runtime_error("Ã»ÓĞ´ı×ª»»µÄÎÄ¼ş¡£");
+		throw runtime_error("æ²¡æœ‰å¾…è½¬æ¢çš„æ–‡ä»¶ã€‚");
 	}
 
-	// ¼ì²éÊä³öÄ¿Â¼
+	// æ£€æŸ¥è¾“å‡ºç›®å½•
 	if (core.GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN)
 	{
 		if (core.GetConfig().outputDir.empty())
 		{
-			throw runtime_error("Êä³öÄ¿Â¼ÎŞĞ§¡£");
+			throw runtime_error("è¾“å‡ºç›®å½•æ— æ•ˆã€‚");
 		}
 	}
 
-	vector<tstring> allOutputFileNames;	// È«²¿ÎÄ¼ş£¨³É¹¦Ê§°Ü¾ùÓĞ£©
-	vector<pair<tstring, tstring>> failed;	// Ê§°ÜÎÄ¼ş/Ê§°ÜÔ­Òò
-	vector<tstring> succeed;	// ³É¹¦µÄÎÄ¼ş
+	vector<tstring> allOutputFileNames;	// å…¨éƒ¨æ–‡ä»¶ï¼ˆæˆåŠŸå¤±è´¥å‡æœ‰ï¼‰
+	vector<pair<tstring, tstring>> failed;	// å¤±è´¥æ–‡ä»¶/å¤±è´¥åŸå› 
+	vector<tstring> succeed;	// æˆåŠŸçš„æ–‡ä»¶
 
-	// Ä¿±ê±àÂë
+	// ç›®æ ‡ç¼–ç 
 	auto targetCode = core.GetConfig().outputCharset;
 
-	// Öğ¸ö×ª»»
+	// é€ä¸ªè½¬æ¢
 	for (int i = 0; i < listview.GetItemCount(); ++i)
 	{
 		auto filename = listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME));
 		try
 		{
-			// ¼ÆËãÄ¿±êÎÄ¼şÃû
+			// è®¡ç®—ç›®æ ‡æ–‡ä»¶å
 			auto outputFileName = filename;
 			if (core.GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN)
 			{
-				// ´¿ÎÄ¼şÃû
+				// çº¯æ–‡ä»¶å
 				auto pureFileName = GetNameAndExt(outputFileName);
 
 				outputFileName = core.GetConfig().outputDir + TEXT("\\") + pureFileName;
 			}
 
-			// ¼ÓÈëµ½ÈÎÎñÁĞ±í
+			// åŠ å…¥åˆ°ä»»åŠ¡åˆ—è¡¨
 			allOutputFileNames.push_back(outputFileName);
 
-			// È¡³öÔ­±àÂë¼¯
+			// å–å‡ºåŸç¼–ç é›†
 			auto originCode = ToCharsetCode(listview.GetItemText(i, static_cast<int>(ListViewColumn::ENCODING)));
 			if (originCode == CharsetCode::UNKNOWN)
 			{
-				throw runtime_error("Î´Ì½²â³ö±àÂë¼¯");
+				throw runtime_error("æœªæ¢æµ‹å‡ºç¼–ç é›†");
 			}
 
-			// È¡³öÔ­»»ĞĞ·û
+			// å–å‡ºåŸæ¢è¡Œç¬¦
 			auto originLineBreak = lineBreaksMap[listview.GetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK))];
 
-			// ·µ»ØÔ­×Ö·û¼¯ºÍÄ¿±ê×Ö·û¼¯µÄÌõ¼şÎª²»ĞèÒª×ª»»µÄÇéĞÎ
+			// è¿”å›åŸå­—ç¬¦é›†å’Œç›®æ ‡å­—ç¬¦é›†çš„æ¡ä»¶ä¸ºä¸éœ€è¦è½¬æ¢çš„æƒ…å½¢
 			auto CharsetNeedNotConvert = [&]()->bool
 			{
-				// Ô­±àÂëºÍÄ¿±ê±àÂëÒ»Ñù
+				// åŸç¼–ç å’Œç›®æ ‡ç¼–ç ä¸€æ ·
 				if (originCode == targetCode)return true;
 
-				// Ô­À´ÊÇ¿ÕÎÄ¼ş£¬ÇÒÄ¿±ê±àÂë²»ĞèÒªĞ´ÈëBOM
+				// åŸæ¥æ˜¯ç©ºæ–‡ä»¶ï¼Œä¸”ç›®æ ‡ç¼–ç ä¸éœ€è¦å†™å…¥BOM
 				if (originCode == CharsetCode::EMPTY && !HasBom(targetCode)) return true;
 				return false;
 			};
 
-			// ÅĞ¶Ï²»ĞèÒª×ª»»µÄÌõ¼ş£¬»òÕßÊÇĞèÒª¸´ÖÆµÄÇéĞÎ£¬Ö±½Ó²»×ª»»»òÕß¸´ÖÆ
-			// ·µ»ØtrueÔò²»ĞèÒªÊµ¼Ê×ª»»ÁË
+			// åˆ¤æ–­ä¸éœ€è¦è½¬æ¢çš„æ¡ä»¶ï¼Œæˆ–è€…æ˜¯éœ€è¦å¤åˆ¶çš„æƒ…å½¢ï¼Œç›´æ¥ä¸è½¬æ¢æˆ–è€…å¤åˆ¶
+			// è¿”å›trueåˆ™ä¸éœ€è¦å®é™…è½¬æ¢äº†
 			auto CheckNothingOrCopy = [&]()->bool
 			{
 				if (CharsetNeedNotConvert() &&
-					// ²»×ª»»»»ĞĞ·û£¬»òÕßĞÂ»»ĞĞ·ûºÍÔ­À´µÄ»»ĞĞ·ûÒ»Ñù
+					// ä¸è½¬æ¢æ¢è¡Œç¬¦ï¼Œæˆ–è€…æ–°æ¢è¡Œç¬¦å’ŒåŸæ¥çš„æ¢è¡Œç¬¦ä¸€æ ·
 					(core.GetConfig().enableConvertLineBreaks == false || core.GetConfig().lineBreak == originLineBreak))
 				{
-					// ÄÇÃ´Ö»ĞèÒª¿¼ÂÇÊÇ·ñÔ­Î»×ª»»£¬Ô­Î»×ª»»µÄ»°Ê²Ã´Ò²²»×ö£¬·ñÔò¸´ÖÆ¹ıÈ¥
+					// é‚£ä¹ˆåªéœ€è¦è€ƒè™‘æ˜¯å¦åŸä½è½¬æ¢ï¼ŒåŸä½è½¬æ¢çš„è¯ä»€ä¹ˆä¹Ÿä¸åšï¼Œå¦åˆ™å¤åˆ¶è¿‡å»
 
-					// Èç¹û²»ÊÇÔ­Î»ÖÃ×ª»»£¬¸´ÖÆ¹ıÈ¥
+					// å¦‚æœä¸æ˜¯åŸä½ç½®è½¬æ¢ï¼Œå¤åˆ¶è¿‡å»
 					if (core.GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR)
 					{
 						bool ok = CopyFile(filename.c_str(), outputFileName.c_str(), false);
 						if (!ok)
 						{
-							throw runtime_error("Ğ´ÈëÊ§°Ü£º" + to_string(outputFileName));
+							throw runtime_error("å†™å…¥å¤±è´¥ï¼š" + to_string(outputFileName));
 						}
 					}
 
-					// Ô­Î»×ª»»£¬Ê²Ã´Ò²²»×ö
+					// åŸä½è½¬æ¢ï¼Œä»€ä¹ˆä¹Ÿä¸åš
 					return true;
 				}
 
@@ -481,24 +481,24 @@ void DialogMain::StartConvert()try
 			{
 				if (CheckNothingOrCopy()) break;
 
-				// Ç°ºó±àÂë²»Ò»Ñù
+				// å‰åç¼–ç ä¸ä¸€æ ·
 				auto filesize = GetFileSize(filename);
 
-				// ÔİÊ±²»×ö·Ö¿é×ª»» TODO
+				// æš‚æ—¶ä¸åšåˆ†å—è½¬æ¢ TODO
 
 				{
-					// ¶Á¶ş½øÖÆ
+					// è¯»äºŒè¿›åˆ¶
 					auto [raw, rawSize] = ReadFileToBuffer(filename);
 
 					if (rawSize >= std::numeric_limits<int>::max())
 					{
-						throw runtime_error("ÎÄ¼ş´óĞ¡³¬³öÏŞÖÆ");
+						throw runtime_error("æ–‡ä»¶å¤§å°è¶…å‡ºé™åˆ¶");
 					}
 
-					// ¸ù¾İBOMÆ«ÒÆ
+					// æ ¹æ®BOMåç§»
 					const char *rawStart = raw.get();
 
-					// Èç¹ûĞèÒªÄ¨µôBOM£¬Ôò°ÑÆğÊ¼Î»ÖÃÉèÖÃµ½BOMÖ®ºó£¬È·±£UChar[]²»´øBOM
+					// å¦‚æœéœ€è¦æŠ¹æ‰BOMï¼Œåˆ™æŠŠèµ·å§‹ä½ç½®è®¾ç½®åˆ°BOMä¹‹åï¼Œç¡®ä¿UChar[]ä¸å¸¦BOM
 					if (HasBom(originCode) && !HasBom(targetCode))
 					{
 						auto bomSize = BomSize(originCode);
@@ -506,95 +506,95 @@ void DialogMain::StartConvert()try
 						rawSize -= bomSize;
 					}
 
-					// ¸ù¾İÔ­±àÂëµÃµ½Unicode×Ö·û´®
+					// æ ¹æ®åŸç¼–ç å¾—åˆ°Unicodeå­—ç¬¦ä¸²
 					auto [buf, bufLen] = Decode(rawStart, static_cast<int>(rawSize), originCode);
 
-					// Èç¹ûĞèÒª×ª»»»»ĞĞ·û
+					// å¦‚æœéœ€è¦è½¬æ¢æ¢è¡Œç¬¦
 					if (core.GetConfig().enableConvertLineBreaks && core.GetConfig().lineBreak != originLineBreak)
 					{
 						ChangeLineBreaks(buf, bufLen, core.GetConfig().lineBreak);
 					}
 
-					// ×ªµ½Ä¿±ê±àÂë
+					// è½¬åˆ°ç›®æ ‡ç¼–ç 
 					auto [ret, retLen] = Encode(buf, bufLen, targetCode);
 
-					// Ğ´ÈëÎÄ¼ş
+					// å†™å…¥æ–‡ä»¶
 					FILE *fp = nullptr;
 					errno_t err = _tfopen_s(&fp, outputFileName.c_str(), TEXT("wb"));
 					unique_ptr<FILE, function<void(FILE *)>> upFile(fp, [](FILE *fp) { fclose(fp); });
 
-					// Èç¹ûĞèÒª¶îÍâ¼ÓÉÏBOM£¬ÏÈĞ´ÈëBOM
+					// å¦‚æœéœ€è¦é¢å¤–åŠ ä¸ŠBOMï¼Œå…ˆå†™å…¥BOM
 					if (!HasBom(originCode) && HasBom(targetCode))
 					{
 						auto bomData = GetBomData(targetCode);
 
-						// Ğ´ÈëBOM
+						// å†™å…¥BOM
 						size_t wrote = fwrite(bomData, BomSize(targetCode), 1, fp);
 						if (wrote != 1)
 						{
-							throw runtime_error("Ğ´ÈëÊ§°Ü£º" + to_string(outputFileName));
+							throw runtime_error("å†™å…¥å¤±è´¥ï¼š" + to_string(outputFileName));
 						}
 					}
 
-					// Ğ´ÈëÕıÎÄ
+					// å†™å…¥æ­£æ–‡
 					size_t wrote = fwrite(ret.get(), retLen, 1, fp);
 					if (retLen != 0 && wrote != 1)
 					{
-						throw runtime_error("Ğ´ÈëÊ§°Ü£º" + to_string(outputFileName));
+						throw runtime_error("å†™å…¥å¤±è´¥ï¼š" + to_string(outputFileName));
 					}
 				}
 
 			} while (0);
 
-			// Õâ¸öÎÄ¼ş³É¹¦ÁË
+			// è¿™ä¸ªæ–‡ä»¶æˆåŠŸäº†
 			succeed.push_back(filename);
 		}
 		catch (runtime_error &e)
 		{
-			// Õâ¸öÎÄ¼şÊ§°ÜÁË
+			// è¿™ä¸ªæ–‡ä»¶å¤±è´¥äº†
 			failed.push_back({ filename,to_tstring(e.what()) });
 		}
 	}
 
-	// ÒÑ¾­Íê³É´¦Àí
+	// å·²ç»å®Œæˆå¤„ç†
 
-	// Èç¹ûÓĞÊ§°ÜµÄ
+	// å¦‚æœæœ‰å¤±è´¥çš„
 	if (failed.empty() == false)
 	{
 		tstringstream ss;
-		ss << TEXT("×ª»»³É¹¦ ") << succeed.size() << TEXT(" ¸öÎÄ¼ş¡£\r\n\r\n");
-		ss << TEXT("ÒÔÏÂÎÄ¼ş×ª»»Ê§°Ü£º\r\n");
+		ss << TEXT("è½¬æ¢æˆåŠŸ ") << succeed.size() << TEXT(" ä¸ªæ–‡ä»¶ã€‚\r\n\r\n");
+		ss << TEXT("ä»¥ä¸‹æ–‡ä»¶è½¬æ¢å¤±è´¥ï¼š\r\n");
 		for (auto &pr : failed)
 		{
-			ss << pr.first << TEXT(" Ô­Òò£º") << pr.second << TEXT("\r\n");
+			ss << pr.first << TEXT(" åŸå› ï¼š") << pr.second << TEXT("\r\n");
 		}
-		MessageBox(ss.str().c_str(), TEXT("×ª»»½á¹û"), MB_OK | MB_ICONERROR);
+		MessageBox(ss.str().c_str(), TEXT("è½¬æ¢ç»“æœ"), MB_OK | MB_ICONERROR);
 	}
 	else
 	{
-		// È«²¿³É¹¦Ö®ºó
+		// å…¨éƒ¨æˆåŠŸä¹‹å
 		tstringstream ss;
-		ss << TEXT("×ª»»Íê³É£¡");
+		ss << TEXT("è½¬æ¢å®Œæˆï¼");
 
 		if (targetCode == CharsetCode::GB18030)
 		{
-			ss << TEXT("\r\n\r\n×¢Òâ£ºGB18030ÔÚ´¿Ó¢ÎÄµÄÇé¿öÏÂºÍUTF-8±àÂëÎ»ÖØºÏ£¬ËùÒÔ¿ÉÄÜ»á³öÏÖ×ª»»ºóÏÔÊ¾ÎªUTF-8±àÂëµÄÇé¿ö¡£");
+			ss << TEXT("\r\n\r\næ³¨æ„ï¼šGB18030åœ¨çº¯è‹±æ–‡çš„æƒ…å†µä¸‹å’ŒUTF-8ç¼–ç ä½é‡åˆï¼Œæ‰€ä»¥å¯èƒ½ä¼šå‡ºç°è½¬æ¢åæ˜¾ç¤ºä¸ºUTF-8ç¼–ç çš„æƒ…å†µã€‚");
 		}
-		MessageBox(ss.str().c_str(), TEXT("ÌáÊ¾"), MB_OK | MB_ICONINFORMATION);
+		MessageBox(ss.str().c_str(), TEXT("æç¤º"), MB_OK | MB_ICONINFORMATION);
 	}
 
-	// Çå¿ÕÁĞ±í
+	// æ¸…ç©ºåˆ—è¡¨
 	BOOL bHandle = false;
 	OnBnClickedButtonClear(0, 0, 0, bHandle);
 
-	// °Ñ×ª³öµÄ½á¹ûÔÙ´Î¼ÓÔØµ½ÁĞ±íÖĞ
+	// æŠŠè½¬å‡ºçš„ç»“æœå†æ¬¡åŠ è½½åˆ°åˆ—è¡¨ä¸­
 	AddItems(allOutputFileNames);
 
 	return;
 }
 catch (runtime_error &err)
 {
-	MessageBox(to_tstring(err.what()).c_str(), TEXT("³ö´í"), MB_OK | MB_ICONERROR);
+	MessageBox(to_tstring(err.what()).c_str(), TEXT("å‡ºé”™"), MB_OK | MB_ICONERROR);
 	return;
 }
 
@@ -662,28 +662,28 @@ LRESULT DialogMain::OnBnClickedRadioOther(WORD /*wNotifyCode*/, WORD /*wID*/, HW
 
 void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstring &dotExt)> fn)
 {
-	// ºó×º×Ö·û´®
+	// åç¼€å­—ç¬¦ä¸²
 	auto &extsStr = core.GetConfig().includeRule;
 
-	// ÇĞ·Ö
+	// åˆ‡åˆ†
 	auto exts = Split(extsStr, TEXT(" "));
 
-	// Èç¹ûÎª¿Õ
+	// å¦‚æœä¸ºç©º
 	if (exts.empty())
 	{
-		throw runtime_error("Ö¸¶¨µÄºó×ºÎŞĞ§¡£\r\n\r\nÀı×Ó£º*.h *.hpp *.c *.cpp *.txt");
+		throw runtime_error("æŒ‡å®šçš„åç¼€æ— æ•ˆã€‚\r\n\r\nä¾‹å­ï¼š*.h *.hpp *.c *.cpp *.txt");
 	}
 
-	// Öğ¸ö¼ì²é
+	// é€ä¸ªæ£€æŸ¥
 	for (auto ext : exts)
 	{
 		tstring extStr(ext);
-		wstring pattern = TEXT(R"(\*(\.\w+))");	// Æ¥Åä *.xxx µÄÕıÔò
+		wstring pattern = TEXT(R"(\*(\.\w+))");	// åŒ¹é… *.xxx çš„æ­£åˆ™
 		wregex r(pattern);
 		wsmatch results;
 		if (regex_match(extStr, results, r) == false)
 		{
-			throw runtime_error("Ö¸¶¨µÄºó×ºÎŞĞ§£º" + to_string(extStr) + "¡£\r\n\r\nÀı×Ó£º * .h * .hpp * .c * .cpp * .txt");
+			throw runtime_error("æŒ‡å®šçš„åç¼€æ— æ•ˆï¼š" + to_string(extStr) + "ã€‚\r\n\r\nä¾‹å­ï¼š * .h * .hpp * .c * .cpp * .txt");
 		}
 
 		fn(results.str(1));
@@ -697,19 +697,19 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
 	switch (core.GetConfig().filterMode)
 	{
 	case Configuration::FilterMode::NO_FILTER:
-	case Configuration::FilterMode::SMART:	// ÖÇÄÜÊ¶±ğÎÄ±¾
-		dialogFilter = { { L"ËùÓĞÎÄ¼ş*.*", L"*.*" } };
+	case Configuration::FilterMode::SMART:	// æ™ºèƒ½è¯†åˆ«æ–‡æœ¬
+		dialogFilter = { { L"æ‰€æœ‰æ–‡ä»¶*.*", L"*.*" } };
 		break;
 	case Configuration::FilterMode::ONLY_SOME_EXTANT:
 	{
-		// Ö»°üÀ¨Ö¸¶¨ºó×º
-		tstring filterExtsStr;	// dialogµÄ¹ıÂËÆ÷ÒªÇó;·Ö¸î
+		// åªåŒ…æ‹¬æŒ‡å®šåç¼€
+		tstring filterExtsStr;	// dialogçš„è¿‡æ»¤å™¨è¦æ±‚;åˆ†å‰²
 		CheckAndTraversalIncludeRule([&](const tstring &dotExt)
 			{
 				filterExtsStr += TEXT("*") + dotExt + TEXT(";");
 			});
 
-		// dialog¹ıÂËÆ÷
+		// dialogè¿‡æ»¤å™¨
 		dialogFilter.push_back(make_pair(filterExtsStr, filterExtsStr));
 
 		break;
@@ -718,7 +718,7 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
 		assert(0);
 	}
 
-	// ´ò¿ªÎÄ¼ş¶Ô»°¿ò
+	// æ‰“å¼€æ–‡ä»¶å¯¹è¯æ¡†
 	TFileDialog dialog(*this, dialogFilter, true);
 	if (dialog.Open())
 	{
@@ -730,14 +730,14 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
 }
 catch (runtime_error &err)
 {
-	MessageBox(to_tstring(err.what()).c_str(), TEXT("³ö´í"), MB_OK | MB_ICONERROR);
+	MessageBox(to_tstring(err.what()).c_str(), TEXT("å‡ºé”™"), MB_OK | MB_ICONERROR);
 	return 0;
 }
 
 
 LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)try
 {
-	static tstring dir;	// ¿ÉÓÃÓÚ¸³ÓèTFolderBrowser³õÊ¼Â·¾¶
+	static tstring dir;	// å¯ç”¨äºèµ‹äºˆTFolderBrowseråˆå§‹è·¯å¾„
 
 	TFolderBrowser folderBrowser(*this);
 	if (folderBrowser.Open(dir))
@@ -749,7 +749,7 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 }
 catch (runtime_error &err)
 {
-	MessageBox(to_tstring(err.what()).c_str(), TEXT("³ö´í"), MB_OK | MB_ICONERROR);
+	MessageBox(to_tstring(err.what()).c_str(), TEXT("å‡ºé”™"), MB_OK | MB_ICONERROR);
 	return 0;
 }
 
@@ -794,7 +794,7 @@ LRESULT DialogMain::OnBnClickedButtonSetOutputDir(WORD /*wNotifyCode*/, WORD /*w
 
 LRESULT DialogMain::OnCbnSelchangeComboOtherCharset(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	// TODO: ÔÚ´ËÌí¼Ó¿Ø¼şÍ¨Öª´¦Àí³ÌĞò´úÂë
+	// TODO: åœ¨æ­¤æ·»åŠ æ§ä»¶é€šçŸ¥å¤„ç†ç¨‹åºä»£ç 
 
 	return 0;
 }
@@ -844,7 +844,7 @@ LRESULT DialogMain::OnRemoveItem(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
 
 LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl, BOOL & /*bHandled*/)try
 {
-	// È¡µÃ×Ö·û´®
+	// å–å¾—å­—ç¬¦ä¸²
 	tstring filterStr;
 
 	BSTR bstr = nullptr;
@@ -853,19 +853,19 @@ LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/
 	{
 		bool ok = edit.GetWindowTextW(bstr);
 		if (!ok)
-			throw runtime_error("³ö´í£ºÄÚ´æ²»×ã¡£");
+			throw runtime_error("å‡ºé”™ï¼šå†…å­˜ä¸è¶³ã€‚");
 		filterStr = bstr;
 		SysReleaseString(bstr);
 	}
 
-	// ±£´æµ½core
+	// ä¿å­˜åˆ°core
 	core.SetFilterRule(filterStr);
 
 	return 0;
 }
 catch (runtime_error &err)
 {
-	MessageBox(to_tstring(err.what()).c_str(), TEXT("³ö´í"), MB_OK | MB_ICONERROR);
+	MessageBox(to_tstring(err.what()).c_str(), TEXT("å‡ºé”™"), MB_OK | MB_ICONERROR);
 	return 0;
 }
 
@@ -914,17 +914,17 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
 	HDROP hDrop = reinterpret_cast<HDROP>(wParam);
 
 	vector<tstring> ret;
-	UINT nFileNum = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0); // ÍÏ×§ÎÄ¼ş¸öÊı
+	UINT nFileNum = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0); // æ‹–æ‹½æ–‡ä»¶ä¸ªæ•°
 	TCHAR strFileName[MAX_PATH];
 	for (UINT i = 0; i < nFileNum; i++)
 	{
-		DragQueryFile(hDrop, i, strFileName, MAX_PATH);//»ñµÃÍÏÒ·µÄÎÄ¼şÃû
+		DragQueryFile(hDrop, i, strFileName, MAX_PATH);//è·å¾—æ‹–æ›³çš„æ–‡ä»¶å
 		ret.push_back(strFileName);
 	}
-	DragFinish(hDrop);      //ÊÍ·ÅhDrop
+	DragFinish(hDrop);      //é‡Šæ”¾hDrop
 
 
-	// Ìí¼ÓÎÄ¼ş
+	// æ·»åŠ æ–‡ä»¶
 	AddItemsNoThrow(ret);
 
 	return 0;
