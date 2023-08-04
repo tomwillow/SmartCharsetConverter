@@ -256,7 +256,10 @@ AddItemsAbort:
         for (auto &pr : failed) {
             info += pr.first + TEXT(" 原因：") + pr.second + TEXT("\r\n");
         }
-        MessageBox(info.c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+
+        MyMessage *msg =
+            new MyMessage([this, info]() { MessageBox(info.c_str(), TEXT("Error"), MB_OK | MB_ICONERROR); });
+        PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     }
 
     if (!ignored.empty()) {
@@ -274,7 +277,10 @@ AddItemsAbort:
             }
         }
 
-        MessageBox(ss.str().c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
+        wstring s = ss.str();
+        MyMessage *msg =
+            new MyMessage([this, s]() { MessageBox(s.c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION); });
+        PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
         return ignored;
     }
 
@@ -310,22 +316,27 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames) {
 
                 // 使用RTTI的手法记下恢复事件
                 unique_ptr<void, function<void(void *)>> deferRestore(reinterpret_cast<void *>(1), [&](void *) {
-                    for (auto &pr : restore) {
-                        auto wnd = GetDlgItem(pr.first);
-                        wnd.EnableWindow(pr.second);
-                    }
+                    MyMessage *msg = new MyMessage([this, restore]() {
+                        for (auto &pr : restore) {
+                            auto wnd = GetDlgItem(pr.first);
+                            wnd.EnableWindow(pr.second);
+                        }
 
-                    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
+                        GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
 
 #ifndef NDEBUG
-                    cout << "Exit: AddItemsNoThrow thread" << endl;
+                        cout << "Exit: AddItemsNoThrow thread" << endl;
 #endif
+                    });
+                    PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
                 });
 
                 AddItems(filenames);
 
-            } catch (runtime_error &e) {
-                MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+            } catch (const runtime_error &e) {
+                MyMessage *msg = new MyMessage(
+                    [this, e]() { MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR); });
+                PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
             }
             return;
         },
@@ -494,7 +505,9 @@ void DialogMain::StartConvert() try {
         for (auto &pr : failed) {
             ss << pr.first << TEXT(" 原因：") << pr.second << TEXT("\r\n");
         }
-        MessageBox(ss.str().c_str(), TEXT("转换结果"), MB_OK | MB_ICONERROR);
+        wstring s = ss.str();
+        MyMessage *msg = new MyMessage([this, s]() { MessageBox(s.c_str(), TEXT("转换结果"), MB_OK | MB_ICONERROR); });
+        PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     } else {
         // 全部成功之后
         tstringstream ss;
@@ -504,7 +517,11 @@ void DialogMain::StartConvert() try {
             ss << TEXT(
                 "\r\n\r\n注意：GB18030在纯英文的情况下和UTF-8编码位重合，所以可能会出现转换后显示为UTF-8编码的情况。");
         }
-        MessageBox(ss.str().c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
+
+        wstring s = ss.str();
+        MyMessage *msg =
+            new MyMessage([this, s]() { MessageBox(s.c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION); });
+        PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     }
 
     // 清空列表
@@ -648,6 +665,7 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 
 LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
                                            BOOL &bHandle /*bHandled*/) {
+
     if (thConvert.joinable()) {
         //
         doCancel = true;
@@ -797,5 +815,12 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
     return 0;
 } catch (runtime_error &e) {
     MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+    return 0;
+}
+
+LRESULT DialogMain::OnUser(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled) {
+
+    unique_ptr<MyMessage> msg(reinterpret_cast<MyMessage *>(lParam));
+    msg->fn();
     return 0;
 }

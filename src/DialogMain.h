@@ -20,6 +20,12 @@
 #include <thread>
 #include <atomic>
 
+const unsigned int WM_MY_MESSAGE = WM_USER + 1;
+struct MyMessage {
+    std::function<void()> fn;
+    MyMessage(std::function<void()> fn) : fn(fn) {}
+};
+
 class DialogMain : public CDialogImpl<DialogMain> {
 private:
     const std::string caption;
@@ -103,6 +109,7 @@ public:
     COMMAND_HANDLER(IDC_RADIO_CR, BN_CLICKED, OnBnClickedRadioCr)
 
     MESSAGE_HANDLER(WM_DROPFILES, OnDropFiles)
+    MESSAGE_HANDLER(WM_MY_MESSAGE, OnUser)
     END_MSG_MAP()
     LRESULT OnBnClickedRadioStretegySmart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
     LRESULT OnBnClickedRadioStretegyManual(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
@@ -133,4 +140,6 @@ public:
     LRESULT OnBnClickedRadioCr(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 
     LRESULT OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+
+    LRESULT OnUser(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 };
