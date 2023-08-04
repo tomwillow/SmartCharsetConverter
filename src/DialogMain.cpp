@@ -23,11 +23,7 @@ using namespace std;
 
 DialogMain::DialogMain() : core(TEXT("SmartCharsetConverter.ini")) {}
 
-DialogMain::~DialogMain() {
-    if (thConvert.joinable()) {
-        thConvert.join();
-    }
-}
+DialogMain::~DialogMain() {}
 
 void DialogMain::OnClose() { EndDialog(0); }
 
@@ -291,11 +287,9 @@ AddItemsAbort:
 }
 
 void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames) {
-    if (thConvert.joinable()) {
-        thConvert.join();
-    }
 
-    thConvert = thread(
+    fu = std::async(
+        std::launch::async,
         [&](const std::vector<std::tstring> &filenames) noexcept {
             try {
                 // 遍历控件，如果是启用状态，那么设置为disable，并在restore中记下，留待日后恢复
@@ -338,6 +332,11 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames) {
                     [this, e]() { MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR); });
                 PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
             }
+
+            // 通知UI线程取出fu
+            MyMessage *msg = new MyMessage([this]() { fu.get(); });
+            PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
+
             return;
         },
         filenames);
@@ -366,7 +365,9 @@ void DialogMain::StartConvert() try {
     // 逐个转换
     for (int i = 0; i < listview.GetItemCount(); ++i) {
         auto filename = listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME));
+        wcout << L"convert " << filename << endl;
         try {
+            this_thread::sleep_for(1s);
             // 计算目标文件名
             auto outputFileName = filename;
             if (core.GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN) {
@@ -665,15 +666,13 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 
 LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
                                            BOOL &bHandle /*bHandled*/) {
-
-    if (thConvert.joinable()) {
-        //
+    if (fu.valid()) {
         doCancel = true;
-        thConvert.join();
+        fu.get();
     }
 
     doCancel = false;
-    thConvert = thread(&DialogMain::StartConvert, this);
+    fu = std::async(std::launch::async, &DialogMain::StartConvert, this);
     return 0;
 }
 

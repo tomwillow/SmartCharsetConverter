@@ -19,6 +19,7 @@
 #include <unordered_set>
 #include <thread>
 #include <atomic>
+#include <future>
 
 const unsigned int WM_MY_MESSAGE = WM_USER + 1;
 struct MyMessage {
@@ -38,7 +39,7 @@ private:
 
     std::unordered_set<std::tstring> listFileNames; // 当前列表中的文件
 
-    std::thread thConvert;
+    std::future<void> fu;
     std::atomic<bool> doCancel;
 
 public:
