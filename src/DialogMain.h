@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.h"
+#include "ThreadPool/ThreadPool.h"
 
 #include "resource.h"
 
