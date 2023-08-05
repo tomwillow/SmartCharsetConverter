@@ -18,9 +18,9 @@ public:
         return q.size();
     }
 
-    void enqueue(T &&t) {
+    template <typename U> void enqueue(U &&t) {
         std::scoped_lock<std::mutex> sl(m);
-        q.push(std::forward(t));
+        q.push(std::forward<U>(t));
     }
 
     std::optional<T> dequeue() {

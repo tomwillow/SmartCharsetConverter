@@ -21,11 +21,12 @@
 #include <thread>
 #include <atomic>
 #include <future>
+#include <iostream>
 
 const unsigned int WM_MY_MESSAGE = WM_USER + 1;
 struct MyMessage {
     std::function<void()> fn;
-    MyMessage(std::function<void()> fn) : fn(fn) {}
+    MyMessage(std::function<void()> fn) : fn(fn) { std::cout << "MyMessage ctor: " << this << std::endl; }
 };
 
 class DialogMain : public CDialogImpl<DialogMain> {
@@ -42,6 +43,8 @@ private:
 
     std::future<void> fu;
     std::atomic<bool> doCancel;
+
+    ThreadPool thPool;
 
 public:
     enum { IDD = IDD_DIALOG_MAIN };

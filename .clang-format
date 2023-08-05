@@ -6,6 +6,17 @@ IndentWidth: 4
 # 访问说明符(public、private等)的偏移
 AccessModifierOffset: -4
 
+# 允许短的块放在同一行(Always 总是将短块合并成一行，Empty 只合并空块)
+AllowShortBlocksOnASingleLine: Empty
+
+# 允许短的函数放在同一行: None, InlineOnly(定义在类中), Empty(空函数), Inline(定义在类中，空函数), All
+AllowShortFunctionsOnASingleLine: Empty
+
+AllowShortLambdasOnASingleLine: Empty
+
+# 总是在template声明后换行
+AlwaysBreakTemplateDeclarations: true
+
 # 禁用include重排序
 SortIncludes: false
 ---

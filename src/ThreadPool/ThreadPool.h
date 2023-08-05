@@ -34,14 +34,15 @@ public:
         }
     }
 
-    template <typename F, typename... Args> auto submit(F &&fn, Args &&...args) -> std::future<decltype(fn(args...))> {
-        std::function<decltype(fn(args...)())> fn = std::bind(std::forward(fn), std::forward(args)...);
+    template <typename F, typename... Args>
+    auto submit(F &&fn, Args &&...args) -> std::future<decltype(fn(args...))> {
+        std::function<decltype(fn(args...))()> func = std::bind(std::forward<F>(fn), std::forward<Args>(args)...);
 
-        auto taskPtr = std::make_shared<std::packaged_task<decltype(fn(args...))()>>(fn);
+        auto taskPtr = std::make_shared<std::packaged_task<decltype(fn(args...))()>>(func);
 
         std::function<void()> wrapper = [taskPtr]() { (*taskPtr)(); };
 
-        q.enqueue(wrapper);
+        q.enqueue(std::move(wrapper));
 
         cv.notify_one();
 
@@ -60,7 +61,7 @@ private:
     void workLoop() {
         while (1) {
             std::unique_lock ul(m);
-            while (!doStop || q.empty()) {
+            while (!doStop && q.empty()) {
                 cv.wait(ul);
             }
 

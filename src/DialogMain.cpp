@@ -210,7 +210,9 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
         break;
     case Configuration::FilterMode::ONLY_SOME_EXTANT:
         // 只包括指定后缀
-        CheckAndTraversalIncludeRule([&](const tstring &dotExt) { filterDotExts.insert(dotExt); });
+        CheckAndTraversalIncludeRule([&](const tstring &dotExt) {
+            filterDotExts.insert(dotExt);
+        });
         break;
     default:
         assert(0);
@@ -222,9 +224,7 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
     auto AddItemNoException = [&](const std::tstring &filename) {
         try {
             AddItem(filename, filterDotExts);
-        } catch (io_error_ignore) {
-            ignored.push_back(filename);
-        } catch (runtime_error &e) {
+        } catch (io_error_ignore) { ignored.push_back(filename); } catch (runtime_error &e) {
             failed.push_back({filename, to_tstring(e.what())});
         }
     };
@@ -259,8 +259,10 @@ AddItemsAbort:
             info += pr.first + TEXT(" 原因：") + pr.second + TEXT("\r\n");
         }
 
-        MyMessage *msg =
-            new MyMessage([this, info]() { MessageBox(info.c_str(), TEXT("Error"), MB_OK | MB_ICONERROR); });
+        MyMessage *msg = new MyMessage([this, info]() {
+            MessageBox(info.c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+        });
+        cout << "AddItems MessageBox error " << std::hex << msg << endl;
         PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     }
 
@@ -280,8 +282,10 @@ AddItemsAbort:
         }
 
         wstring s = ss.str();
-        MyMessage *msg =
-            new MyMessage([this, s]() { MessageBox(s.c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION); });
+        MyMessage *msg = new MyMessage([this, s]() {
+            MessageBox(s.c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
+        });
+        cout << "AddItems MessageBox info " << std::hex << msg << endl;
         PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
         return ignored;
     }
@@ -310,19 +314,25 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames,
                 cout << "Exit: AddItemsNoThrow thread" << endl;
 #endif
             });
+            cout << "AddItemsNoThrow restoreUI " << std::hex << msg << endl;
             PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
         });
 
         AddItems(filenames);
 
     } catch (const runtime_error &e) {
-        MyMessage *msg = new MyMessage(
-            [this, e]() { MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR); });
+        MyMessage *msg = new MyMessage([this, e]() {
+            MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+        });
+        cout << "AddItemsNoThrow MessageBox error " << std::hex << msg << endl;
         PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     }
 
     // 通知UI线程取出fu
-    MyMessage *msg = new MyMessage([this]() { fu.get(); });
+    MyMessage *msg = new MyMessage([this]() {
+        fu.get();
+    });
+    cout << "AddItemsNoThrow fu.get() " << std::hex << msg << endl;
     PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
 
     return;
@@ -452,7 +462,9 @@ void DialogMain::StartConvert() try {
                     // 写入文件
                     FILE *fp = nullptr;
                     errno_t err = _tfopen_s(&fp, outputFileName.c_str(), TEXT("wb"));
-                    unique_ptr<FILE, function<void(FILE *)>> upFile(fp, [](FILE *fp) { fclose(fp); });
+                    unique_ptr<FILE, function<void(FILE *)>> upFile(fp, [](FILE *fp) {
+                        fclose(fp);
+                    });
 
                     // 如果需要额外加上BOM，先写入BOM
                     if (!HasBom(originCode) && HasBom(targetCode)) {
@@ -493,7 +505,9 @@ void DialogMain::StartConvert() try {
             ss << pr.first << TEXT(" 原因：") << pr.second << TEXT("\r\n");
         }
         wstring s = ss.str();
-        MyMessage *msg = new MyMessage([this, s]() { MessageBox(s.c_str(), TEXT("转换结果"), MB_OK | MB_ICONERROR); });
+        MyMessage *msg = new MyMessage([this, s]() {
+            MessageBox(s.c_str(), TEXT("转换结果"), MB_OK | MB_ICONERROR);
+        });
         PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     } else {
         // 全部成功之后
@@ -506,8 +520,9 @@ void DialogMain::StartConvert() try {
         }
 
         wstring s = ss.str();
-        MyMessage *msg =
-            new MyMessage([this, s]() { MessageBox(s.c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION); });
+        MyMessage *msg = new MyMessage([this, s]() {
+            MessageBox(s.c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
+        });
         PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     }
 
@@ -611,7 +626,9 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
     case Configuration::FilterMode::ONLY_SOME_EXTANT: {
         // 只包括指定后缀
         tstring filterExtsStr; // dialog的过滤器要求;分割
-        CheckAndTraversalIncludeRule([&](const tstring &dotExt) { filterExtsStr += TEXT("*") + dotExt + TEXT(";"); });
+        CheckAndTraversalIncludeRule([&](const tstring &dotExt) {
+            filterExtsStr += TEXT("*") + dotExt + TEXT(";");
+        });
 
         // dialog过滤器
         dialogFilter.push_back(make_pair(filterExtsStr, filterExtsStr));
@@ -797,6 +814,8 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
     auto restore = PostBusyState();
 
     // 添加文件
+    // fu = thPool.submit([this, ret, restore]() { AddItemsNoThrow(ret, restore); });
+
     fu = std::async(std::launch::async, &DialogMain::AddItemsNoThrow, this, ret, restore);
 
     return 0;
@@ -806,9 +825,10 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
 }
 
 LRESULT DialogMain::OnUser(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled) {
-
+    cout << "OnUser Begin " << std::hex << lParam << endl;
     unique_ptr<MyMessage> msg(reinterpret_cast<MyMessage *>(lParam));
     msg->fn();
+    cout << "OnUser End " << std::hex << lParam << endl;
     return 0;
 }
 
