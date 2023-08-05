@@ -25,7 +25,13 @@ DialogMain::DialogMain() : core(TEXT("SmartCharsetConverter.ini")) {}
 
 DialogMain::~DialogMain() {}
 
-void DialogMain::OnClose() { EndDialog(0); }
+void DialogMain::OnClose() {
+    if (fu.valid()) {
+        doCancel = true;
+        fu.get();
+    }
+    EndDialog(0);
+}
 
 BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
     // 设置窗口的大小图标
@@ -286,60 +292,40 @@ AddItemsAbort:
     return ignored;
 }
 
-void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames) {
+void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames,
+                                 const std::vector<std::pair<int, bool>> &restore) {
+    try {
 
-    fu = std::async(
-        std::launch::async,
-        [&](const std::vector<std::tstring> &filenames) noexcept {
-            try {
-                // 遍历控件，如果是启用状态，那么设置为disable，并在restore中记下，留待日后恢复
-                vector<pair<int, bool>> restore;
-                for (auto id = IDC_RADIO_STRETEGY_SMART; id <= IDC_RADIO_CR; ++id) {
-                    if (::GetDlgItem(m_hWnd, id) != NULL) {
-                        auto wnd = GetDlgItem(id);
-                        if (wnd.IsWindowEnabled()) {
-                            restore.push_back({id, true});
-                            wnd.EnableWindow(false);
-                        }
-                    }
+        // 使用RTTI的手法记下恢复事件
+        unique_ptr<void, function<void(void *)>> deferRestore(reinterpret_cast<void *>(1), [&](void *) {
+            MyMessage *msg = new MyMessage([this, restore]() {
+                for (auto &pr : restore) {
+                    auto wnd = GetDlgItem(pr.first);
+                    wnd.EnableWindow(pr.second);
                 }
 
-                // 开始按钮text变更为“取消”，并额外enable，用于让用户按“取消”
-                GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("取消"));
-                GetDlgItem(IDC_BUTTON_START).EnableWindow(true);
-
-                // 使用RTTI的手法记下恢复事件
-                unique_ptr<void, function<void(void *)>> deferRestore(reinterpret_cast<void *>(1), [&](void *) {
-                    MyMessage *msg = new MyMessage([this, restore]() {
-                        for (auto &pr : restore) {
-                            auto wnd = GetDlgItem(pr.first);
-                            wnd.EnableWindow(pr.second);
-                        }
-
-                        GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
+                GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
 
 #ifndef NDEBUG
-                        cout << "Exit: AddItemsNoThrow thread" << endl;
+                cout << "Exit: AddItemsNoThrow thread" << endl;
 #endif
-                    });
-                    PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
-                });
-
-                AddItems(filenames);
-
-            } catch (const runtime_error &e) {
-                MyMessage *msg = new MyMessage(
-                    [this, e]() { MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR); });
-                PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
-            }
-
-            // 通知UI线程取出fu
-            MyMessage *msg = new MyMessage([this]() { fu.get(); });
+            });
             PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
+        });
 
-            return;
-        },
-        filenames);
+        AddItems(filenames);
+
+    } catch (const runtime_error &e) {
+        MyMessage *msg = new MyMessage(
+            [this, e]() { MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR); });
+        PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
+    }
+
+    // 通知UI线程取出fu
+    MyMessage *msg = new MyMessage([this]() { fu.get(); });
+    PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
+
+    return;
 }
 
 void DialogMain::StartConvert() try {
@@ -808,8 +794,10 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
     }
     DragFinish(hDrop); //释放hDrop
 
+    auto restore = PostBusyState();
+
     // 添加文件
-    AddItemsNoThrow(ret);
+    fu = std::async(std::launch::async, &DialogMain::AddItemsNoThrow, this, ret, restore);
 
     return 0;
 } catch (runtime_error &e) {
@@ -822,4 +810,23 @@ LRESULT DialogMain::OnUser(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandl
     unique_ptr<MyMessage> msg(reinterpret_cast<MyMessage *>(lParam));
     msg->fn();
     return 0;
+}
+
+std::vector<pair<int, bool>> DialogMain::PostBusyState() noexcept {
+    // 遍历控件，如果是启用状态，那么设置为disable，并在restore中记下，留待日后恢复
+    vector<pair<int, bool>> restore;
+    for (auto id = IDC_RADIO_STRETEGY_SMART; id <= IDC_RADIO_CR; ++id) {
+        if (::GetDlgItem(m_hWnd, id) != NULL) {
+            auto wnd = GetDlgItem(id);
+            if (wnd.IsWindowEnabled()) {
+                restore.push_back({id, true});
+                wnd.EnableWindow(false);
+            }
+        }
+    }
+
+    // 开始按钮text变更为“取消”，并额外enable，用于让用户按“取消”
+    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("取消"));
+    GetDlgItem(IDC_BUTTON_START).EnableWindow(true);
+    return restore;
 }

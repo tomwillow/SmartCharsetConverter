@@ -74,7 +74,7 @@ public:
      */
     std::vector<std::tstring> AddItems(const std::vector<std::tstring> &filenames);
 
-    void AddItemsNoThrow(const std::vector<std::tstring> &filenames);
+    void AddItemsNoThrow(const std::vector<std::tstring> &filenames, const std::vector<std::pair<int, bool>> &restore);
 
     void StartConvert();
 
@@ -143,4 +143,6 @@ public:
     LRESULT OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 
     LRESULT OnUser(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+
+    std::vector<std::pair<int, bool>> PostBusyState() noexcept;
 };
