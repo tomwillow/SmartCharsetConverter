@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.11)
 # C++17
 set(CMAKE_CXX_STANDARD 17)
 
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8>")
+
 project(SmartCharsetConverter)
 
 # 添加代码
@@ -11,6 +13,8 @@ file(GLOB COMMON_CODE
 	src/Common/*.cpp
 	src/Control/*.h
 	src/Control/*.cpp
+	src/ThreadPool/*.h
+	src/ThreadPool/*.cpp
 )
 
 file(GLOB SRC_CODE
