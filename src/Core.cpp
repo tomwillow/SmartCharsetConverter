@@ -32,9 +32,13 @@ const doublemap<CharsetCode, tstring> charsetCodeMap = {{CharsetCode::UNKNOWN, T
 std::unordered_set<CharsetCode> Configuration::normalCharset = {CharsetCode::UTF8, CharsetCode::UTF8BOM,
                                                                 CharsetCode::GB18030};
 
-std::tstring ToCharsetName(CharsetCode code) { return charsetCodeMap[code]; }
+std::tstring ToCharsetName(CharsetCode code) {
+    return charsetCodeMap[code];
+}
 
-CharsetCode ToCharsetCode(const std::tstring &name) { return charsetCodeMap[name]; }
+CharsetCode ToCharsetCode(const std::tstring &name) {
+    return charsetCodeMap[name];
+}
 
 bool HasBom(CharsetCode code) {
     switch (code) {
@@ -118,7 +122,7 @@ void DealWithUCNVError(UErrorCode err) {
 
 tuple<unique_ptr<UChar[]>, int> Decode(const char *str, int len, CharsetCode code) {
     if (code == CharsetCode::EMPTY) {
-        return {nullptr, 0};
+        return {unique_ptr<UChar[]>(new UChar[0]), 0};
     }
 
     // 从code转换到icu的字符集名称
@@ -282,13 +286,14 @@ void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::Li
     return;
 }
 
-Core::Core(std::tstring iniFileName) : iniFileName(iniFileName) {
+Core::Core(std::tstring iniFileName, CoreInitOption opt) : iniFileName(iniFileName), opt(opt) {
     // 读ini
     ReadFromIni();
 
     // 初始化uchardet
-    det = unique_ptr<uchardet, std::function<void(uchardet *)>>(uchardet_new(),
-                                                                [](uchardet *det) { uchardet_delete(det); });
+    det = unique_ptr<uchardet, std::function<void(uchardet *)>>(uchardet_new(), [](uchardet *det) {
+        uchardet_delete(det);
+    });
 
     // UErrorCode err;
     // auto allNames = ucnv_openAllNames(&err);
@@ -303,7 +308,9 @@ Core::Core(std::tstring iniFileName) : iniFileName(iniFileName) {
     //}
 }
 
-const Configuration &Core::GetConfig() const { return config; }
+const Configuration &Core::GetConfig() const {
+    return config;
+}
 
 void Core::SetFilterMode(Configuration::FilterMode mode) {
     config.filterMode = mode;
@@ -335,14 +342,16 @@ void Core::SetLineBreaks(Configuration::LineBreaks lineBreak) {
     WriteToIni();
 }
 
-void Core::SetEnableConvertLineBreak(bool enableLineBreaks) { config.enableConvertLineBreaks = enableLineBreaks; }
+void Core::SetEnableConvertLineBreak(bool enableLineBreaks) {
+    config.enableConvertLineBreaks = enableLineBreaks;
+}
 
 std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std::tstring filename) const {
     // 只读取100KB
     auto [buf, bufSize] = ReadFileToBuffer(filename, 100 * KB);
 
     if (bufSize == 0) {
-        return {CharsetCode::EMPTY, nullptr, 0};
+        return {CharsetCode::EMPTY, unique_ptr<UChar[]>(new UChar[0]), 0};
     }
 
     if (bufSize >= std::numeric_limits<int>::max()) {
@@ -411,6 +420,53 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
     auto content = Decode(buf.get(), std::max(64, static_cast<int>(bufSize)), code);
 
     return make_tuple(code, std::move(get<0>(content)), get<1>(content));
+}
+
+void Core::AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts) {
+    // 如果是只包括指定后缀的模式，且文件后缀不符合，则忽略掉，且不提示
+    if (GetConfig().filterMode == Configuration::FilterMode::ONLY_SOME_EXTANT &&
+        filterDotExts.find(TEXT(".") + GetExtend(filename)) == filterDotExts.end()) {
+        return;
+    }
+
+    // 如果重复了
+    if (listFileNames.find(filename) != listFileNames.end()) {
+        throw runtime_error("重复添加");
+        return; // 不重复添加了
+    }
+
+    // 识别字符集
+    auto [charsetCode, content, contentSize] = GetEncoding(filename);
+
+    // 如果是智能模式，且没有识别出编码集，则忽略掉，但要提示
+    if (GetConfig().filterMode == Configuration::FilterMode::SMART && charsetCode == CharsetCode::UNKNOWN) {
+        throw io_error_ignore();
+        return;
+    }
+
+    auto fileSizeStr = FileSizeToTString(GetFileSize(filename));
+
+    auto charsetName = ToCharsetName(charsetCode);
+
+    auto lineBreak = GetLineBreaks(content, contentSize);
+
+    auto lineBreakStr = lineBreaksMap[lineBreak];
+
+    // 到达这里不会再抛异常了
+
+    // 通知UI新增条目
+    opt.fnUIAddItem(filename, fileSizeStr, charsetName, lineBreakStr, reinterpret_cast<wchar_t *>(content.get()));
+
+    // 成功添加
+    listFileNames.insert(filename);
+}
+
+void Core::RemoveItem(const std::tstring &filename) {
+    listFileNames.erase(filename);
+}
+
+void Core::Clear() {
+    listFileNames.clear();
 }
 
 void Core::ReadFromIni() {}

@@ -21,7 +21,7 @@ const std::tstring appTitle = TEXT("智能编码集转换器 v0.41 by Tom Willow
 
 using namespace std;
 
-DialogMain::DialogMain() : core(TEXT("SmartCharsetConverter.ini")) {}
+DialogMain::DialogMain() {}
 
 DialogMain::~DialogMain() {}
 
@@ -49,21 +49,39 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
 
     BOOL bHandle = true;
 
+    CoreInitOption coreOpt;
+    coreOpt.fnUIAddItem = [this](std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
+                                 std::wstring lineBreakStr, std::wstring textPiece) {
+        PostUIFunc([=]() {
+            auto count = listview.GetItemCount();
+            listview.AddItem(count, static_cast<int>(ListViewColumn::INDEX), to_tstring(count + 1).c_str());
+            listview.AddItem(count, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
+            listview.AddItem(count, static_cast<int>(ListViewColumn::FILESIZE), fileSizeStr.c_str());
+            listview.AddItem(count, static_cast<int>(ListViewColumn::ENCODING), charsetStr.c_str());
+            listview.AddItem(count, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreakStr.c_str());
+            listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE), textPiece.c_str());
+
+            // listview滚动到最下面
+            listview.SelectItem(count);
+        });
+    };
+    core = make_unique<Core>(TEXT("SmartCharsetConverter.ini"), coreOpt);
+
     // 包含/排除指定后缀
-    SetFilterMode(core.GetConfig().filterMode);
-    // GetDlgItem(IDC_EDIT_INCLUDE_TEXT).SetWindowTextW(core.GetConfig().includeRule);
+    SetFilterMode(core->GetConfig().filterMode);
+    // GetDlgItem(IDC_EDIT_INCLUDE_TEXT).SetWindowTextW(core->GetConfig().includeRule);
 
     // target
-    SetOutputTarget(core.GetConfig().outputTarget);
-    GetDlgItem(IDC_EDIT_OUTPUT_DIR).SetWindowTextW(core.GetConfig().outputDir.c_str());
+    SetOutputTarget(core->GetConfig().outputTarget);
+    GetDlgItem(IDC_EDIT_OUTPUT_DIR).SetWindowTextW(core->GetConfig().outputDir.c_str());
     static_cast<CEdit>(GetDlgItem(IDC_EDIT_OUTPUT_DIR)).SetReadOnly(true);
 
-    SetOutputCharset(core.GetConfig().outputCharset);
+    SetOutputCharset(core->GetConfig().outputCharset);
 
     // enable/disable line breaks
-    CButton(GetDlgItem(IDC_CHECK_CONVERT_RETURN)).SetCheck(core.GetConfig().enableConvertLineBreaks);
+    CButton(GetDlgItem(IDC_CHECK_CONVERT_RETURN)).SetCheck(core->GetConfig().enableConvertLineBreaks);
     OnBnClickedCheckConvertReturn(0, 0, 0, bHandle);
-    CButton(GetDlgItem(IDC_RADIO_CRLF + static_cast<int>(core.GetConfig().lineBreak))).SetCheck(true);
+    CButton(GetDlgItem(IDC_RADIO_CRLF + static_cast<int>(core->GetConfig().lineBreak))).SetCheck(true);
 
     // listview
     listview.SubclassWindow(GetDlgItem(IDC_LISTVIEW)); // 必须用SubclassWindow传入句柄，才能让MSG_MAP生效
@@ -100,7 +118,7 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
 }
 
 void DialogMain::SetFilterMode(Configuration::FilterMode mode) {
-    core.SetFilterMode(mode);
+    core->SetFilterMode(mode);
 
     CButton(GetDlgItem(IDC_RADIO_STRETEGY_NO_FILTER)).SetCheck(false);
     CButton(GetDlgItem(IDC_RADIO_STRETEGY_SMART)).SetCheck(false);
@@ -123,7 +141,7 @@ void DialogMain::SetFilterMode(Configuration::FilterMode mode) {
 }
 
 void DialogMain::SetOutputTarget(Configuration::OutputTarget outputTarget) {
-    core.SetOutputTarget(outputTarget);
+    core->SetOutputTarget(outputTarget);
     bool isToOrigin = (outputTarget == Configuration::OutputTarget::ORIGIN);
 
     CButton(GetDlgItem(IDC_RADIO_TO_ORIGIN)).SetCheck(isToOrigin);
@@ -134,7 +152,7 @@ void DialogMain::SetOutputTarget(Configuration::OutputTarget outputTarget) {
 }
 
 void DialogMain::SetOutputCharset(CharsetCode charset) {
-    core.SetOutputCharset(charset);
+    core->SetOutputCharset(charset);
     bool isNormalCharset = Configuration::IsNormalCharset(charset);
 
     CButton(GetDlgItem(IDC_RADIO_UTF8)).SetCheck(charset == CharsetCode::UTF8);
@@ -145,70 +163,11 @@ void DialogMain::SetOutputCharset(CharsetCode charset) {
     GetDlgItem(IDC_COMBO_OTHER_CHARSET).EnableWindow(!isNormalCharset);
 }
 
-class io_error_ignore : public std::runtime_error {
-public:
-    io_error_ignore() : runtime_error("ignored") {}
-};
-
-void DialogMain::AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts) {
-    // 如果是只包括指定后缀的模式，且文件后缀不符合，则忽略掉，且不提示
-    if (core.GetConfig().filterMode == Configuration::FilterMode::ONLY_SOME_EXTANT &&
-        filterDotExts.find(TEXT(".") + GetExtend(filename)) == filterDotExts.end()) {
-        return;
-    }
-
-    // 如果重复了
-    if (listFileNames.find(filename) != listFileNames.end()) {
-        throw runtime_error("重复添加");
-        return; // 不重复添加了
-    }
-
-    // 识别字符集
-    auto [charsetCode, content, contentSize] = core.GetEncoding(filename);
-
-    // 如果是智能模式，且没有识别出编码集，则忽略掉，但要提示
-    if (core.GetConfig().filterMode == Configuration::FilterMode::SMART && charsetCode == CharsetCode::UNKNOWN) {
-        throw io_error_ignore();
-        return;
-    }
-
-    auto charsetName = ToCharsetName(charsetCode);
-
-    try {
-        auto count = listview.GetItemCount();
-        listview.AddItem(count, static_cast<int>(ListViewColumn::INDEX), to_tstring(count + 1).c_str());
-        listview.AddItem(count, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
-        listview.AddItem(count, static_cast<int>(ListViewColumn::FILESIZE),
-                         FileSizeToTString(GetFileSize(filename)).c_str());
-
-        listview.AddItem(count, static_cast<int>(ListViewColumn::ENCODING), charsetName.c_str());
-
-        auto lineBreak = GetLineBreaks(content, contentSize);
-        listview.AddItem(count, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreaksMap[lineBreak].c_str());
-
-        listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE),
-                         reinterpret_cast<wchar_t *>(content.get()));
-
-        // 成功添加
-        listFileNames.insert(filename);
-
-        // listview滚动到最下面
-        listview.SelectItem(count);
-
-        wcout << L"AddItem success " << filename << endl;
-        return;
-    } catch (runtime_error &err) {
-        // 如果AddItem之后出错，移除掉错误条目
-        listview.DeleteItem(listview.GetItemCount() - 1);
-        throw err;
-    }
-}
-
 std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &pathes) {
     // 后缀
     unordered_set<tstring> filterDotExts;
 
-    switch (core.GetConfig().filterMode) {
+    switch (core->GetConfig().filterMode) {
     case Configuration::FilterMode::NO_FILTER:
         break;
     case Configuration::FilterMode::SMART: // 智能识别文本
@@ -228,7 +187,7 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 
     auto AddItemNoException = [&](const std::tstring &filename) {
         try {
-            AddItem(filename, filterDotExts);
+            core->AddItem(filename, filterDotExts);
         } catch (io_error_ignore) { ignored.push_back(filename); } catch (runtime_error &e) {
             failed.push_back({filename, to_tstring(e.what())});
         }
@@ -287,12 +246,9 @@ AddItemsAbort:
         }
 
         wstring s = ss.str();
-        MyMessage *msg = new MyMessage([this, s]() {
-            wcout << L"msg MessageBox info " << s << endl;
+        PostUIFunc([this, s]() {
             MessageBox(s.c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
         });
-        cout << "AddItems MessageBox info " << std::hex << msg << endl;
-        PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
         return ignored;
     }
 
@@ -308,7 +264,7 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames,
 
         // 使用RTTI的手法记下恢复事件
         unique_ptr<void, function<void(void *)>> deferRestore(reinterpret_cast<void *>(1), [&](void *) {
-            MyMessage *msg = new MyMessage([this, restore]() {
+            PostUIFunc([this, restore]() {
                 for (auto &pr : restore) {
                     auto wnd = GetDlgItem(pr.first);
                     wnd.EnableWindow(pr.second);
@@ -320,18 +276,14 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames,
                 cout << "Exit: AddItemsNoThrow thread" << endl;
 #endif
             });
-            cout << "AddItemsNoThrow restoreUI " << std::hex << msg << endl;
-            PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
         });
 
         AddItems(filenames);
 
     } catch (const runtime_error &e) {
-        MyMessage *msg = new MyMessage([this, e]() {
+        PostUIFunc([this, e]() {
             MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
         });
-        cout << "AddItemsNoThrow MessageBox error " << std::hex << msg << endl;
-        PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     }
 
     // 通知UI线程取出fu
@@ -352,8 +304,8 @@ void DialogMain::StartConvert() try {
     }
 
     // 检查输出目录
-    if (core.GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN) {
-        if (core.GetConfig().outputDir.empty()) {
+    if (core->GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN) {
+        if (core->GetConfig().outputDir.empty()) {
             throw runtime_error("输出目录无效。");
         }
     }
@@ -363,7 +315,7 @@ void DialogMain::StartConvert() try {
     vector<tstring> succeed;               // 成功的文件
 
     // 目标编码
-    auto targetCode = core.GetConfig().outputCharset;
+    auto targetCode = core->GetConfig().outputCharset;
 
     // 逐个转换
     for (int i = 0; i < listview.GetItemCount(); ++i) {
@@ -373,11 +325,11 @@ void DialogMain::StartConvert() try {
             this_thread::sleep_for(1s);
             // 计算目标文件名
             auto outputFileName = filename;
-            if (core.GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN) {
+            if (core->GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN) {
                 // 纯文件名
                 auto pureFileName = GetNameAndExt(outputFileName);
 
-                outputFileName = core.GetConfig().outputDir + TEXT("\\") + pureFileName;
+                outputFileName = core->GetConfig().outputDir + TEXT("\\") + pureFileName;
             }
 
             // 加入到任务列表
@@ -409,12 +361,12 @@ void DialogMain::StartConvert() try {
             auto CheckNothingOrCopy = [&]() -> bool {
                 if (CharsetNeedNotConvert() &&
                     // 不转换换行符，或者新换行符和原来的换行符一样
-                    (core.GetConfig().enableConvertLineBreaks == false ||
-                     core.GetConfig().lineBreak == originLineBreak)) {
+                    (core->GetConfig().enableConvertLineBreaks == false ||
+                     core->GetConfig().lineBreak == originLineBreak)) {
                     // 那么只需要考虑是否原位转换，原位转换的话什么也不做，否则复制过去
 
                     // 如果不是原位置转换，复制过去
-                    if (core.GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR) {
+                    if (core->GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR) {
                         bool ok = CopyFile(filename.c_str(), outputFileName.c_str(), false);
                         if (!ok) {
                             throw runtime_error("写入失败：" + to_string(outputFileName));
@@ -459,8 +411,8 @@ void DialogMain::StartConvert() try {
                     auto [buf, bufLen] = Decode(rawStart, static_cast<int>(rawSize), originCode);
 
                     // 如果需要转换换行符
-                    if (core.GetConfig().enableConvertLineBreaks && core.GetConfig().lineBreak != originLineBreak) {
-                        ChangeLineBreaks(buf, bufLen, core.GetConfig().lineBreak);
+                    if (core->GetConfig().enableConvertLineBreaks && core->GetConfig().lineBreak != originLineBreak) {
+                        ChangeLineBreaks(buf, bufLen, core->GetConfig().lineBreak);
                     }
 
                     // 转到目标编码
@@ -597,7 +549,7 @@ LRESULT DialogMain::OnBnClickedRadioOther(WORD /*wNotifyCode*/, WORD /*wID*/, HW
 
 void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstring &dotExt)> fn) {
     // 后缀字符串
-    auto &extsStr = core.GetConfig().includeRule;
+    auto &extsStr = core->GetConfig().includeRule;
 
     // 切分
     auto exts = Split(extsStr, TEXT(" "));
@@ -625,7 +577,7 @@ void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstr
 LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
                                               BOOL & /*bHandled*/) try {
     vector<pair<tstring, tstring>> dialogFilter;
-    switch (core.GetConfig().filterMode) {
+    switch (core->GetConfig().filterMode) {
     case Configuration::FilterMode::NO_FILTER:
     case Configuration::FilterMode::SMART: // 智能识别文本
         dialogFilter = {{L"所有文件*.*", L"*.*"}};
@@ -700,17 +652,17 @@ LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, H
 
 LRESULT DialogMain::OnBnClickedButtonClear(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/) {
     listview.DeleteAllItems();
-    listFileNames.clear();
+    core->Clear();
     return 0;
 }
 
 LRESULT DialogMain::OnBnClickedButtonSetOutputDir(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
                                                   BOOL & /*bHandled*/) {
-    tstring dir = core.GetConfig().outputDir;
+    tstring dir = core->GetConfig().outputDir;
 
     TFolderBrowser folderBrowser(*this);
     if (folderBrowser.Open(dir)) {
-        core.SetOutputDir(dir);
+        core->SetOutputDir(dir);
         GetDlgItem(IDC_EDIT_OUTPUT_DIR).SetWindowTextW(dir.c_str());
     }
 
@@ -752,7 +704,7 @@ LRESULT DialogMain::OnRemoveItem(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
         int i = *itor;
         auto filename = listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME));
         listview.DeleteItem(i);
-        listFileNames.erase(filename);
+        core->RemoveItem(filename);
     }
     return 0;
 }
@@ -773,7 +725,7 @@ LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/
     }
 
     // 保存到core
-    core.SetFilterRule(filterStr);
+    core->SetFilterRule(filterStr);
 
     return 0;
 } catch (runtime_error &err) {
@@ -791,7 +743,7 @@ LRESULT DialogMain::OnNMClickSyslink1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL & /*b
 LRESULT DialogMain::OnBnClickedCheckConvertReturn(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
                                                   BOOL & /*bHandled*/) {
     bool enableLineBreaks = CButton(GetDlgItem(IDC_CHECK_CONVERT_RETURN)).GetCheck();
-    core.SetEnableConvertLineBreak(enableLineBreaks);
+    core->SetEnableConvertLineBreak(enableLineBreaks);
 
     CButton(GetDlgItem(IDC_RADIO_CRLF)).EnableWindow(enableLineBreaks);
     CButton(GetDlgItem(IDC_RADIO_LF)).EnableWindow(enableLineBreaks);
@@ -801,19 +753,19 @@ LRESULT DialogMain::OnBnClickedCheckConvertReturn(WORD /*wNotifyCode*/, WORD /*w
 }
 
 LRESULT DialogMain::OnBnClickedRadioCrlf(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/) {
-    core.SetLineBreaks(Configuration::LineBreaks::CRLF);
+    core->SetLineBreaks(Configuration::LineBreaks::CRLF);
 
     return 0;
 }
 
 LRESULT DialogMain::OnBnClickedRadioLf(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/) {
-    core.SetLineBreaks(Configuration::LineBreaks::LF);
+    core->SetLineBreaks(Configuration::LineBreaks::LF);
 
     return 0;
 }
 
 LRESULT DialogMain::OnBnClickedRadioCr(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/) {
-    core.SetLineBreaks(Configuration::LineBreaks::CR);
+    core->SetLineBreaks(Configuration::LineBreaks::CR);
 
     return 0;
 }
@@ -835,6 +787,7 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
     // 添加文件
     // fu = thPool.submit([this, ret, restore]() { AddItemsNoThrow(ret, restore); });
 
+    doCancel = false;
     fuAddItems = std::async(std::launch::async, &DialogMain::AddItemsNoThrow, this, ret, restore);
 
     return 0;
@@ -843,11 +796,16 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
     return 0;
 }
 
+void DialogMain::PostUIFunc(std::function<void()> fn) {
+    MyMessage *msg = new MyMessage(fn);
+    PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
+}
+
 LRESULT DialogMain::OnUser(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled) {
-    cout << "OnUser Begin " << std::hex << lParam << endl;
+    // cout << "OnUser Begin " << std::hex << lParam << endl;
     unique_ptr<MyMessage> msg(reinterpret_cast<MyMessage *>(lParam));
     msg->fn();
-    cout << "OnUser End " << std::hex << lParam << endl;
+    // cout << "OnUser End " << std::hex << lParam << endl;
     return 0;
 }
 

@@ -27,7 +27,7 @@ const unsigned int WM_MY_MESSAGE = WM_USER + 1;
 struct MyMessage {
     std::function<void()> fn;
     MyMessage(std::function<void()> fn) : fn(fn) {
-        std::cout << "MyMessage ctor: " << this << std::endl;
+        // std::cout << "MyMessage ctor: " << this << std::endl;
     }
 };
 
@@ -35,13 +35,11 @@ class DialogMain : public CDialogImpl<DialogMain> {
 private:
     const std::string caption;
 
-    Core core;
+    std::unique_ptr<Core> core;
 
     TListView listview;
 
     enum class ListViewColumn { INDEX = 0, FILENAME, FILESIZE, ENCODING, LINE_BREAK, TEXT_PIECE };
-
-    std::unordered_set<std::tstring> listFileNames; // 当前列表中的文件
 
     std::future<void> fuAddItems;
     std::future<void> fuConvert;
@@ -63,14 +61,6 @@ public:
     void SetOutputTarget(Configuration::OutputTarget outputTarget);
 
     void SetOutputCharset(CharsetCode charset);
-
-    // 加入一个文件到列表。
-    // 如果出错，抛出异常。
-    // 如果没识别出字符集，返回false。如果不是智能模式，那么照常添加条目，否则不添加。
-    /*
-     * @exception io_error_ignore 按照配置忽略掉这个文件
-     */
-    void AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts);
 
     /*
      * 加入多个文件到列表。
@@ -149,6 +139,7 @@ public:
 
     LRESULT OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 
+    void PostUIFunc(std::function<void()> fn);
     LRESULT OnUser(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 
     std::vector<std::pair<int, bool>> PostBusyState() noexcept;

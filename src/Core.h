@@ -13,6 +13,7 @@
 #include <memory>
 #include <functional>
 #include <unordered_set>
+#include <stdexcept>
 
 enum class CharsetCode {
     UNKNOWN,
@@ -90,7 +91,9 @@ struct Configuration {
         : filterMode(FilterMode::SMART), outputTarget(OutputTarget::ORIGIN), outputCharset(CharsetCode::UTF8),
           lineBreak(LineBreaks::CRLF), enableConvertLineBreaks(false) {}
 
-    static bool IsNormalCharset(CharsetCode charset) { return normalCharset.find(charset) != normalCharset.end(); }
+    static bool IsNormalCharset(CharsetCode charset) {
+        return normalCharset.find(charset) != normalCharset.end();
+    }
 };
 
 // 识别换行符
@@ -107,9 +110,21 @@ const doublemap<Configuration::LineBreaks, std::tstring> lineBreaksMap = {
     {Configuration::LineBreaks::EMPTY, TEXT("")},
     {Configuration::LineBreaks::MIX, TEXT("混合")}};
 
+class io_error_ignore : public std::runtime_error {
+public:
+    io_error_ignore() : runtime_error("ignored") {}
+};
+
+struct CoreInitOption {
+    std::function<void(std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
+                       std::wstring lineBreakStr, std::wstring textPiece)>
+        fnUIAddItem = [](std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
+                         std::wstring lineBreakStr, std::wstring textPiece) {};
+};
+
 class Core {
 public:
-    Core(std::tstring iniFileName);
+    Core(std::tstring iniFileName, CoreInitOption opt);
 
     const Configuration &GetConfig() const;
 
@@ -130,10 +145,25 @@ public:
      */
     std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int> GetEncoding(std::tstring filename) const;
 
+    /**
+     * 加入一个文件到列表。
+     * @exception file_io_error 读文件失败
+     * @exception runtime_error ucnv出错。code
+     * @exception io_error_ignore 按照配置忽略掉这个文件
+     */
+    void AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts);
+
+    void RemoveItem(const std::tstring &filename);
+
+    void Clear();
+
 private:
     std::tstring iniFileName;
+    CoreInitOption opt;
     Configuration config;
     std::unique_ptr<uchardet, std::function<void(uchardet *)>> det;
+
+    std::unordered_set<std::tstring> listFileNames; // 当前列表中的文件
 
     void ReadFromIni();
 
