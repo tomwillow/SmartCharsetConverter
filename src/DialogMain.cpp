@@ -26,9 +26,13 @@ DialogMain::DialogMain() : core(TEXT("SmartCharsetConverter.ini")) {}
 DialogMain::~DialogMain() {}
 
 void DialogMain::OnClose() {
-    if (fu.valid()) {
+    if (fuAddItems.valid()) {
         doCancel = true;
-        fu.get();
+        fuAddItems.get();
+    }
+    if (fuConvert.valid()) {
+        doCancel = true;
+        fuConvert.get();
     }
     EndDialog(0);
 }
@@ -191,6 +195,7 @@ void DialogMain::AddItem(const std::tstring &filename, const std::unordered_set<
         // listview滚动到最下面
         listview.SelectItem(count);
 
+        wcout << L"AddItem success " << filename << endl;
         return;
     } catch (runtime_error &err) {
         // 如果AddItem之后出错，移除掉错误条目
@@ -283,6 +288,7 @@ AddItemsAbort:
 
         wstring s = ss.str();
         MyMessage *msg = new MyMessage([this, s]() {
+            wcout << L"msg MessageBox info " << s << endl;
             MessageBox(s.c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
         });
         cout << "AddItems MessageBox info " << std::hex << msg << endl;
@@ -329,11 +335,12 @@ void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames,
     }
 
     // 通知UI线程取出fu
-    MyMessage *msg = new MyMessage([this]() {
-        fu.get();
-    });
-    cout << "AddItemsNoThrow fu.get() " << std::hex << msg << endl;
-    PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
+    // MyMessage *msg = new MyMessage([this]() {
+    //    fuAddItems.get();
+    //    cout << "MyMessage end: fu.get()" << endl;
+    //});
+    // cout << "AddItemsNoThrow fu.get() " << std::hex << msg << endl;
+    // PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
 
     return;
 }
@@ -669,13 +676,25 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 
 LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
                                            BOOL &bHandle /*bHandled*/) {
-    if (fu.valid()) {
+    if (fuAddItems.valid()) {
+        cout << "OnBnClickedButtonStart set cancel true" << endl;
         doCancel = true;
-        fu.get();
+        cout << "OnBnClickedButtonStart wait for fu.get()" << endl;
+        fuAddItems.get();
+        return 0;
     }
 
+    if (fuConvert.valid()) {
+        cout << "OnBnClickedButtonStart set cancel true" << endl;
+        doCancel = true;
+        cout << "OnBnClickedButtonStart wait for fu.get()" << endl;
+        fuConvert.get();
+    }
+
+    cout << "OnBnClickedButtonStart set cancel false" << endl;
     doCancel = false;
-    fu = std::async(std::launch::async, &DialogMain::StartConvert, this);
+    cout << "OnBnClickedButtonStart async StartConvert" << endl;
+    fuConvert = std::async(std::launch::async, &DialogMain::StartConvert, this);
     return 0;
 }
 
@@ -816,7 +835,7 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
     // 添加文件
     // fu = thPool.submit([this, ret, restore]() { AddItemsNoThrow(ret, restore); });
 
-    fu = std::async(std::launch::async, &DialogMain::AddItemsNoThrow, this, ret, restore);
+    fuAddItems = std::async(std::launch::async, &DialogMain::AddItemsNoThrow, this, ret, restore);
 
     return 0;
 } catch (runtime_error &e) {

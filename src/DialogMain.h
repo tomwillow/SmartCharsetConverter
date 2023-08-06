@@ -26,7 +26,9 @@
 const unsigned int WM_MY_MESSAGE = WM_USER + 1;
 struct MyMessage {
     std::function<void()> fn;
-    MyMessage(std::function<void()> fn) : fn(fn) { std::cout << "MyMessage ctor: " << this << std::endl; }
+    MyMessage(std::function<void()> fn) : fn(fn) {
+        std::cout << "MyMessage ctor: " << this << std::endl;
+    }
 };
 
 class DialogMain : public CDialogImpl<DialogMain> {
@@ -41,7 +43,8 @@ private:
 
     std::unordered_set<std::tstring> listFileNames; // 当前列表中的文件
 
-    std::future<void> fu;
+    std::future<void> fuAddItems;
+    std::future<void> fuConvert;
     std::atomic<bool> doCancel;
 
     ThreadPool thPool;
