@@ -159,13 +159,19 @@ public:
 
     void Clear();
 
+    struct ConvertResult {
+        std::tstring outputFileName;
+        std::optional<std::tstring> errInfo;
+        Configuration::LineBreaks targetLineBreaks;
+        int outputFileSize;
+    };
+
     /**
      * @brief 转换一个文件。
      * @return <输出文件的文件名, 出错信息>
      */
-    std::pair<std::tstring, std::optional<std::tstring>> Convert(const std::tstring &inputFilename,
-                                                                 CharsetCode originCode, CharsetCode targetCode,
-                                                                 Configuration::LineBreaks originLineBreak) noexcept;
+    ConvertResult Convert(const std::tstring &inputFilename, CharsetCode originCode, CharsetCode targetCode,
+                          Configuration::LineBreaks originLineBreak) noexcept;
 
 private:
     std::tstring iniFileName;

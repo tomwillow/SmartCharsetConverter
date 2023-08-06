@@ -469,18 +469,22 @@ void Core::Clear() {
     listFileNames.clear();
 }
 
-std::pair<std::tstring, std::optional<std::tstring>> Core::Convert(const std::tstring &inputFilename,
-                                                                   CharsetCode originCode, CharsetCode targetCode,
-                                                                   Configuration::LineBreaks originLineBreak) noexcept {
+Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode originCode, CharsetCode targetCode,
+                                  Configuration::LineBreaks originLineBreak) noexcept {
     wcout << inputFilename << endl;
-    auto outputFileName = inputFilename;
+
+    ConvertResult ret;
     try {
+        ret.outputFileName = inputFilename;
+        ret.targetLineBreaks = originLineBreak;
+        ret.outputFileSize = GetFileSize(inputFilename);
+
         // 计算目标文件名
         if (GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN) {
             // 纯文件名
-            auto pureFileName = GetNameAndExt(outputFileName);
+            auto pureFileName = GetNameAndExt(ret.outputFileName);
 
-            outputFileName = GetConfig().outputDir + TEXT("\\") + pureFileName;
+            ret.outputFileName = GetConfig().outputDir + TEXT("\\") + pureFileName;
         }
 
         // 原编码集
@@ -510,9 +514,9 @@ std::pair<std::tstring, std::optional<std::tstring>> Core::Convert(const std::ts
 
                 // 如果不是原位置转换，复制过去
                 if (GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR) {
-                    bool ok = CopyFile(inputFilename.c_str(), outputFileName.c_str(), false);
+                    bool ok = CopyFile(inputFilename.c_str(), ret.outputFileName.c_str(), false);
                     if (!ok) {
-                        throw runtime_error("写入失败：" + to_string(outputFileName));
+                        throw runtime_error("写入失败：" + to_string(ret.outputFileName));
                     }
                 }
 
@@ -556,14 +560,19 @@ std::pair<std::tstring, std::optional<std::tstring>> Core::Convert(const std::ts
                 // 如果需要转换换行符
                 if (GetConfig().enableConvertLineBreaks && GetConfig().lineBreak != originLineBreak) {
                     ChangeLineBreaks(buf, bufLen, GetConfig().lineBreak);
+                    ret.targetLineBreaks = GetConfig().lineBreak;
                 }
 
                 // 转到目标编码
-                auto [ret, retLen] = Encode(buf, bufLen, targetCode);
+                auto [outputBuf, outputBufSize] = Encode(buf, bufLen, targetCode);
+                ret.outputFileSize = 0;
 
                 // 写入文件
                 FILE *fp = nullptr;
-                errno_t err = _tfopen_s(&fp, outputFileName.c_str(), TEXT("wb"));
+                errno_t err = _tfopen_s(&fp, ret.outputFileName.c_str(), TEXT("wb"));
+                if (fp == nullptr) {
+                    throw runtime_error("打开文件失败：" + to_string(ret.outputFileName));
+                }
                 unique_ptr<FILE, function<void(FILE *)>> upFile(fp, [](FILE *fp) {
                     fclose(fp);
                 });
@@ -574,15 +583,17 @@ std::pair<std::tstring, std::optional<std::tstring>> Core::Convert(const std::ts
 
                     // 写入BOM
                     size_t wrote = fwrite(bomData, BomSize(targetCode), 1, fp);
+                    ret.outputFileSize += BomSize(targetCode);
                     if (wrote != 1) {
-                        throw runtime_error("写入失败：" + to_string(outputFileName));
+                        throw runtime_error("写入失败：" + to_string(ret.outputFileName));
                     }
                 }
 
                 // 写入正文
-                size_t wrote = fwrite(ret.get(), retLen, 1, fp);
-                if (retLen != 0 && wrote != 1) {
-                    throw runtime_error("写入失败：" + to_string(outputFileName));
+                size_t wrote = fwrite(outputBuf.get(), outputBufSize, 1, fp);
+                ret.outputFileSize += outputBufSize;
+                if (outputBufSize != 0 && wrote != 1) {
+                    throw runtime_error("写入失败：" + to_string(ret.outputFileName));
                 }
             }
 
@@ -590,11 +601,11 @@ std::pair<std::tstring, std::optional<std::tstring>> Core::Convert(const std::ts
 
     } catch (runtime_error &e) {
         // 这个文件失败了
-        return {outputFileName, to_tstring(e.what())};
+        ret.errInfo = to_tstring(e.what());
     }
 
     // 这个文件成功了
-    return {outputFileName, {}};
+    return ret;
 }
 
 void Core::ReadFromIni() {}

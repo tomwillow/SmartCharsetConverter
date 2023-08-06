@@ -17,7 +17,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.41 by Tom Willow");
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.5 by Tom Willow");
 
 using namespace std;
 
@@ -299,17 +299,14 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
         // 更新UI
         PostUIFunc([=]() {
             listview.SetItemText(i, static_cast<int>(ListViewColumn::INDEX), (TEXT("->") + to_tstring(i + 1)).c_str());
-            listview.SetItemText(i, static_cast<int>(ListViewColumn::ENCODING), ToCharsetName(targetCode).c_str());
-            // TODO
-            // listview.SetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreaksMap[lineBreak].c_str());
 
             // listview滚动
             listview.SelectItem(i);
         });
 
-        auto [outputFileName, errInfo] = core->Convert(filename, originCode, targetCode, originLineBreak);
-        if (errInfo.has_value()) {
-            failed.push_back({filename, errInfo.value()});
+        auto convertResult = core->Convert(filename, originCode, targetCode, originLineBreak);
+        if (convertResult.errInfo.has_value()) {
+            failed.push_back({filename, convertResult.errInfo.value()});
         } else {
             succeed.push_back(filename);
         }
@@ -317,12 +314,15 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
         // 更新UI
         PostUIFunc([=]() {
             listview.SetItemText(i, static_cast<int>(ListViewColumn::INDEX), to_tstring(i + 1).c_str());
-            if (errInfo.has_value()) {
+            if (convertResult.errInfo.has_value()) {
                 return;
             }
-            listview.SetItemText(i, static_cast<int>(ListViewColumn::FILENAME), outputFileName.c_str());
+            listview.SetItemText(i, static_cast<int>(ListViewColumn::FILENAME), convertResult.outputFileName.c_str());
+            listview.SetItemText(i, static_cast<int>(ListViewColumn::FILESIZE),
+                                 FileSizeToTString(convertResult.outputFileSize).c_str());
             listview.SetItemText(i, static_cast<int>(ListViewColumn::ENCODING), ToCharsetName(targetCode).c_str());
-            // listview.SetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreaksMap[lineBreak].c_str());
+            listview.SetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK),
+                                 lineBreaksMap[convertResult.targetLineBreaks].c_str());
         });
     }
 
@@ -577,12 +577,19 @@ LRESULT DialogMain::OnOpenWithNotepad(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /
 
 LRESULT DialogMain::OnRemoveItem(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/) {
     auto selectedItems = listview.GetSelectedItems();
+    // 选中的序号，倒序遍历
     for (auto itor = selectedItems.rbegin(); itor != selectedItems.rend(); ++itor) {
         int i = *itor;
         auto filename = listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME));
         listview.DeleteItem(i);
         core->RemoveItem(filename);
     }
+
+    // 剩下的重新编号
+    for (int i = selectedItems.front(); i < listview.GetItemCount(); ++i) {
+        listview.SetItemText(i, static_cast<int>(ListViewColumn::INDEX), to_tstring(i + 1).c_str());
+    }
+
     return 0;
 }
 
