@@ -71,8 +71,6 @@ public:
      */
     std::vector<std::tstring> AddItems(const std::vector<std::tstring> &filenames);
 
-    void AddItemsNoThrow(const std::vector<std::tstring> &filenames, const std::vector<std::pair<int, bool>> &restore);
-
     void StartConvert();
 
     void OnClose();

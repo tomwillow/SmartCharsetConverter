@@ -258,45 +258,6 @@ AddItemsAbort:
     return ignored;
 }
 
-void DialogMain::AddItemsNoThrow(const std::vector<std::tstring> &filenames,
-                                 const std::vector<std::pair<int, bool>> &restore) {
-    try {
-
-        // 使用RTTI的手法记下恢复事件
-        unique_ptr<void, function<void(void *)>> deferRestore(reinterpret_cast<void *>(1), [&](void *) {
-            PostUIFunc([this, restore]() {
-                for (auto &pr : restore) {
-                    auto wnd = GetDlgItem(pr.first);
-                    wnd.EnableWindow(pr.second);
-                }
-
-                GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
-
-#ifndef NDEBUG
-                cout << "Exit: AddItemsNoThrow thread" << endl;
-#endif
-            });
-        });
-
-        AddItems(filenames);
-
-    } catch (const runtime_error &e) {
-        PostUIFunc([this, e]() {
-            MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
-        });
-    }
-
-    // 通知UI线程取出fu
-    // MyMessage *msg = new MyMessage([this]() {
-    //    fuAddItems.get();
-    //    cout << "MyMessage end: fu.get()" << endl;
-    //});
-    // cout << "AddItemsNoThrow fu.get() " << std::hex << msg << endl;
-    // PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
-
-    return;
-}
-
 void DialogMain::StartConvert() try {
     // 如果没有内容
     if (listview.GetItemCount() == 0) {
@@ -773,22 +734,46 @@ LRESULT DialogMain::OnBnClickedRadioCr(WORD /*wNotifyCode*/, WORD /*wID*/, HWND 
 LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled) try {
     HDROP hDrop = reinterpret_cast<HDROP>(wParam);
 
-    vector<tstring> ret;
+    vector<tstring> filenames;
     UINT nFileNum = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0); // 拖拽文件个数
     TCHAR strFileName[MAX_PATH];
     for (UINT i = 0; i < nFileNum; i++) {
         DragQueryFile(hDrop, i, strFileName, MAX_PATH); //获得拖曳的文件名
-        ret.push_back(strFileName);
+        filenames.push_back(strFileName);
     }
     DragFinish(hDrop); //释放hDrop
 
     auto restore = PostBusyState();
 
     // 添加文件
-    // fu = thPool.submit([this, ret, restore]() { AddItemsNoThrow(ret, restore); });
+    // fu = thPool.submit([this, filenames, restore]() { AddItemsNoThrow(filenames, restore); });
 
     doCancel = false;
-    fuAddItems = std::async(std::launch::async, &DialogMain::AddItemsNoThrow, this, ret, restore);
+    fuAddItems = std::async(std::launch::async, [this, restore, filenames]() {
+        // 使用RTTI的手法记下恢复事件
+        unique_ptr<void, function<void(void *)>> deferRestore(reinterpret_cast<void *>(1), [this, restore](void *) {
+            PostUIFunc([this, restore]() {
+                for (auto &pr : restore) {
+                    auto wnd = GetDlgItem(pr.first);
+                    wnd.EnableWindow(pr.second);
+                }
+
+                GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
+
+#ifndef NDEBUG
+                cout << "Exit: AddItemsNoThrow thread" << endl;
+#endif
+            });
+        });
+
+        try {
+            AddItems(filenames);
+        } catch (const runtime_error &e) {
+            PostUIFunc([this, e]() {
+                MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+            });
+        }
+    });
 
     return 0;
 } catch (runtime_error &e) {
