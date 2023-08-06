@@ -469,6 +469,134 @@ void Core::Clear() {
     listFileNames.clear();
 }
 
+std::pair<std::tstring, std::optional<std::tstring>> Core::Convert(const std::tstring &inputFilename,
+                                                                   CharsetCode originCode, CharsetCode targetCode,
+                                                                   Configuration::LineBreaks originLineBreak) noexcept {
+    wcout << inputFilename << endl;
+    auto outputFileName = inputFilename;
+    try {
+        // 计算目标文件名
+        if (GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN) {
+            // 纯文件名
+            auto pureFileName = GetNameAndExt(outputFileName);
+
+            outputFileName = GetConfig().outputDir + TEXT("\\") + pureFileName;
+        }
+
+        // 原编码集
+        if (originCode == CharsetCode::UNKNOWN) {
+            throw runtime_error("未探测出编码集");
+        }
+
+        // 返回原字符集和目标字符集的条件为不需要转换的情形
+        auto CharsetNeedNotConvert = [&]() -> bool {
+            // 原编码和目标编码一样
+            if (originCode == targetCode)
+                return true;
+
+            // 原来是空文件，且目标编码不需要写入BOM
+            if (originCode == CharsetCode::EMPTY && !HasBom(targetCode))
+                return true;
+            return false;
+        };
+
+        // 判断不需要转换的条件，或者是需要复制的情形，直接不转换或者复制
+        // 返回true则不需要实际转换了
+        auto CheckNothingOrCopy = [&]() -> bool {
+            if (CharsetNeedNotConvert() &&
+                // 不转换换行符，或者新换行符和原来的换行符一样
+                (GetConfig().enableConvertLineBreaks == false || GetConfig().lineBreak == originLineBreak)) {
+                // 那么只需要考虑是否原位转换，原位转换的话什么也不做，否则复制过去
+
+                // 如果不是原位置转换，复制过去
+                if (GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR) {
+                    bool ok = CopyFile(inputFilename.c_str(), outputFileName.c_str(), false);
+                    if (!ok) {
+                        throw runtime_error("写入失败：" + to_string(outputFileName));
+                    }
+                }
+
+                // 原位转换，什么也不做
+                return true;
+            }
+
+            return false;
+        };
+
+        do {
+            if (CheckNothingOrCopy())
+                break;
+
+            // 前后编码不一样
+            auto filesize = GetFileSize(inputFilename);
+
+            // 暂时不做分块转换 TODO
+
+            {
+                // 读二进制
+                auto [raw, rawSize] = ReadFileToBuffer(inputFilename);
+
+                if (rawSize >= std::numeric_limits<int>::max()) {
+                    throw runtime_error("文件大小超出限制");
+                }
+
+                // 根据BOM偏移
+                const char *rawStart = raw.get();
+
+                // 如果需要抹掉BOM，则把起始位置设置到BOM之后，确保UChar[]不带BOM
+                if (HasBom(originCode) && !HasBom(targetCode)) {
+                    auto bomSize = BomSize(originCode);
+                    rawStart += bomSize;
+                    rawSize -= bomSize;
+                }
+
+                // 根据原编码得到Unicode字符串
+                auto [buf, bufLen] = Decode(rawStart, static_cast<int>(rawSize), originCode);
+
+                // 如果需要转换换行符
+                if (GetConfig().enableConvertLineBreaks && GetConfig().lineBreak != originLineBreak) {
+                    ChangeLineBreaks(buf, bufLen, GetConfig().lineBreak);
+                }
+
+                // 转到目标编码
+                auto [ret, retLen] = Encode(buf, bufLen, targetCode);
+
+                // 写入文件
+                FILE *fp = nullptr;
+                errno_t err = _tfopen_s(&fp, outputFileName.c_str(), TEXT("wb"));
+                unique_ptr<FILE, function<void(FILE *)>> upFile(fp, [](FILE *fp) {
+                    fclose(fp);
+                });
+
+                // 如果需要额外加上BOM，先写入BOM
+                if (!HasBom(originCode) && HasBom(targetCode)) {
+                    auto bomData = GetBomData(targetCode);
+
+                    // 写入BOM
+                    size_t wrote = fwrite(bomData, BomSize(targetCode), 1, fp);
+                    if (wrote != 1) {
+                        throw runtime_error("写入失败：" + to_string(outputFileName));
+                    }
+                }
+
+                // 写入正文
+                size_t wrote = fwrite(ret.get(), retLen, 1, fp);
+                if (retLen != 0 && wrote != 1) {
+                    throw runtime_error("写入失败：" + to_string(outputFileName));
+                }
+            }
+
+        } while (0);
+
+    } catch (runtime_error &e) {
+        // 这个文件失败了
+        return {outputFileName, to_tstring(e.what())};
+    }
+
+    // 这个文件成功了
+    return {outputFileName, {}};
+}
+
 void Core::ReadFromIni() {}
 
 void Core::WriteToIni() {}

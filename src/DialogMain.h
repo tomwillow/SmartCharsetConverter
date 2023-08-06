@@ -41,8 +41,8 @@ private:
 
     enum class ListViewColumn { INDEX = 0, FILENAME, FILESIZE, ENCODING, LINE_BREAK, TEXT_PIECE };
 
-    std::future<void> fuAddItems;
-    std::future<void> fuConvert;
+    std::future<void> fu;
+    std::atomic<bool> thRunning;
     std::atomic<bool> doCancel;
 
     ThreadPool thPool;
@@ -71,7 +71,13 @@ public:
      */
     std::vector<std::tstring> AddItems(const std::vector<std::tstring> &filenames);
 
-    void StartConvert();
+    struct Item {
+        std::tstring filename;
+        CharsetCode originCode;
+        Configuration::LineBreaks originLineBreak;
+    };
+
+    void StartConvert(const std::vector<std::pair<int, bool>> &restore, const std::vector<Item> &items);
 
     void OnClose();
 
@@ -140,5 +146,15 @@ public:
     void PostUIFunc(std::function<void()> fn);
     LRESULT OnUser(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 
-    std::vector<std::pair<int, bool>> PostBusyState() noexcept;
+    /**
+     * @brief 禁用控件，只保留一个取消按钮。
+     * @return vector<被禁用控件的id, 恢复时应该设置的enable值>
+     */
+    std::vector<std::pair<int, bool>> SetBusyState() noexcept;
+
+    /**
+     * @brief 恢复控件。
+     * @return vector<被禁用控件的id, 恢复时应该设置的enable值>
+     */
+    void RestoreReadyState(const std::vector<std::pair<int, bool>> &restore) noexcept;
 };

@@ -26,13 +26,9 @@ DialogMain::DialogMain() {}
 DialogMain::~DialogMain() {}
 
 void DialogMain::OnClose() {
-    if (fuAddItems.valid()) {
+    if (thRunning) {
         doCancel = true;
-        fuAddItems.get();
-    }
-    if (fuConvert.valid()) {
-        doCancel = true;
-        fuConvert.get();
+        fu.get();
     }
     EndDialog(0);
 }
@@ -258,7 +254,19 @@ AddItemsAbort:
     return ignored;
 }
 
-void DialogMain::StartConvert() try {
+void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, const std::vector<Item> &items) try {
+    // 使用RTTI的手法记下恢复事件
+    unique_ptr<void, function<void(void *)>> deferRestore(reinterpret_cast<void *>(1), [this, restore](void *) {
+        PostUIFunc([this, restore]() {
+            RestoreReadyState(restore);
+
+#ifndef NDEBUG
+            cout << "Exit: StartConvert thread" << endl;
+#endif
+            thRunning = false;
+        });
+    });
+
     // 如果没有内容
     if (listview.GetItemCount() == 0) {
         throw runtime_error("没有待转换的文件。");
@@ -271,7 +279,6 @@ void DialogMain::StartConvert() try {
         }
     }
 
-    vector<tstring> allOutputFileNames;    // 全部文件（成功失败均有）
     vector<pair<tstring, tstring>> failed; // 失败文件/失败原因
     vector<tstring> succeed;               // 成功的文件
 
@@ -279,139 +286,44 @@ void DialogMain::StartConvert() try {
     auto targetCode = core->GetConfig().outputCharset;
 
     // 逐个转换
-    for (int i = 0; i < listview.GetItemCount(); ++i) {
-        auto filename = listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME));
-        wcout << L"convert " << filename << endl;
-        try {
-            this_thread::sleep_for(1s);
-            // 计算目标文件名
-            auto outputFileName = filename;
-            if (core->GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN) {
-                // 纯文件名
-                auto pureFileName = GetNameAndExt(outputFileName);
-
-                outputFileName = core->GetConfig().outputDir + TEXT("\\") + pureFileName;
-            }
-
-            // 加入到任务列表
-            allOutputFileNames.push_back(outputFileName);
-
-            // 取出原编码集
-            auto originCode = ToCharsetCode(listview.GetItemText(i, static_cast<int>(ListViewColumn::ENCODING)));
-            if (originCode == CharsetCode::UNKNOWN) {
-                throw runtime_error("未探测出编码集");
-            }
-
-            // 取出原换行符
-            auto originLineBreak = lineBreaksMap[listview.GetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK))];
-
-            // 返回原字符集和目标字符集的条件为不需要转换的情形
-            auto CharsetNeedNotConvert = [&]() -> bool {
-                // 原编码和目标编码一样
-                if (originCode == targetCode)
-                    return true;
-
-                // 原来是空文件，且目标编码不需要写入BOM
-                if (originCode == CharsetCode::EMPTY && !HasBom(targetCode))
-                    return true;
-                return false;
-            };
-
-            // 判断不需要转换的条件，或者是需要复制的情形，直接不转换或者复制
-            // 返回true则不需要实际转换了
-            auto CheckNothingOrCopy = [&]() -> bool {
-                if (CharsetNeedNotConvert() &&
-                    // 不转换换行符，或者新换行符和原来的换行符一样
-                    (core->GetConfig().enableConvertLineBreaks == false ||
-                     core->GetConfig().lineBreak == originLineBreak)) {
-                    // 那么只需要考虑是否原位转换，原位转换的话什么也不做，否则复制过去
-
-                    // 如果不是原位置转换，复制过去
-                    if (core->GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR) {
-                        bool ok = CopyFile(filename.c_str(), outputFileName.c_str(), false);
-                        if (!ok) {
-                            throw runtime_error("写入失败：" + to_string(outputFileName));
-                        }
-                    }
-
-                    // 原位转换，什么也不做
-                    return true;
-                }
-
-                return false;
-            };
-
-            do {
-                if (CheckNothingOrCopy())
-                    break;
-
-                // 前后编码不一样
-                auto filesize = GetFileSize(filename);
-
-                // 暂时不做分块转换 TODO
-
-                {
-                    // 读二进制
-                    auto [raw, rawSize] = ReadFileToBuffer(filename);
-
-                    if (rawSize >= std::numeric_limits<int>::max()) {
-                        throw runtime_error("文件大小超出限制");
-                    }
-
-                    // 根据BOM偏移
-                    const char *rawStart = raw.get();
-
-                    // 如果需要抹掉BOM，则把起始位置设置到BOM之后，确保UChar[]不带BOM
-                    if (HasBom(originCode) && !HasBom(targetCode)) {
-                        auto bomSize = BomSize(originCode);
-                        rawStart += bomSize;
-                        rawSize -= bomSize;
-                    }
-
-                    // 根据原编码得到Unicode字符串
-                    auto [buf, bufLen] = Decode(rawStart, static_cast<int>(rawSize), originCode);
-
-                    // 如果需要转换换行符
-                    if (core->GetConfig().enableConvertLineBreaks && core->GetConfig().lineBreak != originLineBreak) {
-                        ChangeLineBreaks(buf, bufLen, core->GetConfig().lineBreak);
-                    }
-
-                    // 转到目标编码
-                    auto [ret, retLen] = Encode(buf, bufLen, targetCode);
-
-                    // 写入文件
-                    FILE *fp = nullptr;
-                    errno_t err = _tfopen_s(&fp, outputFileName.c_str(), TEXT("wb"));
-                    unique_ptr<FILE, function<void(FILE *)>> upFile(fp, [](FILE *fp) {
-                        fclose(fp);
-                    });
-
-                    // 如果需要额外加上BOM，先写入BOM
-                    if (!HasBom(originCode) && HasBom(targetCode)) {
-                        auto bomData = GetBomData(targetCode);
-
-                        // 写入BOM
-                        size_t wrote = fwrite(bomData, BomSize(targetCode), 1, fp);
-                        if (wrote != 1) {
-                            throw runtime_error("写入失败：" + to_string(outputFileName));
-                        }
-                    }
-
-                    // 写入正文
-                    size_t wrote = fwrite(ret.get(), retLen, 1, fp);
-                    if (retLen != 0 && wrote != 1) {
-                        throw runtime_error("写入失败：" + to_string(outputFileName));
-                    }
-                }
-
-            } while (0);
-
-            // 这个文件成功了
-            succeed.push_back(filename);
-        } catch (runtime_error &e) {
-            // 这个文件失败了
-            failed.push_back({filename, to_tstring(e.what())});
+    auto count = items.size();
+    for (int i = 0; i < count; ++i) {
+        if (doCancel) {
+            break;
         }
+
+        auto &filename = items[i].filename;
+        auto originCode = items[i].originCode;
+        auto originLineBreak = items[i].originLineBreak;
+
+        // 更新UI
+        PostUIFunc([=]() {
+            listview.SetItemText(i, static_cast<int>(ListViewColumn::INDEX), (TEXT("->") + to_tstring(i + 1)).c_str());
+            listview.SetItemText(i, static_cast<int>(ListViewColumn::ENCODING), ToCharsetName(targetCode).c_str());
+            // TODO
+            // listview.SetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreaksMap[lineBreak].c_str());
+
+            // listview滚动
+            listview.SelectItem(i);
+        });
+
+        auto [outputFileName, errInfo] = core->Convert(filename, originCode, targetCode, originLineBreak);
+        if (errInfo.has_value()) {
+            failed.push_back({filename, errInfo.value()});
+        } else {
+            succeed.push_back(filename);
+        }
+
+        // 更新UI
+        PostUIFunc([=]() {
+            listview.SetItemText(i, static_cast<int>(ListViewColumn::INDEX), to_tstring(i + 1).c_str());
+            if (errInfo.has_value()) {
+                return;
+            }
+            listview.SetItemText(i, static_cast<int>(ListViewColumn::FILENAME), outputFileName.c_str());
+            listview.SetItemText(i, static_cast<int>(ListViewColumn::ENCODING), ToCharsetName(targetCode).c_str());
+            // listview.SetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreaksMap[lineBreak].c_str());
+        });
     }
 
     // 已经完成处理
@@ -424,38 +336,38 @@ void DialogMain::StartConvert() try {
         for (auto &pr : failed) {
             ss << pr.first << TEXT(" 原因：") << pr.second << TEXT("\r\n");
         }
-        wstring s = ss.str();
-        MyMessage *msg = new MyMessage([this, s]() {
-            MessageBox(s.c_str(), TEXT("转换结果"), MB_OK | MB_ICONERROR);
-        });
-        PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
-    } else {
-        // 全部成功之后
-        tstringstream ss;
-        ss << TEXT("转换完成！");
-
-        if (targetCode == CharsetCode::GB18030) {
-            ss << TEXT(
-                "\r\n\r\n注意：GB18030在纯英文的情况下和UTF-8编码位重合，所以可能会出现转换后显示为UTF-8编码的情况。");
+        if (doCancel) {
+            ss << TEXT("\r\n") << TEXT("\r\n") << TEXT("剩余文件由于取消操作所以未做处理。");
         }
 
         wstring s = ss.str();
-        MyMessage *msg = new MyMessage([this, s]() {
+        PostUIFunc([this, s]() {
+            MessageBox(s.c_str(), TEXT("转换结果"), MB_OK | MB_ICONERROR);
+        });
+    } else {
+        // 全部成功之后
+        tstringstream ss;
+        ss << TEXT("转换成功 ") << succeed.size() << TEXT(" 个文件。\r\n\r\n");
+
+        if (targetCode == CharsetCode::GB18030) {
+            ss << TEXT("\r\n\r\n注意：GB18030在纯英文的情况下和UTF-8编码位重合，所以可能会出现转换后显示为UTF-"
+                       "8编码的情况。");
+        }
+        if (doCancel) {
+            ss << TEXT("\r\n") << TEXT("\r\n") << TEXT("剩余文件由于取消操作所以未做处理。");
+        }
+
+        wstring s = ss.str();
+        PostUIFunc([this, s]() {
             MessageBox(s.c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
         });
-        PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     }
 
-    // 清空列表
-    BOOL bHandle = false;
-    OnBnClickedButtonClear(0, 0, 0, bHandle);
-
-    // 把转出的结果再次加载到列表中
-    AddItems(allOutputFileNames);
-
     return;
-} catch (runtime_error &err) {
-    MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
+} catch (const runtime_error &err) {
+    PostUIFunc([this, err]() {
+        MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
+    });
     return;
 }
 
@@ -589,25 +501,29 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 
 LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
                                            BOOL &bHandle /*bHandled*/) {
-    if (fuAddItems.valid()) {
+    if (thRunning) {
         cout << "OnBnClickedButtonStart set cancel true" << endl;
         doCancel = true;
         cout << "OnBnClickedButtonStart wait for fu.get()" << endl;
-        fuAddItems.get();
+        fu.get();
         return 0;
     }
 
-    if (fuConvert.valid()) {
-        cout << "OnBnClickedButtonStart set cancel true" << endl;
-        doCancel = true;
-        cout << "OnBnClickedButtonStart wait for fu.get()" << endl;
-        fuConvert.get();
+    auto restore = SetBusyState();
+
+    vector<Item> items;
+    for (int i = 0; i < listview.GetItemCount(); ++i) {
+        auto filename = listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME));
+        auto originCode = ToCharsetCode(listview.GetItemText(i, static_cast<int>(ListViewColumn::ENCODING)));
+        auto originLineBreak = lineBreaksMap[listview.GetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK))];
+        items.push_back({filename, originCode, originLineBreak});
     }
 
     cout << "OnBnClickedButtonStart set cancel false" << endl;
     doCancel = false;
     cout << "OnBnClickedButtonStart async StartConvert" << endl;
-    fuConvert = std::async(std::launch::async, &DialogMain::StartConvert, this);
+    thRunning = true;
+    fu = std::async(std::launch::async, &DialogMain::StartConvert, this, restore, items);
     return 0;
 }
 
@@ -743,26 +659,23 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
     }
     DragFinish(hDrop); //释放hDrop
 
-    auto restore = PostBusyState();
+    auto restore = SetBusyState();
 
     // 添加文件
     // fu = thPool.submit([this, filenames, restore]() { AddItemsNoThrow(filenames, restore); });
 
     doCancel = false;
-    fuAddItems = std::async(std::launch::async, [this, restore, filenames]() {
+    thRunning = true;
+    fu = std::async(std::launch::async, [this, restore, filenames]() {
         // 使用RTTI的手法记下恢复事件
         unique_ptr<void, function<void(void *)>> deferRestore(reinterpret_cast<void *>(1), [this, restore](void *) {
             PostUIFunc([this, restore]() {
-                for (auto &pr : restore) {
-                    auto wnd = GetDlgItem(pr.first);
-                    wnd.EnableWindow(pr.second);
-                }
-
-                GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
+                RestoreReadyState(restore);
 
 #ifndef NDEBUG
                 cout << "Exit: AddItemsNoThrow thread" << endl;
 #endif
+                thRunning = false;
             });
         });
 
@@ -794,7 +707,7 @@ LRESULT DialogMain::OnUser(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandl
     return 0;
 }
 
-std::vector<pair<int, bool>> DialogMain::PostBusyState() noexcept {
+std::vector<pair<int, bool>> DialogMain::SetBusyState() noexcept {
     // 遍历控件，如果是启用状态，那么设置为disable，并在restore中记下，留待日后恢复
     vector<pair<int, bool>> restore;
     for (auto id = IDC_RADIO_STRETEGY_SMART; id <= IDC_RADIO_CR; ++id) {
@@ -811,4 +724,13 @@ std::vector<pair<int, bool>> DialogMain::PostBusyState() noexcept {
     GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("取消"));
     GetDlgItem(IDC_BUTTON_START).EnableWindow(true);
     return restore;
+}
+
+void DialogMain::RestoreReadyState(const std::vector<std::pair<int, bool>> &restore) noexcept {
+    for (auto &pr : restore) {
+        auto wnd = GetDlgItem(pr.first);
+        wnd.EnableWindow(pr.second);
+    }
+
+    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
 }

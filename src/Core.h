@@ -13,7 +13,9 @@
 #include <memory>
 #include <functional>
 #include <unordered_set>
+#include <thread>
 #include <stdexcept>
+#include <optional>
 
 enum class CharsetCode {
     UNKNOWN,
@@ -156,6 +158,14 @@ public:
     void RemoveItem(const std::tstring &filename);
 
     void Clear();
+
+    /**
+     * @brief 转换一个文件。
+     * @return <输出文件的文件名, 出错信息>
+     */
+    std::pair<std::tstring, std::optional<std::tstring>> Convert(const std::tstring &inputFilename,
+                                                                 CharsetCode originCode, CharsetCode targetCode,
+                                                                 Configuration::LineBreaks originLineBreak) noexcept;
 
 private:
     std::tstring iniFileName;
