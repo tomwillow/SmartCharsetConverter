@@ -71,6 +71,14 @@ public:
      */
     std::vector<std::tstring> AddItems(const std::vector<std::tstring> &filenames);
 
+    /*
+     * 加入多个文件到列表。
+     * 如果中途有加入失败的文件，会在最后弹一个对话框统一说明。
+     * 返回忽略掉的文件
+     * 添加失败的文件会弹窗
+     */
+    void AddItemsAsync(const std::vector<std::tstring> &filenames);
+
     struct Item {
         std::tstring filename;
         CharsetCode originCode;

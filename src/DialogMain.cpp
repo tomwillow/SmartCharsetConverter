@@ -13,6 +13,7 @@
 #include <sstream>
 #include <set>
 #include <regex>
+#include <filesystem>
 
 #undef min
 #undef max
@@ -191,7 +192,7 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 
     for (auto &path : pathes) {
         // 如果是目录
-        if (IsFolder(path)) {
+        if (std::filesystem::is_directory(path)) {
             // 遍历指定目录
             auto filenames = TraversalAllFileNames(path);
 
@@ -252,6 +253,34 @@ AddItemsAbort:
     cout << "Exit: AddItems" << endl;
 #endif
     return ignored;
+}
+
+void DialogMain::AddItemsAsync(const std::vector<std::tstring> &filenames) {
+    auto restore = SetBusyState();
+
+    doCancel = false;
+    thRunning = true;
+    fu = std::async(std::launch::async, [this, restore, filenames]() {
+        // 使用RTTI的手法记下恢复事件
+        unique_ptr<void, function<void(void *)>> deferRestore(reinterpret_cast<void *>(1), [this, restore](void *) {
+            PostUIFunc([this, restore]() {
+                RestoreReadyState(restore);
+
+#ifndef NDEBUG
+                cout << "Exit: AddItemsNoThrow thread" << endl;
+#endif
+                thRunning = false;
+            });
+        });
+
+        try {
+            AddItems(filenames);
+        } catch (const runtime_error &e) {
+            PostUIFunc([this, e]() {
+                MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+            });
+        }
+    });
 }
 
 void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, const std::vector<Item> &items) try {
@@ -476,7 +505,7 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
     if (dialog.Open()) {
         auto filenames = dialog.GetResult();
 
-        AddItems(filenames);
+        AddItemsAsync(filenames);
     }
     return 0;
 } catch (runtime_error &err) {
@@ -490,7 +519,7 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 
     TFolderBrowser folderBrowser(*this);
     if (folderBrowser.Open(dir)) {
-        AddItems({dir});
+        AddItemsAsync({dir});
     }
 
     return 0;
@@ -666,34 +695,7 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
     }
     DragFinish(hDrop); //释放hDrop
 
-    auto restore = SetBusyState();
-
-    // 添加文件
-    // fu = thPool.submit([this, filenames, restore]() { AddItemsNoThrow(filenames, restore); });
-
-    doCancel = false;
-    thRunning = true;
-    fu = std::async(std::launch::async, [this, restore, filenames]() {
-        // 使用RTTI的手法记下恢复事件
-        unique_ptr<void, function<void(void *)>> deferRestore(reinterpret_cast<void *>(1), [this, restore](void *) {
-            PostUIFunc([this, restore]() {
-                RestoreReadyState(restore);
-
-#ifndef NDEBUG
-                cout << "Exit: AddItemsNoThrow thread" << endl;
-#endif
-                thRunning = false;
-            });
-        });
-
-        try {
-            AddItems(filenames);
-        } catch (const runtime_error &e) {
-            PostUIFunc([this, e]() {
-                MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
-            });
-        }
-    });
+    AddItemsAsync(filenames);
 
     return 0;
 } catch (runtime_error &e) {

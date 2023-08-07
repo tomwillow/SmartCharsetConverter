@@ -52,7 +52,9 @@ class file_io_error : public std::runtime_error {
 public:
     std::tstring _filename;
     file_io_error(std::string s, std::tstring filename) : std::runtime_error(s), _filename(filename) {}
-    const std::tstring &filename() { return _filename; }
+    const std::tstring &filename() {
+        return _filename;
+    }
 };
 
 const uint64_t KB = 1024;
@@ -65,9 +67,6 @@ std::wstring GetCommandLineByIndex(int index);
 
 //判断文件是否存在
 bool GetFileExists(const std::tstring filename);
-
-//判断是否是文件夹
-bool IsFolder(const std::tstring dir);
 
 //分割完整路径为 {路径，文件名不带后缀，.后缀}
 std::vector<std::tstring> SplitPath(const std::tstring &s);

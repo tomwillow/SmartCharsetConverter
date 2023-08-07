@@ -243,26 +243,6 @@ bool GetFileExists(const std::tstring filename) {
     }
 }
 
-bool IsFolder(const std::tstring dir) {
-    WIN32_FIND_DATA FindFileData;
-    HANDLE hFind;
-
-    hFind = FindFirstFile(dir.c_str(), &FindFileData);
-
-    if (hFind == INVALID_HANDLE_VALUE) {
-        return false;
-    } else {
-        if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            // is folder
-            FindClose(hFind);
-            return true;
-        } else {
-            FindClose(hFind);
-            return false;
-        }
-    }
-}
-
 vector<tstring> SplitPath(const std::tstring &s) {
     vector<tstring> ret;
     auto slash = s.find_last_of(TEXT("/\\")); //找最后一个正斜杠或者反斜杠位置
@@ -455,7 +435,9 @@ void findFiles(std::vector<std::tstring> &ret, std::tstring lpPath, std::vector<
             } else {
                 auto tstolower = [](tstring s) -> tstring {
                     tstring temp(s);
-                    for_each(temp.begin(), temp.end(), [](TCHAR &c) { c = tolower(c); });
+                    for_each(temp.begin(), temp.end(), [](TCHAR &c) {
+                        c = tolower(c);
+                    });
                     return temp;
                 };
 
