@@ -351,7 +351,7 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
     auto [buf, bufSize] = ReadFileToBuffer(filename, 100 * KB);
 
     if (bufSize == 0) {
-        return {CharsetCode::EMPTY, unique_ptr<UChar[]>(new UChar[0]), 0};
+        return {CharsetCode::EMPTY, unique_ptr<UChar[]>(new UChar[1]{L'\0'}), 0};
     }
 
     if (bufSize >= std::numeric_limits<int>::max()) {
@@ -417,9 +417,9 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
     }
 
     // 根据uchardet得出的字符集解码
-    auto content = Decode(buf.get(), std::max(64, static_cast<int>(bufSize)), code);
+    auto partContentAndSize = Decode(buf.get(), std::min(64, static_cast<int>(bufSize)), code);
 
-    return make_tuple(code, std::move(get<0>(content)), get<1>(content));
+    return make_tuple(code, std::move(get<0>(partContentAndSize)), get<1>(partContentAndSize));
 }
 
 void Core::AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts) {
@@ -471,7 +471,6 @@ void Core::Clear() {
 
 Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode originCode, CharsetCode targetCode,
                                   Configuration::LineBreaks originLineBreak) noexcept {
-    wcout << inputFilename << endl;
 
     ConvertResult ret;
     try {
