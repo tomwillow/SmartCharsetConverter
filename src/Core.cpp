@@ -295,17 +295,17 @@ Core::Core(std::tstring iniFileName, CoreInitOption opt) : iniFileName(iniFileNa
         uchardet_delete(det);
     });
 
-    // UErrorCode err;
-    // auto allNames = ucnv_openAllNames(&err);
-    // while (1)
-    //{
-    //	auto name = uenum_next(allNames, nullptr, &err);
-    //	if (name == nullptr)
-    //	{
-    //		break;
-    //	}
-    //	cout << name << endl;
-    //}
+#ifndef NDEBUG
+    UErrorCode err;
+    auto allNames = ucnv_openAllNames(&err);
+    while (1) {
+        auto name = uenum_next(allNames, nullptr, &err);
+        if (name == nullptr) {
+            break;
+        }
+        cout << name << endl;
+    }
+#endif
 }
 
 const Configuration &Core::GetConfig() const {
