@@ -18,7 +18,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.51 by Tom Willow");
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.6 by Tom Willow");
 
 using namespace std;
 
