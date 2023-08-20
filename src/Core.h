@@ -31,7 +31,8 @@ enum class CharsetCode {
     UTF16LE,
     UTF16LEBOM,
     BIG5,
-    SHIFT_JS,
+    SHIFT_JIS,
+    EUC_JP,
     WINDOWS_1252,
     ISO_8859_1
 
@@ -58,7 +59,8 @@ const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
     {CharsetCode::UTF16BE, MyCharset{TEXT("UTF-16BE"), "UTF-16BE", {}}},
     {CharsetCode::UTF16BEBOM, MyCharset{TEXT("UTF-16BE BOM"), "UTF-16BE", {}}},
     {CharsetCode::BIG5, MyCharset{TEXT("BIG5"), "Big5", {"Big5"}}},
-    {CharsetCode::SHIFT_JS, MyCharset{TEXT("SHIFT-JIS"), "SHIFT-JIS", {"Shift_JIS"}}},
+    {CharsetCode::SHIFT_JIS, MyCharset{TEXT("SHIFT-JIS"), "SHIFT-JIS", {"Shift_JIS"}}},
+    {CharsetCode::EUC_JP, MyCharset{TEXT("EUC-JP"), "EUC-JP", {"EUC-JP"}}},
     {CharsetCode::WINDOWS_1252, MyCharset{TEXT("WINDOWS-1252"), "WINDOWS-1252", {"WINDOWS-1252", "Windows-1252"}}},
     {CharsetCode::ISO_8859_1, MyCharset{TEXT("ISO-8859-1"), "ISO-8859-1", {"ISO-8859-1"}}}};
 

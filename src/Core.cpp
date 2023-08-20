@@ -131,19 +131,102 @@ tuple<unique_ptr<UChar[]>, int> Decode(const char *str, int len, CharsetCode cod
     UErrorCode err = U_ZERO_ERROR;
 
     // 打开转换器
-    UConverter *conv = ucnv_open(to_string(icuCharsetName).c_str(), &err);
+    unique_ptr<UConverter, function<void(UConverter *)>> conv(ucnv_open(to_string(icuCharsetName).c_str(), &err),
+                                                              [](UConverter *p) {
+                                                                  ucnv_close(p);
+                                                              });
     DealWithUCNVError(err);
 
     int32_t cap = len + 1;
     unique_ptr<UChar[]> target(new UChar[cap]);
 
     // 解码
-    int retLen = ucnv_toUChars(conv, target.get(), cap, str, len, &err);
+    int retLen = ucnv_toUChars(conv.get(), target.get(), cap, str, len, &err);
     DealWithUCNVError(err);
 
-    ucnv_close(conv);
-
     return make_tuple<unique_ptr<UChar[]>, int32_t>(std::move(target), std::move(retLen));
+}
+
+// below copied from https://github.com/unicode-org/icu/blob/main/icu4c/source/samples/ucnv/flagcb.c
+
+/* The structure of a FromU Flag context.
+   (conceivably there could be a ToU Flag Context) */
+struct FromUFLAGContext {
+    UConverterFromUCallback subCallback;
+    const void *subContext;
+    UBool unassigned; // 是否出现了不能转换的字符
+    FromUFLAGContext() : subCallback(nullptr), subContext(nullptr), unassigned(false) {}
+};
+
+/**
+ * the actual callback
+ */
+U_CAPI void U_EXPORT2 flagCB_fromU(const void *context, UConverterFromUnicodeArgs *fromUArgs, const UChar *codeUnits,
+                                   int32_t length, UChar32 codePoint, UConverterCallbackReason reason,
+                                   UErrorCode *err) {
+    /* First step - based on the reason code, take action */
+    FromUFLAGContext *ctx = reinterpret_cast<FromUFLAGContext *>(const_cast<void *>(context));
+
+    if (reason == UCNV_UNASSIGNED) { /* whatever set should be trapped here */
+        ctx->unassigned = true;
+    }
+
+    if (reason == UCNV_CLONE) {
+        /* The following is the recommended way to implement UCNV_CLONE
+           in a callback. */
+        UConverterFromUCallback saveCallback;
+        const void *saveContext;
+        UErrorCode subErr = U_ZERO_ERROR;
+
+        FromUFLAGContext *cloned;
+        *cloned = *ctx;
+
+        /* We need to get the sub CB to handle cloning,
+         * so we have to set up the following, temporarily:
+         *
+         *   - Set the callback+context to the sub of this (flag) cb
+         *   - preserve the current cb+context, it could be anything
+         *
+         *   Before:
+         *      CNV  ->   FLAG ->  subcb -> ...
+         *
+         *   After:
+         *      CNV  ->   subcb -> ...
+         *
+         *    The chain from 'something' on is saved, and will be restored
+         *   at the end of this block.
+         *
+         */
+
+        ucnv_setFromUCallBack(fromUArgs->converter, cloned->subCallback, cloned->subContext, &saveCallback,
+                              &saveContext, &subErr);
+
+        if (cloned->subCallback != NULL) {
+            /* Now, call the sub callback if present */
+            cloned->subCallback(cloned->subContext, fromUArgs, codeUnits, length, codePoint, reason, err);
+        }
+
+        ucnv_setFromUCallBack(fromUArgs->converter, saveCallback, /* Us */
+                              cloned,                             /* new context */
+                              &cloned->subCallback,               /* IMPORTANT! Accept any change in CB or context */
+                              &cloned->subContext, &subErr);
+
+        if (U_FAILURE(subErr)) {
+            *err = subErr;
+        }
+    }
+
+    /* process other reasons here if need be */
+
+    /* Always call the subCallback if present */
+    if (ctx->subCallback != NULL && reason != UCNV_CLONE) {
+        ctx->subCallback(ctx->subContext, fromUArgs, codeUnits, length, codePoint, reason, err);
+    }
+
+    /* cleanup - free the memory AFTER calling the sub CB */
+    if (reason == UCNV_CLOSE) {
+        delete context;
+    }
 }
 
 std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, int bufSize,
@@ -154,17 +237,26 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
     UErrorCode err = U_ZERO_ERROR;
 
     // 打开转换器
-    UConverter *conv = ucnv_open(to_string(icuCharsetName).c_str(), &err);
+    unique_ptr<UConverter, function<void(UConverter *)>> conv(ucnv_open(to_string(icuCharsetName).c_str(), &err),
+                                                              [](UConverter *p) {
+                                                                  ucnv_close(p);
+                                                              });
     DealWithUCNVError(err);
 
     int32_t destCap = bufSize * sizeof(UChar) + 2;
     unique_ptr<char[]> target(new char[destCap]);
 
-    // 解码
+    FromUFLAGContext *context = new FromUFLAGContext; // 由回调函数管理生命期
+
+    /* Set our special callback */
+    ucnv_setFromUCallBack(conv.get(), flagCB_fromU, context, &(context->subCallback), &(context->subContext), &err);
+    DealWithUCNVError(err);
+
+    // 编码
     int retLen;
     while (1) {
         err = U_ZERO_ERROR;
-        retLen = ucnv_fromUChars(conv, target.get(), destCap, buf.get(), bufSize, &err);
+        retLen = ucnv_fromUChars(conv.get(), target.get(), destCap, buf.get(), bufSize, &err);
         if (err == U_BUFFER_OVERFLOW_ERROR) {
             destCap = retLen + 6; // 增加一个尾后0的大小：utf-8 单个字符最大占用字节数
             target.reset(new char[destCap]);
@@ -176,7 +268,10 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
         }
     }
 
-    ucnv_close(conv);
+    if (context->unassigned) {
+        throw runtime_error("转换到目标编码会丢失字符。");
+    }
+
     return make_tuple(std::move(target), retLen);
 }
 
