@@ -51,6 +51,14 @@ v0.6 现在转换时会检查是否会丢失字符。
 * 增加一个刷新按钮。
 * 使用ini文件保存配置。
 
+# 构建方法
+
+1. 确认编译环境：win10+ x64, Visual Studio 2019+, cmake。
+1. 下载 icu4c-71_1-Win64-MSVC2019.zip 并解压。
+3. 修改 build_on_win32.bat 以适配你的 icu4c lib位置。
+4. 双击 build_on_win32.bat 生成.sln。
+5. 打开 output/SmartCharsetConverter.sln。
+
 # Reference
 
 [ICU](https://icu.unicode.org/)

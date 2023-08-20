@@ -52,13 +52,6 @@ file(GLOB ICU_LIBS ${ICU_DIR}/lib64/*.lib)
 link_libraries(${ICU_LIBS})
 # icu添加完成
 
-find_package(boost)
-if (Boost_FOUND)
-	include_directories(${Boost_INCLUDE_DIR})
-else()
-	message(FATAL_ERROR "没找到boost")
-endif()
-
 # 打印include目录情况
 get_property(dirs DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 message(">>> include_dirs=${dirs}")
