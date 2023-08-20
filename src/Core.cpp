@@ -5,6 +5,7 @@
 #include <unicode/ucnv.h>
 
 #include <stdexcept>
+#include <algorithm>
 
 #ifdef _DEBUG
 #include <iostream>
@@ -15,29 +16,36 @@
 
 using namespace std;
 
-// 字符集code到名称的映射表
-const doublemap<CharsetCode, tstring> charsetCodeMap = {{CharsetCode::UNKNOWN, TEXT("未知")},
-                                                        {CharsetCode::EMPTY, TEXT("空")},
-                                                        {CharsetCode::NOT_SUPPORTED, TEXT("不支持")},
-                                                        {CharsetCode::UTF8, TEXT("UTF-8")},
-                                                        {CharsetCode::UTF8BOM, TEXT("UTF-8 BOM")},
-                                                        {CharsetCode::UTF16LE, TEXT("UTF-16LE")},
-                                                        {CharsetCode::UTF16LEBOM, TEXT("UTF-16LE BOM")},
-                                                        {CharsetCode::UTF16BE, TEXT("UTF-16BE")},
-                                                        {CharsetCode::UTF16BEBOM, TEXT("UTF-16BE BOM")},
-                                                        {CharsetCode::GB18030, TEXT("GB18030")},
-                                                        {CharsetCode::WINDOWS_1252, TEXT("WINDOWS-1252")},
-                                                        {CharsetCode::ISO_8859_1, TEXT("ISO-8859-1")}};
-
 std::unordered_set<CharsetCode> Configuration::normalCharset = {CharsetCode::UTF8, CharsetCode::UTF8BOM,
                                                                 CharsetCode::GB18030};
 
-std::tstring ToCharsetName(CharsetCode code) {
-    return charsetCodeMap[code];
+std::tstring ToViewCharsetName(CharsetCode code) {
+    return charsetCodeMap.at(code).viewName;
 }
 
 CharsetCode ToCharsetCode(const std::tstring &name) {
-    return charsetCodeMap[name];
+    auto it =
+        std::find_if(charsetCodeMap.begin(), charsetCodeMap.end(), [&](const std::pair<CharsetCode, MyCharset> &pr) {
+            return pr.second.viewName == name;
+        });
+    if (it != charsetCodeMap.end()) {
+        return it->first;
+    }
+    it = std::find_if(charsetCodeMap.begin(), charsetCodeMap.end(), [&](const std::pair<CharsetCode, MyCharset> &pr) {
+        return pr.second.icuName == to_string(name);
+    });
+    if (it != charsetCodeMap.end()) {
+        return it->first;
+    }
+    it = std::find_if(charsetCodeMap.begin(), charsetCodeMap.end(), [&](const std::pair<CharsetCode, MyCharset> &pr) {
+        auto ititEnd = pr.second.icuNames.end();
+        auto itit = std::find(pr.second.icuNames.begin(), pr.second.icuNames.end(), to_string(name));
+        return itit != ititEnd;
+    });
+    if (it != charsetCodeMap.end()) {
+        return it->first;
+    }
+    throw runtime_error("unsupported: " + to_string(name));
 }
 
 bool HasBom(CharsetCode code) {
@@ -94,15 +102,7 @@ CharsetCode CheckBom(char *buf, int bufSize) {
 }
 
 std::string ToICUCharsetName(CharsetCode code) {
-    switch (code) {
-    case CharsetCode::UTF8BOM:
-        return "UTF-8";
-    case CharsetCode::UTF16LEBOM:
-        return "UTF-16LE";
-    case CharsetCode::UTF16BEBOM:
-        return "UTF-16BE";
-    }
-    return to_string(charsetCodeMap[code]);
+    return to_string(charsetCodeMap.at(code).icuName);
 }
 
 /*
@@ -376,9 +376,7 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
 
     // filter
     CharsetCode code;
-    if (charset == "ASCII" || charset == "ANSI") {
-        code = CharsetCode::UTF8;
-    } else if (charset == "UTF-8") {
+    if (charset == "UTF-8") {
         // 区分有无BOM
         if (bufSize >= sizeof(UTF8BOM_DATA) && memcmp(buf.get(), UTF8BOM_DATA, sizeof(UTF8BOM_DATA)) == 0) {
             code = CharsetCode::UTF8BOM;
@@ -399,21 +397,19 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
         } else {
             code = CharsetCode::UTF16BE;
         }
-    } else if (charset == "GB18030") {
-        code = CharsetCode::GB18030;
-    } else if (charset == "WINDOWS-1252") {
-        code = CharsetCode::WINDOWS_1252;
-    } else if (charset == "ISO-8859-1") {
-        code = CharsetCode::ISO_8859_1;
     } else if (charset == "") // 没识别出来
     {
         code = CharsetCode::UNKNOWN;
         return make_tuple(code, nullptr, 0);
     } else {
-        string info = "暂不支持：";
-        info += charset;
-        info += "，请联系作者。";
-        throw runtime_error(info);
+        try {
+            code = ToCharsetCode(to_wstring(charset));
+        } catch (...) {
+            string info = "暂不支持：";
+            info += charset;
+            info += "，请联系作者。";
+            throw runtime_error(info);
+        }
     }
 
     // 根据uchardet得出的字符集解码
@@ -446,11 +442,11 @@ void Core::AddItem(const std::tstring &filename, const std::unordered_set<std::t
 
     auto fileSizeStr = FileSizeToTString(GetFileSize(filename));
 
-    auto charsetName = ToCharsetName(charsetCode);
+    auto charsetName = ToViewCharsetName(charsetCode);
 
     auto lineBreak = GetLineBreaks(content, contentSize);
 
-    auto lineBreakStr = lineBreaksMap[lineBreak];
+    auto lineBreakStr = lineBreaksMap.at(lineBreak);
 
     // 到达这里不会再抛异常了
 

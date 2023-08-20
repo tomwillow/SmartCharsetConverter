@@ -18,7 +18,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.5 by Tom Willow");
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.51 by Tom Willow");
 
 using namespace std;
 
@@ -72,6 +72,17 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
     SetOutputTarget(core->GetConfig().outputTarget);
     GetDlgItem(IDC_EDIT_OUTPUT_DIR).SetWindowTextW(core->GetConfig().outputDir.c_str());
     static_cast<CEdit>(GetDlgItem(IDC_EDIT_OUTPUT_DIR)).SetReadOnly(true);
+    //
+    comboBoxOther.Attach(GetDlgItem(IDC_COMBO_OTHER_CHARSET).m_hWnd);
+    for (int icode = static_cast<int>(CharsetCode::GB18030) + 1, i = 0;
+         icode < static_cast<int>(CharsetCode::ISO_8859_1); ++icode, ++i) {
+        CharsetCode code = static_cast<CharsetCode>(icode);
+        comboBoxOther.AddString(ToViewCharsetName(code).c_str());
+        comboBoxOther.SetItemData(i, static_cast<int>(code));
+        int i2 = comboBoxOther.GetItemData(i);
+        int n = 10;
+    }
+    comboBoxOther.SetCurSel(0);
 
     SetOutputCharset(core->GetConfig().outputCharset);
 
@@ -158,6 +169,14 @@ void DialogMain::SetOutputCharset(CharsetCode charset) {
     CButton(GetDlgItem(IDC_RADIO_OTHER)).SetCheck(Configuration::IsNormalCharset(charset) == false);
 
     GetDlgItem(IDC_COMBO_OTHER_CHARSET).EnableWindow(!isNormalCharset);
+
+    if (!isNormalCharset) {
+        for (int i = 0; i < comboBoxOther.GetCount(); ++i) {
+            if (comboBoxOther.GetItemData(i) == static_cast<int>(charset)) {
+                comboBoxOther.SetCurSel(i);
+            }
+        }
+    }
 }
 
 std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &pathes) {
@@ -349,9 +368,9 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
             listview.SetItemText(i, static_cast<int>(ListViewColumn::FILENAME), convertResult.outputFileName.c_str());
             listview.SetItemText(i, static_cast<int>(ListViewColumn::FILESIZE),
                                  FileSizeToTString(convertResult.outputFileSize).c_str());
-            listview.SetItemText(i, static_cast<int>(ListViewColumn::ENCODING), ToCharsetName(targetCode).c_str());
+            listview.SetItemText(i, static_cast<int>(ListViewColumn::ENCODING), ToViewCharsetName(targetCode).c_str());
             listview.SetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK),
-                                 lineBreaksMap[convertResult.targetLineBreaks].c_str());
+                                 lineBreaksMap.at(convertResult.targetLineBreaks).c_str());
         });
     }
 
@@ -445,7 +464,8 @@ LRESULT DialogMain::OnBnClickedRadioGb18030(WORD /*wNotifyCode*/, WORD /*wID*/, 
 }
 
 LRESULT DialogMain::OnBnClickedRadioOther(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/) {
-    // SetOutputCharset(Configuration::OutputCharset::OTHER_UNSPECIFIED);
+    SetOutputCharset(static_cast<CharsetCode>(comboBoxOther.GetItemData(comboBoxOther.GetCurSel())));
+
     return 0;
 }
 
@@ -544,7 +564,7 @@ LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, H
     for (int i = 0; i < listview.GetItemCount(); ++i) {
         auto filename = listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME));
         auto originCode = ToCharsetCode(listview.GetItemText(i, static_cast<int>(ListViewColumn::ENCODING)));
-        auto originLineBreak = lineBreaksMap[listview.GetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK))];
+        auto originLineBreak = lineBreaksMap.at(listview.GetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK)));
         items.push_back({filename, originCode, originLineBreak});
     }
 
@@ -577,7 +597,7 @@ LRESULT DialogMain::OnBnClickedButtonSetOutputDir(WORD /*wNotifyCode*/, WORD /*w
 
 LRESULT DialogMain::OnCbnSelchangeComboOtherCharset(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
                                                     BOOL & /*bHandled*/) {
-    // TODO: 在此添加控件通知处理程序代码
+    SetOutputCharset(static_cast<CharsetCode>(comboBoxOther.GetItemData(comboBoxOther.GetCurSel())));
 
     return 0;
 }

@@ -23,11 +23,13 @@ enum class CharsetCode {
     NOT_SUPPORTED,
     UTF8,
     UTF8BOM,
+    GB18030,
+
+    //
     UTF16BE,
     UTF16BEBOM,
     UTF16LE,
     UTF16LEBOM,
-    GB18030,
     BIG5,
     SHIFT_JS,
     WINDOWS_1252,
@@ -36,17 +38,41 @@ enum class CharsetCode {
     // 添加字符集需要同步修改：charsetCodeMap ToICUCharsetName
 };
 
+struct MyCharset {
+    std::tstring viewName;
+    std::string icuName;
+    std::unordered_set<std::string> icuNames;
+};
+
+// 字符集code到名称的映射表
+const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
+    {CharsetCode::UNKNOWN, MyCharset{TEXT("未知"), "-", {}}},
+    {CharsetCode::EMPTY, MyCharset{TEXT("空"), "-", {}}},
+    {CharsetCode::NOT_SUPPORTED, MyCharset{TEXT("不支持"), "-", {}}},
+    {CharsetCode::UTF8, MyCharset{TEXT("UTF-8"), "UTF-8", {"ASCII", "ANSI"}}},
+    {CharsetCode::UTF8BOM, MyCharset{TEXT("UTF-8 BOM"), "UTF-8", {}}},
+    {CharsetCode::GB18030, MyCharset{TEXT("GB18030"), "GB18030", {"GB18030"}}},
+
+    {CharsetCode::UTF16LE, MyCharset{TEXT("UTF-16LE"), "UTF-16LE", {}}},
+    {CharsetCode::UTF16LEBOM, MyCharset{TEXT("UTF-16LE BOM"), "UTF-16LE", {}}},
+    {CharsetCode::UTF16BE, MyCharset{TEXT("UTF-16BE"), "UTF-16BE", {}}},
+    {CharsetCode::UTF16BEBOM, MyCharset{TEXT("UTF-16BE BOM"), "UTF-16BE", {}}},
+    {CharsetCode::BIG5, MyCharset{TEXT("BIG5"), "Big5", {"Big5"}}},
+    {CharsetCode::SHIFT_JS, MyCharset{TEXT("SHIFT-JIS"), "SHIFT-JIS", {"Shift_JIS"}}},
+    {CharsetCode::WINDOWS_1252, MyCharset{TEXT("WINDOWS-1252"), "WINDOWS-1252", {"WINDOWS-1252", "Windows-1252"}}},
+    {CharsetCode::ISO_8859_1, MyCharset{TEXT("ISO-8859-1"), "ISO-8859-1", {"ISO-8859-1"}}}};
+
+std::tstring ToViewCharsetName(CharsetCode code);
+
+// 编码集名字转CharsetCode。不含推测，只允许特定字符串出现。否则报assert
+CharsetCode ToCharsetCode(const std::tstring &name);
+
 // bom串
 const char UTF8BOM_DATA[] = {'\xEF', '\xBB', '\xBF'};
 const char UTF16LEBOM_DATA[] = {'\xFF', '\xFE'};
 const char UTF16BEBOM_DATA[] = {'\xFE', '\xFF'};
 const char UTF32LEBOM_DATA[] = {'\xFF', '\xFE', '\x0', '\x0'};
 const char UTF32BEBOM_DATA[] = {'\xFE', '\xFF', '\x0', '\x0'};
-
-std::tstring ToCharsetName(CharsetCode code);
-
-// 编码集名字转CharsetCode。不含推测，只允许特定字符串出现。否则报assert
-CharsetCode ToCharsetCode(const std::tstring &name);
 
 bool HasBom(CharsetCode code);
 const char *GetBomData(CharsetCode code);

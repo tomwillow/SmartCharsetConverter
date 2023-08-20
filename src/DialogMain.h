@@ -37,6 +37,7 @@ private:
 
     std::unique_ptr<Core> core;
 
+    CComboBox comboBoxOther;
     TListView listview;
 
     enum class ListViewColumn { INDEX = 0, FILENAME, FILESIZE, ENCODING, LINE_BREAK, TEXT_PIECE };
