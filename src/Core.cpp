@@ -3,6 +3,7 @@
 #include <FileFunction.h>
 
 #include <unicode/ucnv.h>
+#include <unicode/ucsdet.h>
 
 #include <stdexcept>
 #include <algorithm>
@@ -441,6 +442,48 @@ void Core::SetEnableConvertLineBreak(bool enableLineBreaks) {
     config.enableConvertLineBreaks = enableLineBreaks;
 }
 
+std::tuple<std::string, int> DetectByUCharDet(uchardet *det, const char *buf, int bufSize) {
+    // 用uchardet判定字符集
+    uchardet_reset(det);
+    int ret = uchardet_handle_data(det, buf, bufSize);
+    switch (ret) {
+    case HANDLE_DATA_RESULT_NEED_MORE_DATA:
+    case HANDLE_DATA_RESULT_DETECTED:
+        break;
+    case HANDLE_DATA_RESULT_ERROR:
+        throw runtime_error("uchardet fail");
+    }
+
+    uchardet_data_end(det);
+
+    // 得到uchardet的识别结果
+    string charset = uchardet_get_charset(det);
+
+    float confidence = uchardet_get_confidence(det);
+
+    return {charset, static_cast<int>(confidence * 100)};
+}
+
+std::tuple<std::string, int> DetectByUCSDet(const char *buf, int bufSize) {
+    UErrorCode status = U_ZERO_ERROR;
+    UCharsetDetector *csd = ucsdet_open(&status);
+    DealWithUCNVError(status);
+
+    ucsdet_setText(csd, buf, bufSize, &status);
+    DealWithUCNVError(status);
+
+    const UCharsetMatch *ucm = ucsdet_detect(csd, &status);
+    DealWithUCNVError(status);
+
+    int32_t confidence = ucsdet_getConfidence(ucm, &status);
+    DealWithUCNVError(status);
+
+    const char *name = ucsdet_getName(ucm, &status);
+    DealWithUCNVError(status);
+
+    return {name, confidence};
+}
+
 std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std::tstring filename) const {
     // 只读取100KB
     auto [buf, bufSize] = ReadFileToBuffer(filename, 100 * KB);
@@ -453,55 +496,57 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
         throw runtime_error("文件大小超出限制");
     }
 
-    // 用uchardet判定字符集
-    uchardet_reset(det.get());
-    int ret = uchardet_handle_data(det.get(), buf.get(), bufSize);
-    switch (ret) {
-    case HANDLE_DATA_RESULT_NEED_MORE_DATA:
-    case HANDLE_DATA_RESULT_DETECTED:
-        break;
-    case HANDLE_DATA_RESULT_ERROR:
-        throw runtime_error("uchardet fail");
+    string charsetStr;
+
+    auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf.get(), bufSize);
+    {
+        std::tcout << filename << TEXT(": ") << endl;
+        tcout << TEXT("ucsdet: ") << to_tstring(ucsdetResult) << TEXT(": ") << ucsdetConfidence << endl;
     }
-
-    uchardet_data_end(det.get());
-
-    // 得到uchardet的识别结果
-    string charset = string(uchardet_get_charset(det.get()));
+    if (ucsdetConfidence >= 95) {
+        charsetStr = ucsdetResult;
+    } else {
+        auto [ucharsetResult, uchardetConfidence] = DetectByUCharDet(det.get(), buf.get(), bufSize);
+        {
+            std::tcout << filename << TEXT(": ") << TEXT("ucsdet: ") << to_tstring(ucharsetResult) << TEXT(": ")
+                       << uchardetConfidence << endl;
+        }
+        charsetStr = ucharsetResult;
+    }
 
     // filter
     CharsetCode code;
-    if (charset == "UTF-8") {
+    if (charsetStr == "UTF-8") {
         // 区分有无BOM
         if (bufSize >= sizeof(UTF8BOM_DATA) && memcmp(buf.get(), UTF8BOM_DATA, sizeof(UTF8BOM_DATA)) == 0) {
             code = CharsetCode::UTF8BOM;
         } else {
             code = CharsetCode::UTF8;
         }
-    } else if (charset == "UTF-16LE") {
+    } else if (charsetStr == "UTF-16LE") {
         // 区分有无BOM
         if (bufSize >= sizeof(UTF16LEBOM_DATA) && memcmp(buf.get(), UTF16LEBOM_DATA, sizeof(UTF16LEBOM_DATA)) == 0) {
             code = CharsetCode::UTF16LEBOM;
         } else {
             code = CharsetCode::UTF16LE;
         }
-    } else if (charset == "UTF-16BE") {
+    } else if (charsetStr == "UTF-16BE") {
         // 区分有无BOM
         if (bufSize >= sizeof(UTF16BEBOM_DATA) && memcmp(buf.get(), UTF16BEBOM_DATA, sizeof(UTF16BEBOM_DATA)) == 0) {
             code = CharsetCode::UTF16BEBOM;
         } else {
             code = CharsetCode::UTF16BE;
         }
-    } else if (charset == "") // 没识别出来
+    } else if (charsetStr == "") // 没识别出来
     {
         code = CharsetCode::UNKNOWN;
         return make_tuple(code, nullptr, 0);
     } else {
         try {
-            code = ToCharsetCode(to_wstring(charset));
+            code = ToCharsetCode(to_wstring(charsetStr));
         } catch (...) {
             string info = "暂不支持：";
-            info += charset;
+            info += charsetStr;
             info += "，请联系作者。";
             throw runtime_error(info);
         }
