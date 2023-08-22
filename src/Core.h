@@ -127,7 +127,9 @@ struct Configuration {
 };
 
 // 识别换行符
-Configuration::LineBreaks GetLineBreaks(const std::unique_ptr<UChar[]> &buf, int len);
+Configuration::LineBreaks GetLineBreaks(const UChar *buf, int len);
+
+void Test_GetLineBreaks();
 
 // 变更换行符
 void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::LineBreaks targetLineBreak);
@@ -173,7 +175,7 @@ public:
      * @exception file_io_error 读文件失败
      * @exception runtime_error ucnv出错。code
      */
-    std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int> GetEncoding(std::tstring filename) const;
+    std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int> GetEncoding(const char *buf, int bufSize) const;
 
     /**
      * 加入一个文件到列表。

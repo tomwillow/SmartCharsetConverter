@@ -276,13 +276,13 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
     return make_tuple(std::move(target), retLen);
 }
 
-Configuration::LineBreaks GetLineBreaks(const unique_ptr<UChar[]> &buf, int len) {
+Configuration::LineBreaks GetLineBreaks(const UChar *buf, int len) {
     Configuration::LineBreaks ans = Configuration::LineBreaks::EMPTY;
     for (int i = 0; i < len;) {
-        UChar &c = buf.get()[i];
+        const UChar &c = buf[i];
         if (c == UChar(u'\r')) {
             // \r\n
-            if (i < len && buf.get()[i + 1] == UChar(u'\n')) {
+            if (i < len && buf[i + 1] == UChar(u'\n')) {
                 if (ans == Configuration::LineBreaks::EMPTY) {
                     ans = Configuration::LineBreaks::CRLF;
                 } else {
@@ -325,6 +325,38 @@ Configuration::LineBreaks GetLineBreaks(const unique_ptr<UChar[]> &buf, int len)
         i++;
     }
     return ans;
+}
+
+void Test_GetLineBreaks() {
+    u16string ws;
+
+    ws = u"\r";
+    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::CR);
+    ws = u"\r\r";
+    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::CR);
+    ws = u"\r00\r";
+    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::CR);
+    ws = u"\r\r\n";
+    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::MIX);
+
+    ws = u"\n";
+    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::LF);
+    ws = u"\n\r";
+    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::MIX);
+    ws = u"\n\n";
+    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::LF);
+    ws = u"\n\n\r";
+    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::MIX);
+
+    ws = u"\r\n";
+    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::CRLF);
+    ws = u"\r\n\n";
+    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::MIX);
+    ws = u"\r\n\r";
+    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::MIX);
+
+    ws = u"\n\r";
+    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::MIX);
 }
 
 void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::LineBreaks targetLineBreak) {
@@ -541,32 +573,28 @@ CharsetCode ToCharsetCodeFinal(std::string charsetStr, const char *buf, int bufS
     return code;
 }
 
-std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std::tstring filename) const {
-    // 只读取100KB
-    auto [buf, bufSize] = ReadFileToBuffer(filename, 100 * KB);
-
+std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(const char *buf, int bufSize) const {
     if (bufSize == 0) {
         return {CharsetCode::EMPTY, unique_ptr<UChar[]>(new UChar[1]{L'\0'}), 0};
     }
 
-    auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf.get(), bufSize);
-    {
-        std::tcout << filename << TEXT(": ") << endl;
-        tcout << TEXT("ucsdet: ") << to_tstring(ucsdetResult) << TEXT(": ") << ucsdetConfidence << endl;
-    }
-    auto [uchardetResult, uchardetConfidence] = DetectByUCharDet(det.get(), buf.get(), bufSize);
+    bufSize = std::min(bufSize, static_cast<int>(100 * KB));
+
+    auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf, bufSize);
+    { tcout << TEXT("ucsdet: ") << to_tstring(ucsdetResult) << TEXT(": ") << ucsdetConfidence << endl; }
+    auto [uchardetResult, uchardetConfidence] = DetectByUCharDet(det.get(), buf, bufSize);
     { std::tcout << TEXT("uchardet: ") << to_tstring(uchardetResult) << TEXT(": ") << uchardetConfidence << endl; }
 
     CharsetCode code = CharsetCode::UNKNOWN;
 
     if (ucsdetConfidence >= 95 && ucsdetResult.find("UTF") != string::npos) {
         // ucsdet如果判定为UTF-8/UTF-16BE|LE等，那么相信它
-        code = ToCharsetCodeFinal(ucsdetResult, buf.get(), bufSize);
+        code = ToCharsetCodeFinal(ucsdetResult, buf, bufSize);
     } else if (uchardetConfidence >= 95) {
         // uchardet如果有95及以上的信心，那么直接相信它
-        code = ToCharsetCodeFinal(uchardetResult, buf.get(), bufSize);
+        code = ToCharsetCodeFinal(uchardetResult, buf, bufSize);
     } else {
-        auto codes = DetectByMine(buf.get(), bufSize);
+        auto codes = DetectByMine(buf, bufSize);
         int n = 10;
     }
 
@@ -575,7 +603,7 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
     }
 
     // 根据uchardet得出的字符集解码
-    auto partContentAndSize = Decode(buf.get(), std::min(64, static_cast<int>(bufSize)), code);
+    auto partContentAndSize = Decode(buf, std::min(64, static_cast<int>(bufSize)), code);
 
     return make_tuple(code, std::move(get<0>(partContentAndSize)), get<1>(partContentAndSize));
 }
@@ -593,8 +621,12 @@ void Core::AddItem(const std::tstring &filename, const std::unordered_set<std::t
         return; // 不重复添加了
     }
 
+    std::tcout << filename << TEXT(": ") << endl;
+
+    auto [buf, bufSize] = ReadFileToBuffer(filename);
+
     // 识别字符集
-    auto [charsetCode, content, contentSize] = GetEncoding(filename);
+    auto [charsetCode, content, contentSize] = GetEncoding(buf.get(), bufSize);
 
     // 如果是智能模式，且没有识别出编码集，则忽略掉，但要提示
     if (GetConfig().filterMode == Configuration::FilterMode::SMART && charsetCode == CharsetCode::UNKNOWN) {
@@ -606,7 +638,8 @@ void Core::AddItem(const std::tstring &filename, const std::unordered_set<std::t
 
     auto charsetName = ToViewCharsetName(charsetCode);
 
-    auto lineBreak = GetLineBreaks(content, contentSize);
+    auto [wholeUtfStr, wholeUtfStrSize] = Decode(buf.get(), bufSize, charsetCode);
+    auto lineBreak = GetLineBreaks(wholeUtfStr.get(), wholeUtfStrSize);
 
     auto lineBreakStr = lineBreaksMap.at(lineBreak);
 

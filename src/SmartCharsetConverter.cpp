@@ -16,6 +16,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR szCmdLine, int nC
 #endif
     try {
     Split_UnitTest();
+    Test_GetLineBreaks();
+
     InitCommonControls();
     SupportHighDPI();
 
