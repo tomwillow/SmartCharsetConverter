@@ -155,7 +155,7 @@ tuple<unique_ptr<UChar[]>, int> Decode(const char *str, int len, CharsetCode cod
 struct FromUFLAGContext {
     UConverterFromUCallback subCallback;
     const void *subContext;
-    UBool unassigned; // 是否出现了不能转换的字符
+    std::vector<UChar32> unassigned; // 是否出现了不能转换的字符
     FromUFLAGContext() : subCallback(nullptr), subContext(nullptr), unassigned(false) {}
 };
 
@@ -169,7 +169,8 @@ U_CAPI void U_EXPORT2 flagCB_fromU(const void *context, UConverterFromUnicodeArg
     FromUFLAGContext *ctx = reinterpret_cast<FromUFLAGContext *>(const_cast<void *>(context));
 
     if (reason == UCNV_UNASSIGNED) { /* whatever set should be trapped here */
-        ctx->unassigned = true;
+        if (ctx->unassigned.size() < 32)
+            ctx->unassigned.push_back(codePoint);
     }
 
     if (reason == UCNV_CLONE) {
@@ -269,8 +270,15 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
         }
     }
 
-    if (context->unassigned) {
-        throw runtime_error("转换到目标编码会丢失字符。");
+    if (!context->unassigned.empty()) {
+        context->unassigned.push_back(0);
+        auto s = context->unassigned.data();
+
+        auto [buf, bufSize] = Decode(reinterpret_cast<char *>(s), context->unassigned.size() * 4, CharsetCode::UTF32LE);
+
+        auto [ret, retSize] = Encode(buf, bufSize, CharsetCode::GB18030);
+
+        throw runtime_error(string("转换到目标编码会丢失字符：") + ret.get());
     }
 
     return make_tuple(std::move(target), retLen);
