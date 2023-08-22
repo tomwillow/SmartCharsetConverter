@@ -484,55 +484,43 @@ std::tuple<std::string, int> DetectByUCSDet(const char *buf, int bufSize) {
     return {name, confidence};
 }
 
-std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std::tstring filename) const {
-    // 只读取100KB
-    auto [buf, bufSize] = ReadFileToBuffer(filename, 100 * KB);
+std::unordered_set<CharsetCode> DetectByMine(const char *buf, int bufSize) {
+    std::unordered_set<CharsetCode> ret;
+    for (int i = static_cast<int>(CharsetCode::UTF8); i <= static_cast<int>(CharsetCode::ISO_8859_1); ++i) {
+        CharsetCode tryCode = static_cast<CharsetCode>(i);
 
-    if (bufSize == 0) {
-        return {CharsetCode::EMPTY, unique_ptr<UChar[]>(new UChar[1]{L'\0'}), 0};
-    }
+        try {
+            auto [decStr, decLen] = Decode(buf, bufSize, tryCode);
 
-    if (bufSize >= std::numeric_limits<int>::max()) {
-        throw runtime_error("文件大小超出限制");
-    }
+            Encode(decStr, decLen, tryCode);
 
-    string charsetStr;
+            ret.insert(tryCode);
+        } catch (...) {}
+    }
+    return ret;
+}
 
-    auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf.get(), bufSize);
-    {
-        std::tcout << filename << TEXT(": ") << endl;
-        tcout << TEXT("ucsdet: ") << to_tstring(ucsdetResult) << TEXT(": ") << ucsdetConfidence << endl;
-    }
-    if (ucsdetConfidence >= 95) {
-        charsetStr = ucsdetResult;
-    } else {
-        auto [ucharsetResult, uchardetConfidence] = DetectByUCharDet(det.get(), buf.get(), bufSize);
-        {
-            std::tcout << filename << TEXT(": ") << TEXT("ucsdet: ") << to_tstring(ucharsetResult) << TEXT(": ")
-                       << uchardetConfidence << endl;
-        }
-        charsetStr = ucharsetResult;
-    }
+CharsetCode ToCharsetCodeFinal(std::string charsetStr, const char *buf, int bufSize) {
 
     // filter
     CharsetCode code;
     if (charsetStr == "UTF-8") {
         // 区分有无BOM
-        if (bufSize >= sizeof(UTF8BOM_DATA) && memcmp(buf.get(), UTF8BOM_DATA, sizeof(UTF8BOM_DATA)) == 0) {
+        if (bufSize >= sizeof(UTF8BOM_DATA) && memcmp(buf, UTF8BOM_DATA, sizeof(UTF8BOM_DATA)) == 0) {
             code = CharsetCode::UTF8BOM;
         } else {
             code = CharsetCode::UTF8;
         }
     } else if (charsetStr == "UTF-16LE") {
         // 区分有无BOM
-        if (bufSize >= sizeof(UTF16LEBOM_DATA) && memcmp(buf.get(), UTF16LEBOM_DATA, sizeof(UTF16LEBOM_DATA)) == 0) {
+        if (bufSize >= sizeof(UTF16LEBOM_DATA) && memcmp(buf, UTF16LEBOM_DATA, sizeof(UTF16LEBOM_DATA)) == 0) {
             code = CharsetCode::UTF16LEBOM;
         } else {
             code = CharsetCode::UTF16LE;
         }
     } else if (charsetStr == "UTF-16BE") {
         // 区分有无BOM
-        if (bufSize >= sizeof(UTF16BEBOM_DATA) && memcmp(buf.get(), UTF16BEBOM_DATA, sizeof(UTF16BEBOM_DATA)) == 0) {
+        if (bufSize >= sizeof(UTF16BEBOM_DATA) && memcmp(buf, UTF16BEBOM_DATA, sizeof(UTF16BEBOM_DATA)) == 0) {
             code = CharsetCode::UTF16BEBOM;
         } else {
             code = CharsetCode::UTF16BE;
@@ -540,7 +528,6 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
     } else if (charsetStr == "") // 没识别出来
     {
         code = CharsetCode::UNKNOWN;
-        return make_tuple(code, nullptr, 0);
     } else {
         try {
             code = ToCharsetCode(to_wstring(charsetStr));
@@ -550,6 +537,41 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std
             info += "，请联系作者。";
             throw runtime_error(info);
         }
+    }
+    return code;
+}
+
+std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(std::tstring filename) const {
+    // 只读取100KB
+    auto [buf, bufSize] = ReadFileToBuffer(filename, 100 * KB);
+
+    if (bufSize == 0) {
+        return {CharsetCode::EMPTY, unique_ptr<UChar[]>(new UChar[1]{L'\0'}), 0};
+    }
+
+    auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf.get(), bufSize);
+    {
+        std::tcout << filename << TEXT(": ") << endl;
+        tcout << TEXT("ucsdet: ") << to_tstring(ucsdetResult) << TEXT(": ") << ucsdetConfidence << endl;
+    }
+    auto [uchardetResult, uchardetConfidence] = DetectByUCharDet(det.get(), buf.get(), bufSize);
+    { std::tcout << TEXT("uchardet: ") << to_tstring(uchardetResult) << TEXT(": ") << uchardetConfidence << endl; }
+
+    CharsetCode code = CharsetCode::UNKNOWN;
+
+    if (ucsdetConfidence >= 95 && ucsdetResult.find("UTF") != string::npos) {
+        // ucsdet如果判定为UTF-8/UTF-16BE|LE等，那么相信它
+        code = ToCharsetCodeFinal(ucsdetResult, buf.get(), bufSize);
+    } else if (uchardetConfidence >= 95) {
+        // uchardet如果有95及以上的信心，那么直接相信它
+        code = ToCharsetCodeFinal(uchardetResult, buf.get(), bufSize);
+    } else {
+        auto codes = DetectByMine(buf.get(), bufSize);
+        int n = 10;
+    }
+
+    if (code == CharsetCode::UNKNOWN) {
+        return make_tuple(code, nullptr, 0);
     }
 
     // 根据uchardet得出的字符集解码
