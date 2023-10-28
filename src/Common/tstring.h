@@ -86,8 +86,15 @@ std::string to_string(const std::string &s);
 std::wstring to_wstring(const std::string &s);
 std::wstring to_wstring(const std::wstring &s);
 
-void tolower(std::string &s);
-void toupper(std::string &s);
+template <typename T>
+std::enable_if_t<std::is_same_v<T, std::string> || std::is_same_v<T, std::wstring>, T> tolower(const T &s) noexcept {
+    using C = T::value_type;
+    T ret{s};
+    std::for_each(ret.begin(), ret.end(), [](C &c) {
+        c = tolower(c);
+    });
+    return ret;
+}
 
 std::string to_utf8(const std::wstring &wstr);
 std::string to_utf8(const std::string &str);

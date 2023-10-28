@@ -44,7 +44,7 @@ enum class CharsetCode {
 
     CHARSET_CODE_END
 
-    // 添加字符集需要同步修改：charsetCodeMap ToICUCharsetName
+    // 添加字符集需要同步修改：charsetCodeMap
 };
 
 struct MyCharset {
@@ -60,7 +60,7 @@ const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
     {CharsetCode::NOT_SUPPORTED, MyCharset{TEXT("不支持"), "-", {}}},
     {CharsetCode::UTF8, MyCharset{TEXT("UTF-8"), "UTF-8", {"ASCII", "ANSI"}}},
     {CharsetCode::UTF8BOM, MyCharset{TEXT("UTF-8 BOM"), "UTF-8", {}}},
-    {CharsetCode::GB18030, MyCharset{TEXT("GB18030"), "GB18030", {"GB18030"}}},
+    {CharsetCode::GB18030, MyCharset{TEXT("GB18030"), "GB18030", {}}},
 
     {CharsetCode::UTF16LE, MyCharset{TEXT("UTF-16LE"), "UTF-16LE", {}}},
     {CharsetCode::UTF16LEBOM, MyCharset{TEXT("UTF-16LE BOM"), "UTF-16LE", {}}},
@@ -71,10 +71,10 @@ const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
     {CharsetCode::UTF32BE, MyCharset{TEXT("UTF-32BE"), "UTF-32BE", {}}},
     {CharsetCode::UTF32BEBOM, MyCharset{TEXT("UTF-32BE BOM"), "UTF-32BE", {}}},
     {CharsetCode::BIG5, MyCharset{TEXT("BIG5"), "Big5", {"Big5"}}},
-    {CharsetCode::SHIFT_JIS, MyCharset{TEXT("SHIFT-JIS"), "SHIFT-JIS", {"Shift_JIS"}}},
+    {CharsetCode::SHIFT_JIS, MyCharset{TEXT("SHIFT-JIS"), "SHIFT-JIS", {}}},
     {CharsetCode::EUC_JP, MyCharset{TEXT("EUC-JP"), "EUC-JP", {"EUC-JP"}}},
-    {CharsetCode::WINDOWS_1252, MyCharset{TEXT("WINDOWS-1252"), "WINDOWS-1252", {"WINDOWS-1252", "Windows-1252"}}},
-    {CharsetCode::ISO_8859_1, MyCharset{TEXT("ISO-8859-1"), "ISO-8859-1", {"ISO-8859-1"}}}};
+    {CharsetCode::WINDOWS_1252, MyCharset{TEXT("WINDOWS-1252"), "WINDOWS-1252", {}}},
+    {CharsetCode::ISO_8859_1, MyCharset{TEXT("ISO-8859-1"), "ISO-8859-1", {}}}};
 
 std::tstring ToViewCharsetName(CharsetCode code);
 

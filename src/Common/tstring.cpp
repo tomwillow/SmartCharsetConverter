@@ -80,20 +80,20 @@ std::string wstring_to_string(const std::wstring &wstr) {
     return std::string(buf.get());
 }
 
-std::string to_string(const std::wstring &ws) { return wstring_to_string(ws); }
-
-std::string to_string(const std::string &s) { return s; }
-
-std::wstring to_wstring(const std::string &s) { return string_to_wstring(s); }
-
-std::wstring to_wstring(const std::wstring &s) { return s; }
-
-void tolower(std::string &s) {
-    for_each(s.begin(), s.end(), [](char &c) { c = tolower(c); });
+std::string to_string(const std::wstring &ws) {
+    return wstring_to_string(ws);
 }
 
-void toupper(std::string &s) {
-    for_each(s.begin(), s.end(), [](char &c) { c = toupper(c); });
+std::string to_string(const std::string &s) {
+    return s;
+}
+
+std::wstring to_wstring(const std::string &s) {
+    return string_to_wstring(s);
+}
+
+std::wstring to_wstring(const std::wstring &s) {
+    return s;
 }
 
 std::string to_utf8(const std::wstring &wstr) {

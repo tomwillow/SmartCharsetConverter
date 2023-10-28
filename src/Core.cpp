@@ -25,26 +25,30 @@ std::tstring ToViewCharsetName(CharsetCode code) {
 }
 
 CharsetCode ToCharsetCode(const std::tstring &name) {
+    // 查找name是否有吻合的viewName
     auto it =
         std::find_if(charsetCodeMap.begin(), charsetCodeMap.end(), [&](const std::pair<CharsetCode, MyCharset> &pr) {
-            return pr.second.viewName == name;
+            return tolower(pr.second.viewName) == tolower(name);
         });
     if (it != charsetCodeMap.end()) {
         return it->first;
     }
+
+    // 查找name是否有吻合的icuName
     it = std::find_if(charsetCodeMap.begin(), charsetCodeMap.end(), [&](const std::pair<CharsetCode, MyCharset> &pr) {
-        return pr.second.icuName == to_string(name);
+        return tolower(pr.second.icuName) == tolower(to_string(name));
     });
     if (it != charsetCodeMap.end()) {
         return it->first;
     }
-    it = std::find_if(charsetCodeMap.begin(), charsetCodeMap.end(), [&](const std::pair<CharsetCode, MyCharset> &pr) {
-        auto ititEnd = pr.second.icuNames.end();
-        auto itit = std::find(pr.second.icuNames.begin(), pr.second.icuNames.end(), to_string(name));
-        return itit != ititEnd;
-    });
-    if (it != charsetCodeMap.end()) {
-        return it->first;
+
+    // 查找name是否有吻合的icuNames
+    for (auto &pr : charsetCodeMap) {
+        for (auto &icuName : pr.second.icuNames) {
+            if (tolower(icuName) == tolower(to_string(name))) {
+                return pr.first;
+            }
+        }
     }
     throw runtime_error("unsupported: " + to_string(name));
 }
