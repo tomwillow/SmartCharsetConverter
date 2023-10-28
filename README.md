@@ -68,3 +68,13 @@ v0.61 现在选择“不过滤”模式可以强行加入文件。并且，在�
 [WTL](https://sourceforge.net/projects/wtl)
 
 [uchardet](https://github.com/rizonesoft/Notepad3/tree/master/src/uchardet)
+
+# E-mail
+
+tomwillow@qq.com
+
+# 微信交流群
+
+如果您在使用中有疑问，或者有意见建议，欢迎加作者微信tomwillow。备注“智能编码集转换器”按照指引进群。
+
+如果您觉得此项目不错，请赏颗星吧！
