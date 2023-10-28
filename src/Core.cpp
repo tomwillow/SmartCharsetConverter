@@ -689,6 +689,28 @@ void Core::AddItem(const std::tstring &filename, const std::unordered_set<std::t
     listFileNames.insert(filename);
 }
 
+void Core::SpecifyItemCharset(int index, const std::tstring &filename, CharsetCode charsetCode) {
+    assert(listFileNames.find(filename) != listFileNames.end());
+
+    auto [buf, bufSize] = ReadFileToBuffer(filename);
+
+    auto fileSizeStr = FileSizeToTString(GetFileSize(filename));
+
+    auto charsetName = ToViewCharsetName(charsetCode);
+
+    auto [wholeUtfStr, wholeUtfStrSize] = Decode(buf.get(), bufSize, charsetCode);
+    auto lineBreak = GetLineBreaks(wholeUtfStr.get(), wholeUtfStrSize);
+
+    auto lineBreakStr = lineBreaksMap.at(lineBreak);
+
+    // 到达这里不会再抛异常了
+
+    // 通知UI新增条目
+    auto partContentAndSize = Decode(buf.get(), std::min(64, static_cast<int>(bufSize)), charsetCode);
+    opt.fnUIUpdateItem(index, filename, fileSizeStr, charsetName, lineBreakStr,
+                       reinterpret_cast<wchar_t *>(std::get<0>(partContentAndSize).get()));
+}
+
 void Core::RemoveItem(const std::tstring &filename) {
     listFileNames.erase(filename);
 }

@@ -162,6 +162,11 @@ struct CoreInitOption {
                        std::wstring lineBreakStr, std::wstring textPiece)>
         fnUIAddItem = [](std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
                          std::wstring lineBreakStr, std::wstring textPiece) {};
+
+    std::function<void(int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
+                       std::wstring lineBreakStr, std::wstring textPiece)>
+        fnUIUpdateItem = [](int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
+                            std::wstring lineBreakStr, std::wstring textPiece) {};
 };
 
 class Core {
@@ -194,6 +199,13 @@ public:
      * @exception io_error_ignore 按照配置忽略掉这个文件
      */
     void AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts);
+
+    /**
+     * 指定文件的字符集。
+     * @exception file_io_error 读文件失败
+     * @exception runtime_error ucnv出错。code
+     */
+    void SpecifyItemCharset(int index, const std::tstring &filename, CharsetCode code);
 
     void RemoveItem(const std::tstring &filename);
 

@@ -62,6 +62,17 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
             listview.SelectItem(count);
         });
     };
+    coreOpt.fnUIUpdateItem = [this](int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
+                                    std::wstring lineBreakStr, std::wstring textPiece) {
+        PostUIFunc([=]() {
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::FILESIZE), fileSizeStr.c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::ENCODING), charsetStr.c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreakStr.c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::TEXT_PIECE), textPiece.c_str());
+        });
+    };
+
     core = make_unique<Core>(TEXT("SmartCharsetConverter.ini"), coreOpt);
 
     // 包含/排除指定后缀
@@ -658,7 +669,30 @@ LRESULT DialogMain::OnRemoveItem(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
 
 LRESULT DialogMain::OnSpecifyOriginCharset(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/) {
     CharsetCode code = CommandIdToCharsetCode(wID);
-    return LRESULT();
+
+    auto selectedItems = listview.GetSelectedItems();
+
+    vector<pair<tstring, tstring>> failed; // 失败文件/失败原因
+    for (auto itor = selectedItems.begin(); itor != selectedItems.end(); ++itor) {
+        int index = *itor;
+        auto filename = listview.GetItemText(index, static_cast<int>(ListViewColumn::FILENAME));
+        try {
+            core->SpecifyItemCharset(index, filename, code);
+        } catch (const std::runtime_error &err) { failed.push_back({filename, to_tstring(err.what())}); }
+    }
+
+    if (!failed.empty()) {
+        tstring info = TEXT("以下文件设置字符集失败：\r\n");
+        for (auto &pr : failed) {
+            info += pr.first + TEXT(" 原因：") + pr.second + TEXT("\r\n");
+        }
+
+        MyMessage *msg = new MyMessage([this, info]() {
+            MessageBox(info.c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+        });
+        PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
+    }
+    return 0;
 }
 
 LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl,
