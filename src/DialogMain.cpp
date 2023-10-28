@@ -4,10 +4,7 @@
 #include <FileFunction.h>
 #include "Control/TMenu.h"
 
-#ifdef _DEBUG
-#include <iostream>
 #include <cassert>
-#endif
 
 #include <stdexcept>
 #include <sstream>
@@ -261,7 +258,6 @@ AddItemsAbort:
         MyMessage *msg = new MyMessage([this, info]() {
             MessageBox(info.c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
         });
-        cout << "AddItems MessageBox error " << std::hex << msg << endl;
         PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     }
 
@@ -289,10 +285,6 @@ AddItemsAbort:
         });
         return ignored;
     }
-
-#ifndef NDEBUG
-    cout << "Exit: AddItems" << endl;
-#endif
     return ignored;
 }
 
@@ -307,9 +299,6 @@ void DialogMain::AddItemsAsync(const std::vector<std::tstring> &filenames) {
             PostUIFunc([this, restore]() {
                 RestoreReadyState(restore);
 
-#ifndef NDEBUG
-                cout << "Exit: AddItemsNoThrow thread" << endl;
-#endif
                 thRunning = false;
             });
         });
@@ -573,9 +562,7 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
                                            BOOL &bHandle /*bHandled*/) {
     if (thRunning) {
-        cout << "OnBnClickedButtonStart set cancel true" << endl;
         doCancel = true;
-        cout << "OnBnClickedButtonStart wait for fu.get()" << endl;
         fu.get();
         return 0;
     }

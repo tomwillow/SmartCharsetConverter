@@ -8,10 +8,6 @@
 #include <stdexcept>
 #include <algorithm>
 
-#ifdef _DEBUG
-#include <iostream>
-#endif
-
 #undef min
 #undef max
 
@@ -445,7 +441,6 @@ Core::Core(std::tstring iniFileName, CoreInitOption opt) : iniFileName(iniFileNa
         if (name == nullptr) {
             break;
         }
-        cout << name << endl;
     }
 #endif
 }
@@ -595,13 +590,8 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(con
     bufSize = std::min(bufSize, static_cast<int>(100 * KB));
 
     auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf, bufSize);
-#ifndef NDEBUG
-    { tcout << TEXT("ucsdet: ") << to_tstring(ucsdetResult) << TEXT(": ") << ucsdetConfidence << endl; }
-#endif
+
     auto [uchardetResult, uchardetConfidence] = DetectByUCharDet(det.get(), buf, bufSize);
-#ifndef NDEBUG
-    { std::tcout << TEXT("uchardet: ") << to_tstring(uchardetResult) << TEXT(": ") << uchardetConfidence << endl; }
-#endif
 
     CharsetCode code = CharsetCode::UNKNOWN;
 
@@ -638,9 +628,6 @@ void Core::AddItem(const std::tstring &filename, const std::unordered_set<std::t
         throw runtime_error("重复添加");
         return; // 不重复添加了
     }
-#ifndef NDEBUG
-    std::tcout << filename << TEXT(": ") << endl;
-#endif
 
     auto [buf, bufSize] = ReadFileToBuffer(filename);
 
