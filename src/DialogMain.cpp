@@ -281,7 +281,7 @@ AddItemsAbort:
         }
 
         ss << L"\r\n\r\n";
-        ss << L"提示：使用“不过滤”模式再次添加，可以手动指定原编码集。";
+        ss << L"提示：使用“不过滤”模式再次添加，可以在列表框中点击右键手动指定原编码集。";
 
         wstring s = ss.str();
         PostUIFunc([this, s]() {
