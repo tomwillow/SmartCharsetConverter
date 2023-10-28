@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include "ThreadPool/ThreadPool.h"
+#include "Control/TMenu.h"
 
 #include "resource.h"
 
@@ -31,6 +32,23 @@ struct MyMessage {
     }
 };
 
+/*
+    为了动态地在listview的右键菜单"指定原编码"项目里面添加字符集菜单选项，需要为每个字符集指定一个id。
+    但手动指定太麻烦，根据观察，菜单项目的起始编号为40000，所以这里选定了一个30000为起始编号，目的是不和其他id重合。
+    然后这个30000+字符集的index则得到菜单项的id。
+*/
+const int SPECIFY_ORIGIN_CHARSET_ID_CONST = 30000;
+const int SPECIFY_ORIGIN_CHARSET_ID_START = SPECIFY_ORIGIN_CHARSET_ID_CONST + static_cast<int>(CharsetCode::UTF8);
+const int SPECIFY_ORIGIN_CHARSET_ID_END =
+    SPECIFY_ORIGIN_CHARSET_ID_CONST + static_cast<int>(CharsetCode::CHARSET_CODE_END);
+inline int CharsetCodeToCommandId(CharsetCode code) noexcept {
+    return SPECIFY_ORIGIN_CHARSET_ID_CONST + static_cast<int>(code);
+}
+
+inline CharsetCode CommandIdToCharsetCode(int id) noexcept {
+    return static_cast<CharsetCode>(id - SPECIFY_ORIGIN_CHARSET_ID_CONST);
+}
+
 class DialogMain : public CDialogImpl<DialogMain> {
 private:
     const std::string caption;
@@ -39,6 +57,7 @@ private:
 
     CComboBox comboBoxOther;
     TListView listview;
+    std::unique_ptr<TPopupMenu> rightMenu;
 
     enum class ListViewColumn { INDEX = 0, FILENAME, FILESIZE, ENCODING, LINE_BREAK, TEXT_PIECE };
 
@@ -108,9 +127,12 @@ public:
     COMMAND_HANDLER(IDC_BUTTON_CLEAR, BN_CLICKED, OnBnClickedButtonClear)
     COMMAND_HANDLER(IDC_BUTTON_SET_OUTPUT_DIR, BN_CLICKED, OnBnClickedButtonSetOutputDir)
     COMMAND_HANDLER(IDC_COMBO_OTHER_CHARSET, CBN_SELCHANGE, OnCbnSelchangeComboOtherCharset)
+
     NOTIFY_HANDLER(IDC_LISTVIEW, NM_RCLICK, OnNMRclickListview)
     COMMAND_ID_HANDLER(ID_OPEN_WITH_NOTEPAD, OnOpenWithNotepad)
     COMMAND_ID_HANDLER(ID_REMOVE_ITEM, OnRemoveItem)
+    COMMAND_RANGE_HANDLER(SPECIFY_ORIGIN_CHARSET_ID_START, SPECIFY_ORIGIN_CHARSET_ID_END, OnSpecifyOriginCharset)
+
     COMMAND_HANDLER(IDC_EDIT_INCLUDE_TEXT, EN_CHANGE, OnEnChangeEditIncludeText)
     COMMAND_HANDLER(IDC_RADIO_STRETEGY_NO_FILTER, BN_CLICKED, OnBnClickedRadioStretegyNoFilter)
     NOTIFY_HANDLER(IDC_SYSLINK1, NM_CLICK, OnNMClickSyslink1)
@@ -139,9 +161,14 @@ public:
     LRESULT OnBnClickedButtonClear(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
     LRESULT OnBnClickedButtonSetOutputDir(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
     LRESULT OnCbnSelchangeComboOtherCharset(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+
+    // 右键点击listview
     LRESULT OnNMRclickListview(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL & /*bHandled*/);
+
     LRESULT OnOpenWithNotepad(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
     LRESULT OnRemoveItem(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+    LRESULT OnSpecifyOriginCharset(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+
     LRESULT OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
     LRESULT OnBnClickedRadioStretegyNoFilter(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
     LRESULT OnNMClickSyslink1(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL & /*bHandled*/);

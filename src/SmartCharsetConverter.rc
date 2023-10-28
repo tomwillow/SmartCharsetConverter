@@ -138,6 +138,7 @@ BEGIN
     POPUP "右键"
     BEGIN
         MENUITEM "用记事本打开",                      ID_OPEN_WITH_NOTEPAD
+        MENUITEM "指定原编码",                       ID_SPECIFY_ORIGIN_CHARSET
         MENUITEM "移除",                          ID_REMOVE_ITEM
     END
 END

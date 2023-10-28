@@ -115,6 +115,8 @@ void DealWithUCNVError(UErrorCode err) {
         break;
     case U_AMBIGUOUS_ALIAS_WARNING: // windows-1252 时会出这个，暂时忽略
         break;
+    case U_INVALID_CHAR_FOUND:
+        throw runtime_error("内容包含无效字符");
     default:
         throw runtime_error("ucnv出错。code=" + to_string(err));
         break;
@@ -589,9 +591,13 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(con
     bufSize = std::min(bufSize, static_cast<int>(100 * KB));
 
     auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf, bufSize);
+#ifndef NDEBUG
     { tcout << TEXT("ucsdet: ") << to_tstring(ucsdetResult) << TEXT(": ") << ucsdetConfidence << endl; }
+#endif
     auto [uchardetResult, uchardetConfidence] = DetectByUCharDet(det.get(), buf, bufSize);
+#ifndef NDEBUG
     { std::tcout << TEXT("uchardet: ") << to_tstring(uchardetResult) << TEXT(": ") << uchardetConfidence << endl; }
+#endif
 
     CharsetCode code = CharsetCode::UNKNOWN;
 
@@ -602,8 +608,8 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(con
         // uchardet如果有95及以上的信心，那么直接相信它
         code = ToCharsetCodeFinal(uchardetResult, buf, bufSize);
     } else {
-        auto codes = DetectByMine(buf, bufSize);
-        int n = 10;
+        // auto codes = DetectByMine(buf, bufSize);
+        // 判断不出，code维持在unknown
     }
 
     if (code == CharsetCode::UNKNOWN) {
@@ -628,18 +634,41 @@ void Core::AddItem(const std::tstring &filename, const std::unordered_set<std::t
         throw runtime_error("重复添加");
         return; // 不重复添加了
     }
-
+#ifndef NDEBUG
     std::tcout << filename << TEXT(": ") << endl;
+#endif
 
     auto [buf, bufSize] = ReadFileToBuffer(filename);
 
     // 识别字符集
     auto [charsetCode, content, contentSize] = GetEncoding(buf.get(), bufSize);
 
-    // 如果是智能模式，且没有识别出编码集，则忽略掉，但要提示
-    if (GetConfig().filterMode == Configuration::FilterMode::SMART && charsetCode == CharsetCode::UNKNOWN) {
-        throw io_error_ignore();
-        return;
+    // 如果没有识别出编码集
+    if (charsetCode == CharsetCode::UNKNOWN) {
+        switch (GetConfig().filterMode) {
+        // 如果是智能模式或者后缀模式，不添加这个文件，但要抛出异常，让UI弹出提示
+        case Configuration::FilterMode::SMART:
+        case Configuration::FilterMode::ONLY_SOME_EXTANT:
+            throw io_error_ignore();
+        // 如果是不过滤模式
+        case Configuration::FilterMode::NO_FILTER: {
+            // 强行添加
+
+            auto fileSizeStr = FileSizeToTString(GetFileSize(filename));
+
+            auto charsetName = ToViewCharsetName(charsetCode);
+
+            auto lineBreakStr = lineBreaksMap.at(Configuration::LineBreaks::UNKNOWN);
+
+            // 通知UI新增条目
+            opt.fnUIAddItem(filename, fileSizeStr, charsetName, lineBreakStr, L"");
+
+            // 成功添加
+            listFileNames.insert(filename);
+
+            return;
+        }
+        }
     }
 
     auto fileSizeStr = FileSizeToTString(GetFileSize(filename));

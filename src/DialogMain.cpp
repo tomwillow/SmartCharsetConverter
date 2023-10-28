@@ -18,7 +18,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.6 by Tom Willow");
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.61 by Tom Willow");
 
 using namespace std;
 
@@ -114,6 +114,14 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
 
     listview.AddColumn(TEXT("文本片段"), static_cast<int>(ListViewColumn::TEXT_PIECE));
     listview.SetColumnWidth(5, 200);
+
+    // 右键菜单
+    rightMenu = std::make_unique<TPopupMenu>(IDR_MENU_RIGHT);
+    TMenu &specifyOriginCharsetMenu = rightMenu->SetItemToBeContainer(ID_SPECIFY_ORIGIN_CHARSET);
+    for (auto id = SPECIFY_ORIGIN_CHARSET_ID_START; id < SPECIFY_ORIGIN_CHARSET_ID_END; ++id) {
+        CharsetCode code = CommandIdToCharsetCode(id);
+        specifyOriginCharsetMenu.AppendItem(id, ToViewCharsetName(code));
+    }
 
     // 启用拖放
     ::DragAcceptFiles(listview, true);
@@ -260,6 +268,9 @@ AddItemsAbort:
                 break;
             }
         }
+
+        ss << L"\r\n\r\n";
+        ss << L"提示：使用“不过滤”模式再次添加，可以手动指定原编码集。";
 
         wstring s = ss.str();
         PostUIFunc([this, s]() {
@@ -604,9 +615,12 @@ LRESULT DialogMain::OnCbnSelchangeComboOtherCharset(WORD /*wNotifyCode*/, WORD /
 
 LRESULT DialogMain::OnNMRclickListview(int /*idCtrl*/, LPNMHDR pNMHDR, BOOL & /*bHandled*/) {
     auto selectedItems = listview.GetSelectedItems();
-    if (selectedItems.empty() == false) {
-        PopupMenu(this->m_hWnd, IDR_MENU_RIGHT);
+    if (selectedItems.empty()) {
+        return 0;
     }
+
+    // 弹出右键菜单
+    rightMenu->Popup(m_hWnd);
 
     return 0;
 }
@@ -642,6 +656,11 @@ LRESULT DialogMain::OnRemoveItem(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
     return 0;
 }
 
+LRESULT DialogMain::OnSpecifyOriginCharset(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/) {
+    CharsetCode code = CommandIdToCharsetCode(wID);
+    return LRESULT();
+}
+
 LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl,
                                               BOOL & /*bHandled*/) try {
     // 取得字符串
@@ -654,7 +673,7 @@ LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/
         if (!ok)
             throw runtime_error("出错：内存不足。");
         filterStr = bstr;
-        SysReleaseString(bstr);
+        SysFreeString(bstr);
     }
 
     // 保存到core

@@ -21,11 +21,11 @@ enum class CharsetCode {
     UNKNOWN,
     EMPTY,
     NOT_SUPPORTED,
-    UTF8,
-    UTF8BOM,
-    GB18030,
 
     //
+    UTF8,
+    UTF8BOM,
+
     UTF16BE,
     UTF16BEBOM,
     UTF16LE,
@@ -34,11 +34,15 @@ enum class CharsetCode {
     UTF32BEBOM,
     UTF32LE,
     UTF32LEBOM,
+
+    GB18030,
     BIG5,
     SHIFT_JIS,
     EUC_JP,
     WINDOWS_1252,
-    ISO_8859_1
+    ISO_8859_1,
+
+    CHARSET_CODE_END
 
     // 添加字符集需要同步修改：charsetCodeMap ToICUCharsetName
 };
@@ -115,7 +119,7 @@ struct Configuration {
     enum class FilterMode { NO_FILTER, SMART, ONLY_SOME_EXTANT };
     enum class OutputTarget { ORIGIN, TO_DIR };
     static std::unordered_set<CharsetCode> normalCharset;
-    enum class LineBreaks { CRLF, LF, CR, EMPTY, MIX };
+    enum class LineBreaks { CRLF, LF, CR, EMPTY, MIX, UNKNOWN };
 
     FilterMode filterMode;
     OutputTarget outputTarget;
@@ -144,11 +148,9 @@ void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::Li
 
 // LineBreaks类型到字符串的映射表
 const doublemap<Configuration::LineBreaks, std::tstring> lineBreaksMap = {
-    {Configuration::LineBreaks::CRLF, TEXT("CRLF")},
-    {Configuration::LineBreaks::LF, TEXT("LF")},
-    {Configuration::LineBreaks::CR, TEXT("CR")},
-    {Configuration::LineBreaks::EMPTY, TEXT("")},
-    {Configuration::LineBreaks::MIX, TEXT("混合")}};
+    {Configuration::LineBreaks::CRLF, TEXT("CRLF")}, {Configuration::LineBreaks::LF, TEXT("LF")},
+    {Configuration::LineBreaks::CR, TEXT("CR")},     {Configuration::LineBreaks::EMPTY, TEXT("")},
+    {Configuration::LineBreaks::MIX, TEXT("混合")},  {Configuration::LineBreaks::UNKNOWN, TEXT("未知")}};
 
 class io_error_ignore : public std::runtime_error {
 public:
