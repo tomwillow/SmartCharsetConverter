@@ -15,7 +15,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.62 by Tom Willow");
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.63 by Tom Willow");
 
 using namespace std;
 
@@ -344,9 +344,6 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
     vector<pair<tstring, tstring>> failed; // 失败文件/失败原因
     vector<tstring> succeed;               // 成功的文件
 
-    // 目标编码
-    auto targetCode = core->GetConfig().outputCharset;
-
     // 逐个转换
     auto count = items.size();
     for (int i = 0; i < count; ++i) {
@@ -366,7 +363,7 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
             listview.SelectItem(i);
         });
 
-        auto convertResult = core->Convert(filename, originCode, targetCode, originLineBreak);
+        auto convertResult = core->Convert(filename, originCode, originLineBreak);
         if (convertResult.errInfo.has_value()) {
             failed.push_back({filename, convertResult.errInfo.value()});
         } else {

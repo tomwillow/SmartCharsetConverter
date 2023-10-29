@@ -16,7 +16,7 @@ using namespace std;
 std::unordered_set<CharsetCode> Configuration::normalCharset = {CharsetCode::UTF8, CharsetCode::UTF8BOM,
                                                                 CharsetCode::GB18030};
 
-std::tstring ToViewCharsetName(CharsetCode code) {
+std::tstring ToViewCharsetName(CharsetCode code) noexcept {
     return charsetCodeMap.at(code).viewName;
 }
 
@@ -626,7 +626,6 @@ void Core::AddItem(const std::tstring &filename, const std::unordered_set<std::t
     // 如果重复了
     if (listFileNames.find(filename) != listFileNames.end()) {
         throw runtime_error("重复添加");
-        return; // 不重复添加了
     }
 
     auto [buf, bufSize] = ReadFileToBuffer(filename);
@@ -710,8 +709,9 @@ void Core::Clear() {
     listFileNames.clear();
 }
 
-Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode originCode, CharsetCode targetCode,
+Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode originCode,
                                   Configuration::LineBreaks originLineBreak) noexcept {
+    CharsetCode targetCode = config.outputCharset;
 
     ConvertResult ret;
     try {

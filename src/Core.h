@@ -76,9 +76,13 @@ const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
     {CharsetCode::WINDOWS_1252, MyCharset{TEXT("WINDOWS-1252"), "WINDOWS-1252", {}}},
     {CharsetCode::ISO_8859_1, MyCharset{TEXT("ISO-8859-1"), "ISO-8859-1", {}}}};
 
-std::tstring ToViewCharsetName(CharsetCode code);
+std::tstring ToViewCharsetName(CharsetCode code) noexcept;
 
-// 编码集名字转CharsetCode。不含推测，只允许特定字符串出现。否则报assert
+/**
+ * 编码集名字转CharsetCode
+ * @exception runtime_error 未识别的字符串
+ */
+//
 CharsetCode ToCharsetCode(const std::tstring &name);
 
 // bom串
@@ -194,6 +198,7 @@ public:
 
     /**
      * 加入一个文件到列表。
+     * @exception runtime_error 重复添加
      * @exception file_io_error 读文件失败
      * @exception runtime_error ucnv出错。code
      * @exception io_error_ignore 按照配置忽略掉这个文件
@@ -222,7 +227,7 @@ public:
      * @brief 转换一个文件。
      * @return <输出文件的文件名, 出错信息>
      */
-    ConvertResult Convert(const std::tstring &inputFilename, CharsetCode originCode, CharsetCode targetCode,
+    ConvertResult Convert(const std::tstring &inputFilename, CharsetCode originCode,
                           Configuration::LineBreaks originLineBreak) noexcept;
 
 private:
