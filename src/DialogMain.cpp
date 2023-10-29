@@ -15,11 +15,11 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.61 by Tom Willow");
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.62 by Tom Willow");
 
 using namespace std;
 
-DialogMain::DialogMain() {}
+DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilenames(filenames) {}
 
 DialogMain::~DialogMain() {}
 
@@ -138,6 +138,8 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
 
     CenterWindow();
 
+    AddItemsAsync(inputFilenames);
+
     return 0;
 }
 
@@ -195,7 +197,7 @@ void DialogMain::SetOutputCharset(CharsetCode charset) {
     }
 }
 
-std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &pathes) {
+std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &pathes) noexcept {
     // 后缀
     unordered_set<tstring> filterDotExts;
 
@@ -288,10 +290,11 @@ AddItemsAbort:
     return ignored;
 }
 
-void DialogMain::AddItemsAsync(const std::vector<std::tstring> &filenames) {
+void DialogMain::AddItemsAsync(const std::vector<std::tstring> &filenames) noexcept {
     auto restore = SetBusyState();
 
     doCancel = false;
+    assert(thRunning == false);
     thRunning = true;
     fu = std::async(std::launch::async, [this, restore, filenames]() {
         // 使用RTTI的手法记下恢复事件

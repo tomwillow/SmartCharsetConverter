@@ -50,8 +50,20 @@ inline CharsetCode CommandIdToCharsetCode(int id) noexcept {
 }
 
 class DialogMain : public CDialogImpl<DialogMain> {
+public:
+    enum { IDD = IDD_DIALOG_MAIN };
+
+    /*
+     * 如果需要初始时就添加文件/文件夹，则传入filenames参数
+     */
+    DialogMain(const std::vector<std::tstring> &filenames = {});
+
+    ~DialogMain();
+
 private:
     const std::string caption;
+
+    std::vector<std::tstring> inputFilenames;
 
     std::unique_ptr<Core> core;
 
@@ -67,13 +79,6 @@ private:
 
     ThreadPool thPool;
 
-public:
-    enum { IDD = IDD_DIALOG_MAIN };
-
-    DialogMain();
-
-    ~DialogMain();
-
     BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 
     void SetFilterMode(Configuration::FilterMode mode);
@@ -83,21 +88,17 @@ public:
     void SetOutputCharset(CharsetCode charset);
 
     /*
-     * 加入多个文件到列表。
-     * 如果中途有加入失败的文件，会在最后弹一个对话框统一说明。
-     * 返回忽略掉的文件
-     * 添加失败的文件会弹窗
-     * @exception runtime_error
+     * 加入多个文件/文件夹到列表。
+     * 如果有添加失败的文件，会在事件队列中Post一个弹窗事件
+     * 线程安全。
      */
-    std::vector<std::tstring> AddItems(const std::vector<std::tstring> &filenames);
+    std::vector<std::tstring> AddItems(const std::vector<std::tstring> &filenames) noexcept;
 
     /*
-     * 加入多个文件到列表。
-     * 如果中途有加入失败的文件，会在最后弹一个对话框统一说明。
-     * 返回忽略掉的文件
-     * 添加失败的文件会弹窗
+     * 加入多个文件/文件夹到列表。
+     * 如果有添加失败的文件，会在事件队列中Post一个弹窗事件
      */
-    void AddItemsAsync(const std::vector<std::tstring> &filenames);
+    void AddItemsAsync(const std::vector<std::tstring> &filenames) noexcept;
 
     struct Item {
         std::tstring filename;
