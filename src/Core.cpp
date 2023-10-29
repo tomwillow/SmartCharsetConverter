@@ -616,11 +616,11 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(con
     return make_tuple(code, std::move(get<0>(partContentAndSize)), get<1>(partContentAndSize));
 }
 
-void Core::AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts) {
+Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts) {
     // 如果是只包括指定后缀的模式，且文件后缀不符合，则忽略掉，且不提示
     if (GetConfig().filterMode == Configuration::FilterMode::ONLY_SOME_EXTANT &&
         filterDotExts.find(TEXT(".") + GetExtend(filename)) == filterDotExts.end()) {
-        return;
+        return {};
     }
 
     // 如果重复了
@@ -644,39 +644,29 @@ void Core::AddItem(const std::tstring &filename, const std::unordered_set<std::t
         case Configuration::FilterMode::NO_FILTER: {
             // 强行添加
 
-            auto fileSizeStr = FileSizeToTString(GetFileSize(filename));
-
-            auto charsetName = ToViewCharsetName(charsetCode);
-
-            auto lineBreakStr = lineBreaksMap.at(Configuration::LineBreaks::UNKNOWN);
-
-            // 通知UI新增条目
-            opt.fnUIAddItem(filename, fileSizeStr, charsetName, lineBreakStr, L"");
+            auto fileSize = GetFileSize(filename);
 
             // 成功添加
             listFileNames.insert(filename);
 
-            return;
+            return AddItemResult{fileSize, charsetCode, Configuration::LineBreaks::UNKNOWN, L""};
         }
         }
     }
 
-    auto fileSizeStr = FileSizeToTString(GetFileSize(filename));
+    auto fileSize = GetFileSize(filename);
 
     auto charsetName = ToViewCharsetName(charsetCode);
 
     auto [wholeUtfStr, wholeUtfStrSize] = Decode(buf.get(), bufSize, charsetCode);
     auto lineBreak = GetLineBreaks(wholeUtfStr.get(), wholeUtfStrSize);
 
-    auto lineBreakStr = lineBreaksMap.at(lineBreak);
-
     // 到达这里不会再抛异常了
-
-    // 通知UI新增条目
-    opt.fnUIAddItem(filename, fileSizeStr, charsetName, lineBreakStr, reinterpret_cast<wchar_t *>(content.get()));
 
     // 成功添加
     listFileNames.insert(filename);
+
+    return AddItemResult{fileSize, charsetCode, lineBreak, reinterpret_cast<wchar_t *>(content.get())};
 }
 
 void Core::SpecifyItemCharset(int index, const std::tstring &filename, CharsetCode charsetCode) {

@@ -44,21 +44,6 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
     BOOL bHandle = true;
 
     CoreInitOption coreOpt;
-    coreOpt.fnUIAddItem = [this](std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
-                                 std::wstring lineBreakStr, std::wstring textPiece) {
-        PostUIFunc([=]() {
-            auto count = listview.GetItemCount();
-            listview.AddItem(count, static_cast<int>(ListViewColumn::INDEX), to_tstring(count + 1).c_str());
-            listview.AddItem(count, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
-            listview.AddItem(count, static_cast<int>(ListViewColumn::FILESIZE), fileSizeStr.c_str());
-            listview.AddItem(count, static_cast<int>(ListViewColumn::ENCODING), charsetStr.c_str());
-            listview.AddItem(count, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreakStr.c_str());
-            listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE), textPiece.c_str());
-
-            // listview滚动到最下面
-            listview.SelectItem(count);
-        });
-    };
     coreOpt.fnUIUpdateItem = [this](int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
                                     std::wstring lineBreakStr, std::wstring textPiece) {
         PostUIFunc([=]() {
@@ -221,7 +206,8 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 
     auto AddItemNoException = [&](const std::tstring &filename) {
         try {
-            core->AddItem(filename, filterDotExts);
+            Core::AddItemResult ret = core->AddItem(filename, filterDotExts);
+            AppendListViewItem(filename, ret.filesize, ret.srcCharset, ret.srcLineBreak, ret.strPiece);
         } catch (io_error_ignore) { ignored.push_back(filename); } catch (runtime_error &e) {
             failed.push_back({filename, to_tstring(e.what())});
         }
@@ -343,6 +329,9 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
 
     vector<pair<tstring, tstring>> failed; // 失败文件/失败原因
     vector<tstring> succeed;               // 成功的文件
+
+    // 目标编码
+    auto targetCode = core->GetConfig().outputCharset;
 
     // 逐个转换
     auto count = items.size();
@@ -802,4 +791,18 @@ void DialogMain::RestoreReadyState(const std::vector<std::pair<int, bool>> &rest
     }
 
     GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
+}
+
+void DialogMain::AppendListViewItem(std::wstring filename, uint64_t fileSize, CharsetCode charset,
+                                    Configuration::LineBreaks lineBreak, std::wstring textPiece) noexcept {
+    auto count = listview.GetItemCount();
+    listview.AddItem(count, static_cast<int>(ListViewColumn::INDEX), to_tstring(count + 1).c_str());
+    listview.AddItem(count, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
+    listview.AddItem(count, static_cast<int>(ListViewColumn::FILESIZE), FileSizeToTString(fileSize).c_str());
+    listview.AddItem(count, static_cast<int>(ListViewColumn::ENCODING), ToViewCharsetName(charset).c_str());
+    listview.AddItem(count, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreaksMap.at(lineBreak).c_str());
+    listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE), textPiece.c_str());
+
+    // listview滚动到最下面
+    listview.SelectItem(count);
 }

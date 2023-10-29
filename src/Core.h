@@ -162,10 +162,6 @@ public:
 };
 
 struct CoreInitOption {
-    std::function<void(std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
-                       std::wstring lineBreakStr, std::wstring textPiece)>
-        fnUIAddItem = [](std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
-                         std::wstring lineBreakStr, std::wstring textPiece) {};
 
     std::function<void(int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
                        std::wstring lineBreakStr, std::wstring textPiece)>
@@ -196,6 +192,13 @@ public:
      */
     std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int> GetEncoding(const char *buf, int bufSize) const;
 
+    struct AddItemResult {
+        uint64_t filesize;
+        CharsetCode srcCharset;
+        Configuration::LineBreaks srcLineBreak;
+        std::wstring strPiece;
+    };
+
     /**
      * 加入一个文件到列表。
      * @exception runtime_error 重复添加
@@ -203,7 +206,8 @@ public:
      * @exception runtime_error ucnv出错。code
      * @exception io_error_ignore 按照配置忽略掉这个文件
      */
-    void AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts);
+    [[nodiscard]] AddItemResult AddItem(const std::tstring &filename,
+                                        const std::unordered_set<std::tstring> &filterDotExts);
 
     /**
      * 指定文件的字符集。

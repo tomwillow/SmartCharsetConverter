@@ -2,11 +2,13 @@
 
 #include "Core.h"
 #include "tstring.h"
+#include "FileFunction.h"
 
 #include <sstream>
 #include <iostream>
 #include <filesystem>
 
+using std::wcerr;
 using std::wcout;
 
 const wchar_t usage[] = LR"(
@@ -52,15 +54,6 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
     bool setOutput = false;
 
     CoreInitOption coreInitOpt;
-    coreInitOpt.fnUIAddItem = [](std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
-                                 std::wstring lineBreakStr, std::wstring textPiece) {
-        std::wcout << L"已读取：\n";
-        std::wcout << L"  文件名: " << filename << L"\n";
-        std::wcout << L"  大小: " << fileSizeStr << L"\n";
-        std::wcout << L"  字符集: " << charsetStr << L"\n";
-        std::wcout << L"  换行符: " << lineBreakStr << L"\n";
-        std::wcout << L"  文本片段: " << textPiece << L"\n";
-    };
     Core core(TEXT("SmartCharsetConverter.ini"), coreInitOpt);
 
     core.SetFilterMode(Configuration::FilterMode::NO_FILTER);
@@ -203,25 +196,60 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
     // 校验输入参数
     if (taskType == TaskType::CONVERT) {
         if (inputFilenames.empty()) {
-            ssErr << L"错误：没有输入文件（--input）。" << L"\n";
+            ssErr << L"错误：没有设置输入文件（--input）。" << L"\n";
         }
+
         if (!setOutput) {
             ssErr << L"错误：没有设置输出方式（--output_origin或者--output_dir）。" << L"\n";
+        } else {
+            if (core.GetConfig().outputTarget == Configuration::OutputTarget::ORIGIN) {
+                wcout << L"输出方式：原位输出\n";
+            } else {
+                wcout << L"输出方式：输出到文件夹：" << core.GetConfig().outputDir << L"\n";
+            }
         }
+
         if (!setTargetCharset) {
             ssErr << L"错误：没有设置目标字符集（--targetCharset）。" << L"\n";
+        } else {
+            wcout << L"目标字符集：" << ToViewCharsetName(core.GetConfig().outputCharset) << L"\n";
+        }
+
+        if (setTargetLineBreak) {
+            wcout << L"目标换行符：" << lineBreaksMap.at(core.GetConfig().lineBreak) << L"\n";
         }
     }
 
     // 开始转换
-    for (auto &inputFilename : inputFilenames) {
+    for (int i = 0; i < inputFilenames.size(); i++) {
+        auto &inputFilename = inputFilenames[i];
+
+        Core::AddItemResult addedItem;
         try {
-            core.AddItem(inputFilename, {});
+            addedItem = core.AddItem(inputFilename, {});
+            std::wcout << L"[" << to_wstring(std::to_string(i)) << L"] 已读取: \n";
+            std::wcout << L"  文件名: " << inputFilename << L"\n";
+            std::wcout << L"  大小: " << FileSizeToTString(addedItem.filesize) << L"\n";
+            std::wcout << L"  字符集: " << ToViewCharsetName(addedItem.srcCharset) << L"\n";
+            std::wcout << L"  换行符: " << lineBreaksMap.at(addedItem.srcLineBreak) << L"\n";
+            std::wcout << L"  文本片段: " << addedItem.strPiece << L"\n";
         } catch (const std::runtime_error &err) {
-            wcout << "读入文件失败：\n";
-            wcout << L"  文件名: " << inputFilename << L"\n";
-            wcout << L"  原因: " << to_wstring(err.what()) << L"\n";
+            wcerr << L"读入文件失败：\n";
+            wcerr << L"  文件名: " << inputFilename << L"\n";
+            wcerr << L"  原因: " << to_wstring(err.what()) << L"\n";
+            wcerr << L"\n";
+            continue;
         }
+
+        Core::ConvertResult ret = core.Convert(inputFilename, addedItem.srcCharset, addedItem.srcLineBreak);
+        if (ret.errInfo.has_value()) {
+            wcerr << L"转换失败。\n";
+            wcerr << L"  原因: " << ret.errInfo.value() << L"\n";
+            wcerr << L"\n";
+            continue;
+        }
+        wcout << L"转换成功。\n\n";
+        continue;
     }
 
     int retCode = 0;

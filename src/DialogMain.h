@@ -194,4 +194,7 @@ private:
      * @return vector<被禁用控件的id, 恢复时应该设置的enable值>
      */
     void RestoreReadyState(const std::vector<std::pair<int, bool>> &restore) noexcept;
+
+    void AppendListViewItem(std::wstring filename, uint64_t fileSize, CharsetCode charset,
+                            Configuration::LineBreaks lineBreak, std::wstring textPiece) noexcept;
 };
