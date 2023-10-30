@@ -64,7 +64,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
     std::wstringstream ssErr;
     std::wstringstream ssOutput;
 
-    std::vector<std::wstring> inputFilenames;
+    std::vector<std::wstring> inputPathes;
 
     int state = 0;
     for (int i = 1; i < args.size(); ++i) {
@@ -144,7 +144,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
         case 20: // --input xxx
             setInput = true;
             if (std::filesystem::is_regular_file(arg) || std::filesystem::is_directory(arg)) {
-                inputFilenames.push_back(arg);
+                inputPathes.push_back(arg);
                 break;
             }
             if (arg.substr(0, 2) == L"--") {
@@ -195,7 +195,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
 
     // 校验输入参数
     if (taskType == TaskType::CONVERT) {
-        if (inputFilenames.empty()) {
+        if (inputPathes.empty()) {
             ssErr << L"错误：没有设置输入文件（--input）。" << L"\n";
         }
 
@@ -218,38 +218,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
         if (setTargetLineBreak) {
             wcout << L"目标换行符：" << lineBreaksMap.at(core.GetConfig().lineBreak) << L"\n";
         }
-    }
-
-    // 开始转换
-    for (int i = 0; i < inputFilenames.size(); i++) {
-        auto &inputFilename = inputFilenames[i];
-
-        Core::AddItemResult addedItem;
-        try {
-            addedItem = core.AddItem(inputFilename, {});
-            std::wcout << L"[" << to_wstring(std::to_string(i)) << L"] 已读取: \n";
-            std::wcout << L"  文件名: " << inputFilename << L"\n";
-            std::wcout << L"  大小: " << FileSizeToTString(addedItem.filesize) << L"\n";
-            std::wcout << L"  字符集: " << ToViewCharsetName(addedItem.srcCharset) << L"\n";
-            std::wcout << L"  换行符: " << lineBreaksMap.at(addedItem.srcLineBreak) << L"\n";
-            std::wcout << L"  文本片段: " << addedItem.strPiece << L"\n";
-        } catch (const std::runtime_error &err) {
-            wcerr << L"读入文件失败：\n";
-            wcerr << L"  文件名: " << inputFilename << L"\n";
-            wcerr << L"  原因: " << to_wstring(err.what()) << L"\n";
-            wcerr << L"\n";
-            continue;
-        }
-
-        Core::ConvertResult ret = core.Convert(inputFilename, addedItem.srcCharset, addedItem.srcLineBreak);
-        if (ret.errInfo.has_value()) {
-            wcerr << L"转换失败。\n";
-            wcerr << L"  原因: " << ret.errInfo.value() << L"\n";
-            wcerr << L"\n";
-            continue;
-        }
-        wcout << L"转换成功。\n\n";
-        continue;
+        wcerr << L"\n";
     }
 
     int retCode = 0;
@@ -264,6 +233,61 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
     }
 
     std::wcout << ssOutput.str() << L"\n";
+
+    // 开始转换
+
+    auto AddAndConvertOneFile = [&core](int index, int total, const std::wstring &inputFilename, int &success,
+                                        int &failed) {
+        Core::AddItemResult addedItem;
+        std::wcout << L"[" << to_wstring(std::to_string(index)) << L"/" << to_wstring(std::to_string(total)) << L"] "
+                   << inputFilename << L"\n";
+        try {
+            addedItem = core.AddItem(inputFilename, {});
+            std::wcout << L"  原大小: " << FileSizeToTString(addedItem.filesize) << L"\n";
+            std::wcout << L"  原字符集: " << ToViewCharsetName(addedItem.srcCharset) << L"\n";
+            std::wcout << L"  原换行符: " << lineBreaksMap.at(addedItem.srcLineBreak) << L"\n";
+            // std::wcout << L"  文本片段: " << addedItem.strPiece << L"\n";
+        } catch (const std::runtime_error &err) {
+            wcerr << L"读入文件失败。原因: " << to_wstring(err.what()) << L"\n";
+            wcerr << L"\n";
+            failed++;
+            return;
+        }
+
+        Core::ConvertResult ret = core.Convert(inputFilename, addedItem.srcCharset, addedItem.srcLineBreak);
+        if (ret.errInfo.has_value()) {
+            wcerr << L"转换失败。原因: " << ret.errInfo.value() << L"\n";
+            wcerr << L"\n";
+            failed++;
+            return;
+        }
+        wcout << L"转换成功。\n\n";
+        success++;
+        return;
+    };
+
+    std::vector<std::wstring> inputFileNames;
+    for (auto &inputPath : inputPathes) {
+        if (std::filesystem::is_regular_file(inputPath)) {
+            inputFileNames.push_back(inputPath);
+            continue;
+        }
+
+        for (auto &path : std::filesystem::recursive_directory_iterator(inputPath)) {
+            inputFileNames.push_back(path.path());
+            continue;
+        }
+    }
+
+    int success = 0, failed = 0;
+    int total = inputFileNames.size();
+    for (int i = 0; i < total; i++) {
+        AddAndConvertOneFile(i + 1, total, inputFileNames[i], success, failed);
+    }
+
+    wcout << L"总计：" << to_wstring(std::to_string(total)) << L"\n";
+    wcout << L"成功：" << to_wstring(std::to_string(success)) << L"\n";
+    wcout << L"失败：" << to_wstring(std::to_string(failed)) << L"\n";
 
     return retCode;
 }
