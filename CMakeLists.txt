@@ -7,6 +7,14 @@ add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/source-charset:utf-8>")
 
 project(SmartCharsetConverter)
 
+# === guicon ============================
+add_library(guicon STATIC
+	${PROJECT_SOURCE_DIR}/third_party/guicon/guicon.h
+	${PROJECT_SOURCE_DIR}/third_party/guicon/guicon.cpp
+	)
+	
+# === SmartCharsetConverter =============
+
 # 添加代码
 file(GLOB COMMON_CODE
 	src/Common/*.h
@@ -28,6 +36,7 @@ add_definitions(-DUNICODE -D_UNICODE)
 # 添加include目录
 include_directories(
 	${PROJECT_SOURCE_DIR}
+	${PROJECT_SOURCE_DIR}/third_party
 	${PROJECT_SOURCE_DIR}/third_party/WTL/include
 	${PROJECT_SOURCE_DIR}/src/Common
 	${PROJECT_SOURCE_DIR}/src/Control
@@ -67,7 +76,9 @@ add_executable(${PROJECT_NAME}
 target_sources(${PROJECT_NAME} PRIVATE src/SmartCharsetConverter.rc)
 
 # 链接uchardet
-target_link_libraries(${PROJECT_NAME} libuchardet_static)
+target_link_libraries(${PROJECT_NAME} 
+	libuchardet_static
+	guicon)
 
 # 完成后拷贝icu dll
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
@@ -81,4 +92,5 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 # VS 设置 Subsystem 选项
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
+set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_RELWITHDEBINFO "/SUBSYSTEM:WINDOWS")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_MINSIZEREL "/SUBSYSTEM:WINDOWS")

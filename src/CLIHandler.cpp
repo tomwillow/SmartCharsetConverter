@@ -5,9 +5,12 @@
 #include "FileFunction.h"
 #include "ConsoleSettings.h"
 
+#include <guicon/guicon.h>
+
 #include <sstream>
 #include <iostream>
 #include <filesystem>
+#include <memory>
 
 using std::wcerr;
 using std::wcout;
@@ -47,6 +50,31 @@ SmartCharsetConverter --input <path>... --target_charset <charset> [--target_lin
 )";
 
 int CLIMain(const std::vector<std::wstring> &args) noexcept {
+
+    try {
+        bool ok = AttachParentConsole(1024);
+        if (!ok) {
+            throw std::runtime_error("failed to AttachParentConsole");
+        }
+
+    } catch (const std::runtime_error &err) {
+        MessageBoxA(NULL, err.what(), "Error", MB_OK | MB_ICONERROR);
+        return -1;
+    }
+
+    std::shared_ptr<void> defer(nullptr, [](auto) {
+        try {
+            bool ok = ReleaseConsole();
+            if (!ok) {
+                throw std::runtime_error("failed to ReleaseConsole");
+            }
+
+        } catch (const std::runtime_error &err) {
+            MessageBoxA(NULL, err.what(), "Error", MB_OK | MB_ICONERROR);
+            return -1;
+        }
+    });
+
     enum class TaskType { PURE_PRINT, CONVERT };
     TaskType taskType = TaskType::CONVERT;
     bool setInput = false;
