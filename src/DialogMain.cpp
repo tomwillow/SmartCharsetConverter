@@ -15,7 +15,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.7 by Tom Willow");
+const std::tstring appTitle = TEXT("智能编码集转换器 v0.72 by Tom Willow");
 
 using namespace std;
 
@@ -59,7 +59,7 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
 
     // 包含/排除指定后缀
     SetFilterMode(core->GetConfig().filterMode);
-    // GetDlgItem(IDC_EDIT_INCLUDE_TEXT).SetWindowTextW(core->GetConfig().includeRule);
+    GetDlgItem(IDC_EDIT_INCLUDE_TEXT).SetWindowTextW(core->GetConfig().includeRule.c_str());
 
     // target
     SetOutputTarget(core->GetConfig().outputTarget);
@@ -193,9 +193,14 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
         break;
     case Configuration::FilterMode::ONLY_SOME_EXTANT:
         // 只包括指定后缀
-        CheckAndTraversalIncludeRule([&](const tstring &dotExt) {
-            filterDotExts.insert(dotExt);
-        });
+        try {
+            CheckAndTraversalIncludeRule([&](const tstring &dotExt) {
+                filterDotExts.insert(dotExt);
+            });
+        } catch (const std::runtime_error &err) {
+            MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
+            return {};
+        }
         break;
     default:
         assert(0);
@@ -207,7 +212,12 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
     auto AddItemNoException = [&](const std::tstring &filename) {
         try {
             Core::AddItemResult ret = core->AddItem(filename, filterDotExts);
-            AppendListViewItem(filename, ret.filesize, ret.srcCharset, ret.srcLineBreak, ret.strPiece);
+            if (ret.isIgnore) {
+                return;
+            }
+            PostUIFunc([filename, ret, this]() {
+                AppendListViewItem(filename, ret.filesize, ret.srcCharset, ret.srcLineBreak, ret.strPiece);
+            });
         } catch (io_error_ignore) { ignored.push_back(filename); } catch (runtime_error &e) {
             failed.push_back({filename, to_tstring(e.what())});
         }
@@ -474,25 +484,27 @@ void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstr
     auto &extsStr = core->GetConfig().includeRule;
 
     // 切分
-    auto exts = Split(extsStr, TEXT(" "));
+    auto exts = Split(extsStr, TEXT(" ,|"));
+
+    string filterExampleStr = "支持以下格式：\r\n*.h *.hpp *.c *.cpp *.txt\r\nh hpp c cpp "
+                              "txt\r\nh|hpp|c|cpp\r\n(分隔符允许空格、逗号、竖线，后缀允许带*.或者不带)";
 
     // 如果为空
     if (exts.empty()) {
-        throw runtime_error("指定的后缀无效。\r\n\r\n例子：*.h *.hpp *.c *.cpp *.txt");
+        throw runtime_error("没有指定要过滤的后缀。\r\n\r\n" + filterExampleStr);
     }
 
     // 逐个检查
-    for (auto ext : exts) {
-        tstring extStr(ext);
-        wstring pattern = TEXT(R"(\*(\.\w+))"); // 匹配 *.xxx 的正则
+    for (auto s : exts) {
+        tstring extStr(s);
+        wstring pattern = TEXT(R"((\*\.|\.|)(\w+))"); // 匹配*.xxx/.xxx/xxx的正则
         wregex r(pattern);
         wsmatch results;
         if (regex_match(extStr, results, r) == false) {
-            throw runtime_error("指定的后缀无效：" + to_string(extStr) +
-                                "。\r\n\r\n例子： * .h * .hpp * .c * .cpp * .txt");
+            throw runtime_error("指定的后缀过滤器无效：" + to_string(extStr) + "\r\n\r\n" + filterExampleStr);
         }
 
-        fn(results.str(1));
+        fn(tolower(TEXT(".") + results.str(2)));
     }
 }
 

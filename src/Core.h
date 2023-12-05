@@ -127,7 +127,8 @@ struct Configuration {
 
     FilterMode filterMode;
     OutputTarget outputTarget;
-    std::tstring includeRule, excludeRule;
+    std::tstring includeRule = TEXT("h hpp c cpp cxx txt");
+    std::tstring excludeRule;
     std::tstring outputDir;
     CharsetCode outputCharset;
     bool enableConvertLineBreaks;
@@ -193,6 +194,7 @@ public:
     std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int> GetEncoding(const char *buf, int bufSize) const;
 
     struct AddItemResult {
+        bool isIgnore = true; // 是否应该忽略掉
         uint64_t filesize;
         CharsetCode srcCharset;
         Configuration::LineBreaks srcLineBreak;

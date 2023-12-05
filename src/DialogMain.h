@@ -132,6 +132,8 @@ private:
     NOTIFY_HANDLER(IDC_LISTVIEW, NM_RCLICK, OnNMRclickListview)
     COMMAND_ID_HANDLER(ID_OPEN_WITH_NOTEPAD, OnOpenWithNotepad)
     COMMAND_ID_HANDLER(ID_REMOVE_ITEM, OnRemoveItem)
+
+    // 指定原编码
     COMMAND_RANGE_HANDLER(SPECIFY_ORIGIN_CHARSET_ID_START, SPECIFY_ORIGIN_CHARSET_ID_END, OnSpecifyOriginCharset)
 
     COMMAND_HANDLER(IDC_EDIT_INCLUDE_TEXT, EN_CHANGE, OnEnChangeEditIncludeText)
@@ -153,6 +155,10 @@ private:
     LRESULT OnBnClickedRadioUtf8bom(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
     LRESULT OnBnClickedRadioGb18030(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 
+    /**
+     * 检查 include过滤器。
+     * @exception runtime_error 过滤器字符串不合法
+     */
     void CheckAndTraversalIncludeRule(std::function<void(const std::tstring &dotExt)> fn);
 
     LRESULT OnBnClickedRadioOther(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);

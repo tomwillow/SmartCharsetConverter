@@ -13,6 +13,8 @@
 
 using namespace std;
 
+constexpr uint64_t tryReadSize = 100Ui64 * KB;
+
 std::unordered_set<CharsetCode> Configuration::normalCharset = {CharsetCode::UTF8, CharsetCode::UTF8BOM,
                                                                 CharsetCode::GB18030};
 
@@ -587,7 +589,7 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(con
         return {CharsetCode::EMPTY, unique_ptr<UChar[]>(new UChar[1]{L'\0'}), 0};
     }
 
-    bufSize = std::min(bufSize, static_cast<int>(100 * KB));
+    bufSize = std::min(bufSize, static_cast<int>(tryReadSize));
 
     auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf, bufSize);
 
@@ -618,9 +620,13 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(con
 
 Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts) {
     // 如果是只包括指定后缀的模式，且文件后缀不符合，则忽略掉，且不提示
-    if (GetConfig().filterMode == Configuration::FilterMode::ONLY_SOME_EXTANT &&
-        filterDotExts.find(TEXT(".") + GetExtend(filename)) == filterDotExts.end()) {
-        return {};
+    if (GetConfig().filterMode == Configuration::FilterMode::ONLY_SOME_EXTANT) {
+        auto ext = GetExtend(filename);
+        auto dotExt = TEXT(".") + tolower(ext);
+
+        if (filterDotExts.find(dotExt) == filterDotExts.end()) {
+            return {};
+        }
     }
 
     // 如果重复了
@@ -628,7 +634,8 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
         throw runtime_error("重复添加");
     }
 
-    auto [buf, bufSize] = ReadFileToBuffer(filename);
+    // 读入文件，只读入部分。因为读入大文件会占用太长时间。
+    auto [buf, bufSize] = ReadFileToBuffer(filename, tryReadSize);
 
     // 识别字符集
     auto [charsetCode, content, contentSize] = GetEncoding(buf.get(), bufSize);
@@ -649,7 +656,7 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
             // 成功添加
             listFileNames.insert(filename);
 
-            return AddItemResult{fileSize, charsetCode, Configuration::LineBreaks::UNKNOWN, L""};
+            return AddItemResult{false, fileSize, charsetCode, Configuration::LineBreaks::UNKNOWN, L""};
         }
         }
     }
@@ -658,7 +665,13 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
 
     auto charsetName = ToViewCharsetName(charsetCode);
 
+    // 重新读入整个文件，因为之前只读入了部分，换行符可能判断不彻底
+    if (bufSize < fileSize) {
+        std::tie(buf, bufSize) = ReadFileToBuffer(filename);
+    }
     auto [wholeUtfStr, wholeUtfStrSize] = Decode(buf.get(), bufSize, charsetCode);
+
+    // 检查换行符
     auto lineBreak = GetLineBreaks(wholeUtfStr.get(), wholeUtfStrSize);
 
     // 到达这里不会再抛异常了
@@ -666,18 +679,24 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
     // 成功添加
     listFileNames.insert(filename);
 
-    return AddItemResult{fileSize, charsetCode, lineBreak, reinterpret_cast<wchar_t *>(content.get())};
+    return AddItemResult{false, fileSize, charsetCode, lineBreak, reinterpret_cast<wchar_t *>(content.get())};
 }
 
 void Core::SpecifyItemCharset(int index, const std::tstring &filename, CharsetCode charsetCode) {
     assert(listFileNames.find(filename) != listFileNames.end());
 
-    auto [buf, bufSize] = ReadFileToBuffer(filename);
+    // 读入文件，只读入部分。因为读入大文件会占用太长时间。
+    auto [buf, bufSize] = ReadFileToBuffer(filename, tryReadSize);
 
-    auto fileSizeStr = FileSizeToTString(GetFileSize(filename));
+    auto fileSize = GetFileSize(filename);
+    auto fileSizeStr = FileSizeToTString(fileSize);
 
     auto charsetName = ToViewCharsetName(charsetCode);
 
+    // 重新读入整个文件，因为之前只读入了部分，换行符可能判断不彻底
+    if (bufSize < fileSize) {
+        std::tie(buf, bufSize) = ReadFileToBuffer(filename);
+    }
     auto [wholeUtfStr, wholeUtfStrSize] = Decode(buf.get(), bufSize, charsetCode);
     auto lineBreak = GetLineBreaks(wholeUtfStr.get(), wholeUtfStrSize);
 
