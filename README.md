@@ -57,6 +57,8 @@ v0.71 修复命令行用不了的bug。
 v0.72 解决添加大文件会卡死的问题（只探测文件前100KB）。
       后缀过滤模式现在支持更多的模式了（支持以`*.` `.` `空格` `|`分隔）。修复后缀过滤模式的其他问题。
 
+v0.8 重新编排界面。TODO 支持多语言。增加语言选择，增加配置文件。
+
 # TODO
 
 * 转换前再次检查一次字符集，已免出现加载后用户更改了字符集后转换出错的情况。
@@ -79,6 +81,10 @@ v0.72 解决添加大文件会卡死的问题（只探测文件前100KB）。
 [WTL](https://sourceforge.net/projects/wtl)
 
 [uchardet](https://github.com/rizonesoft/Notepad3/tree/master/src/uchardet)
+
+# 致谢
+
+感谢[Carlos Sánchez](https://github.com/c-sanchez)提供的界面设计。
 
 # E-mail
 
