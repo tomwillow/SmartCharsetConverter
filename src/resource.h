@@ -28,6 +28,8 @@
 #define IDC_RADIO_LF                    1054
 #define IDC_RADIO_CR                    1055
 #define IDC_SYSLINK1                    1057
+#define IDC_BUTTON1                     1058
+#define IDC_BUTTON_SETTINGS             1058
 #define ID_OPEN_WITH_NOTEPAD            40003
 #define ID_REMOVE_ITEM                  40004
 #define ID_40005                        40005
@@ -39,7 +41,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        107
 #define _APS_NEXT_COMMAND_VALUE         40007
-#define _APS_NEXT_CONTROL_VALUE         1058
+#define _APS_NEXT_CONTROL_VALUE         1059
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
