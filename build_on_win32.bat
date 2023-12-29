@@ -1,6 +1,5 @@
-mkdir output
-cd output
-cmake .. ^
-	-DICU_DIR="D:/lib/cpp/icu/icu4c-71.1/icu4c-71_1-Win64-MSVC2019"
 cd ..
+mkdir build_SmartCharsetConverter
+cd build_SmartCharsetConverter
+cmake ../SmartCharsetConverter -DCMAKE_TOOLCHAIN_FILE=D:\vcpkg\scripts\buildsystems\vcpkg.cmake
 pause
