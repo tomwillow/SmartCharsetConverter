@@ -69,10 +69,10 @@ v0.8 重新编排界面。TODO 支持多语言。增加语言选择，增加配�
 # 构建方法
 
 1. 确认编译环境：win10+ x64, Visual Studio 2019+, cmake。
-2. 下载 icu4c-71_1-Win64-MSVC2019.zip 并解压。
-3. 修改 build_on_win32.bat 以适配你的 icu4c lib位置。
-4. 双击 build_on_win32.bat 生成.sln。
-5. 打开 output/SmartCharsetConverter.sln。
+2. 安装 vcpkg。
+3. 修改 build_on_win32.bat 以适配你的 vcpkg 安装目录。
+4. 执行 build_on_win32.bat 生成.sln。
+5. 打开 ../build_SmartCharsetConverter/SmartCharsetConverter.sln。
 
 # Reference
 
