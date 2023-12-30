@@ -48,9 +48,10 @@ enum class CharsetCode {
 };
 
 struct MyCharset {
-    std::tstring viewName;
-    std::string icuName;
-    std::unordered_set<std::string> icuNames;
+    std::tstring viewName; // the name shown on interface
+    std::string icuName;   // the name used by icu
+    std::unordered_set<std::string>
+        icuNames; // if icu detected these charset names, map all of them to be the main charset
 };
 
 // 字符集code到名称的映射表
