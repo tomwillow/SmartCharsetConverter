@@ -1,5 +1,6 @@
 {
   "dependencies": [
-    "icu"
+    "icu",
+    "nlohmann-json"
   ]
 }
