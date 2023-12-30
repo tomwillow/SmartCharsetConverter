@@ -68,6 +68,10 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 	ICU::in
 )
 
+# add nlohmann/json library
+find_package(nlohmann_json CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
+
 # 添加.rc
 target_sources(${PROJECT_NAME} PRIVATE src/SmartCharsetConverter.rc)
 
