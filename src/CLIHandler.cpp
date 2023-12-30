@@ -216,7 +216,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
         case 50:
             setOutput = true;
             core.SetOutputTarget(Configuration::OutputTarget::TO_DIR);
-            core.SetOutputDir(arg);
+            core.SetOutputDir(to_utf8(arg));
             state = 0;
             break;
         } // end of switch
@@ -234,7 +234,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
             if (core.GetConfig().outputTarget == Configuration::OutputTarget::ORIGIN) {
                 ssOutput << L"输出方式：原位输出\n";
             } else {
-                ssOutput << L"输出方式：输出到文件夹：" << core.GetConfig().outputDir << L"\n";
+                ssOutput << L"输出方式：输出到文件夹：" << utf8_to_wstring(core.GetConfig().outputDir) << L"\n";
             }
         }
 

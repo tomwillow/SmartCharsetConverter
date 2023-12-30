@@ -7,13 +7,11 @@
 
 #include <stdexcept>
 #include <algorithm>
+#include <iostream>
 
 using namespace std;
 
 constexpr uint64_t tryReadSize = 100Ui64 * KB;
-
-std::unordered_set<CharsetCode> Configuration::normalCharset = {CharsetCode::UTF8, CharsetCode::UTF8BOM,
-                                                                CharsetCode::GB18030};
 
 /*
  * @exception runtime_error ucnv出错。code
@@ -195,9 +193,9 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
     return make_tuple(std::move(target), retLen);
 }
 
-Core::Core(std::tstring iniFileName, CoreInitOption opt) : iniFileName(iniFileName), opt(opt) {
+Core::Core(std::tstring configFileName, CoreInitOption opt) : configFileName(configFileName), opt(opt) {
     // 读ini
-    ReadFromIni();
+    ReadConfigFromFile();
 
     // 初始化uchardet
     det = unique_ptr<uchardet, std::function<void(uchardet *)>>(uchardet_new(), [](uchardet *det) {
@@ -222,36 +220,37 @@ const Configuration &Core::GetConfig() const {
 
 void Core::SetFilterMode(Configuration::FilterMode mode) {
     config.filterMode = mode;
-    WriteToIni();
+    WriteConfigToFile();
 }
 
-void Core::SetFilterRule(std::tstring rule) {
+void Core::SetFilterRule(const std::string &rule) {
     config.includeRule = rule;
-    WriteToIni();
+    WriteConfigToFile();
 }
 
 void Core::SetOutputTarget(Configuration::OutputTarget outputTarget) {
     config.outputTarget = outputTarget;
-    WriteToIni();
+    WriteConfigToFile();
 }
 
-void Core::SetOutputDir(std::tstring outputDir) {
+void Core::SetOutputDir(const std::string &outputDir) {
     config.outputDir = outputDir;
-    WriteToIni();
+    WriteConfigToFile();
 }
 
 void Core::SetOutputCharset(CharsetCode outputCharset) {
     config.outputCharset = outputCharset;
-    WriteToIni();
+    WriteConfigToFile();
 }
 
 void Core::SetLineBreaks(LineBreaks lineBreak) {
     config.lineBreak = lineBreak;
-    WriteToIni();
+    WriteConfigToFile();
 }
 
 void Core::SetEnableConvertLineBreak(bool enableLineBreaks) {
     config.enableConvertLineBreaks = enableLineBreaks;
+    WriteConfigToFile();
 }
 
 std::tuple<std::string, int> DetectByUCharDet(uchardet *det, const char *buf, int bufSize) {
@@ -502,7 +501,7 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
             // 纯文件名
             auto pureFileName = GetNameAndExt(ret.outputFileName);
 
-            ret.outputFileName = GetConfig().outputDir + TEXT("\\") + pureFileName;
+            ret.outputFileName = utf8_to_wstring(GetConfig().outputDir) + TEXT("\\") + pureFileName;
         }
 
         // 原编码集
@@ -626,9 +625,34 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
     return ret;
 }
 
-void Core::ReadFromIni() {}
+void Core::ReadConfigFromFile() {
+    if (!GetFileExists(configFileName)) {
+        return;
+    }
 
-void Core::WriteToIni() {}
+    std::ifstream ifs(to_string(configFileName));
+    if (!ifs) {
+        throw std::runtime_error("open file fail: " + to_string(configFileName));
+    }
+
+    nlohmann::json j = nlohmann::json::parse(ifs);
+    from_json(j, config);
+
+    ifs.close();
+}
+
+void Core::WriteConfigToFile() {
+    std::ofstream ofs(to_string(configFileName));
+    if (!ofs) {
+        throw std::runtime_error("write file fail: " + to_string(configFileName));
+    }
+
+    nlohmann::json j;
+    to_json(j, config);
+
+    ofs << std::setw(4) << j;
+    ofs.close();
+}
 
 // UINT Configuration::ToWinCodePage(OutputCharset charset)
 //{
