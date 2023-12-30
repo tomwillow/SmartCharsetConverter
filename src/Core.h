@@ -1,6 +1,9 @@
 #pragma once
 
-#include "doublemap.h"
+// self
+#include "CharsetCode.h"
+#include "LineBreaks.h"
+#include "Config.h"
 
 #include <tstring.h>
 
@@ -17,90 +20,8 @@
 #include <stdexcept>
 #include <optional>
 
-enum class CharsetCode {
-    UNKNOWN,
-    EMPTY,
-    NOT_SUPPORTED,
-
-    //
-    UTF8,
-    UTF8BOM,
-
-    UTF16BE,
-    UTF16BEBOM,
-    UTF16LE,
-    UTF16LEBOM,
-    UTF32BE,
-    UTF32BEBOM,
-    UTF32LE,
-    UTF32LEBOM,
-
-    GB18030,
-    BIG5,
-    SHIFT_JIS,
-    EUC_JP,
-    WINDOWS_1252,
-    ISO_8859_1,
-
-    CHARSET_CODE_END
-
-    // 添加字符集需要同步修改：charsetCodeMap
-};
-
-struct MyCharset {
-    std::tstring viewName; // the name shown on interface
-    std::string icuName;   // the name used by icu
-    std::unordered_set<std::string>
-        icuNames; // if icu detected these charset names, map all of them to be the main charset
-};
-
-// 字符集code到名称的映射表
-const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
-    {CharsetCode::UNKNOWN, MyCharset{TEXT("未知"), "-", {}}},
-    {CharsetCode::EMPTY, MyCharset{TEXT("空"), "-", {}}},
-    {CharsetCode::NOT_SUPPORTED, MyCharset{TEXT("不支持"), "-", {}}},
-    {CharsetCode::UTF8, MyCharset{TEXT("UTF-8"), "UTF-8", {"ASCII", "ANSI"}}},
-    {CharsetCode::UTF8BOM, MyCharset{TEXT("UTF-8 BOM"), "UTF-8", {}}},
-    {CharsetCode::GB18030, MyCharset{TEXT("GB18030"), "GB18030", {}}},
-
-    {CharsetCode::UTF16LE, MyCharset{TEXT("UTF-16LE"), "UTF-16LE", {}}},
-    {CharsetCode::UTF16LEBOM, MyCharset{TEXT("UTF-16LE BOM"), "UTF-16LE", {}}},
-    {CharsetCode::UTF16BE, MyCharset{TEXT("UTF-16BE"), "UTF-16BE", {}}},
-    {CharsetCode::UTF16BEBOM, MyCharset{TEXT("UTF-16BE BOM"), "UTF-16BE", {}}},
-    {CharsetCode::UTF32LE, MyCharset{TEXT("UTF-32LE"), "UTF-32LE", {}}},
-    {CharsetCode::UTF32LEBOM, MyCharset{TEXT("UTF-32LE BOM"), "UTF-32LE", {}}},
-    {CharsetCode::UTF32BE, MyCharset{TEXT("UTF-32BE"), "UTF-32BE", {}}},
-    {CharsetCode::UTF32BEBOM, MyCharset{TEXT("UTF-32BE BOM"), "UTF-32BE", {}}},
-    {CharsetCode::BIG5, MyCharset{TEXT("BIG5"), "Big5", {"Big5"}}},
-    {CharsetCode::SHIFT_JIS, MyCharset{TEXT("SHIFT-JIS"), "SHIFT-JIS", {"SHIFT_JIS"}}},
-    {CharsetCode::EUC_JP, MyCharset{TEXT("EUC-JP"), "EUC-JP", {"EUC-JP"}}},
-    {CharsetCode::WINDOWS_1252, MyCharset{TEXT("WINDOWS-1252"), "WINDOWS-1252", {}}},
-    {CharsetCode::ISO_8859_1, MyCharset{TEXT("ISO-8859-1"), "ISO-8859-1", {}}}};
-
-std::tstring ToViewCharsetName(CharsetCode code) noexcept;
-
-/**
- * 编码集名字转CharsetCode
- * @exception runtime_error 未识别的字符串
- */
-//
-CharsetCode ToCharsetCode(const std::tstring &name);
-
-// bom串
-const char UTF8BOM_DATA[] = {'\xEF', '\xBB', '\xBF'};
-const char UTF16LEBOM_DATA[] = {'\xFF', '\xFE'};
-const char UTF16BEBOM_DATA[] = {'\xFE', '\xFF'};
-const char UTF32LEBOM_DATA[] = {'\xFF', '\xFE', '\x0', '\x0'};
-const char UTF32BEBOM_DATA[] = {'\xFE', '\xFF', '\x0', '\x0'};
-
-bool HasBom(CharsetCode code);
-const char *GetBomData(CharsetCode code);
-int BomSize(CharsetCode code);
-
-/**
- * @brief 返回buf的开头是否符合某种BOM，如果都不符合返回UNKNOWN
- */
-CharsetCode CheckBom(char *buf, int bufSize);
+#undef min
+#undef max
 
 /**
  * @brief 根据code的字符集解码字符串为unicode
@@ -116,47 +37,6 @@ std::tuple<std::unique_ptr<UChar[]>, int> Decode(const char *str, int len, Chars
  */
 std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, int bufSize,
                                                 CharsetCode targetCode);
-
-/**
- * @brief 配置信息
- */
-struct Configuration {
-    enum class FilterMode { NO_FILTER, SMART, ONLY_SOME_EXTANT };
-    enum class OutputTarget { ORIGIN, TO_DIR };
-    static std::unordered_set<CharsetCode> normalCharset;
-    enum class LineBreaks { CRLF, LF, CR, EMPTY, MIX, UNKNOWN };
-
-    FilterMode filterMode;
-    OutputTarget outputTarget;
-    std::tstring includeRule = TEXT("h hpp c cpp cxx txt");
-    std::tstring excludeRule;
-    std::tstring outputDir;
-    CharsetCode outputCharset;
-    bool enableConvertLineBreaks;
-    LineBreaks lineBreak;
-
-    Configuration()
-        : filterMode(FilterMode::SMART), outputTarget(OutputTarget::ORIGIN), outputCharset(CharsetCode::UTF8),
-          lineBreak(LineBreaks::CRLF), enableConvertLineBreaks(false) {}
-
-    static bool IsNormalCharset(CharsetCode charset) {
-        return normalCharset.find(charset) != normalCharset.end();
-    }
-};
-
-// 识别换行符
-Configuration::LineBreaks GetLineBreaks(const UChar *buf, int len);
-
-void Test_GetLineBreaks();
-
-// 变更换行符
-void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::LineBreaks targetLineBreak);
-
-// LineBreaks类型到字符串的映射表
-const doublemap<Configuration::LineBreaks, std::tstring> lineBreaksMap = {
-    {Configuration::LineBreaks::CRLF, TEXT("CRLF")}, {Configuration::LineBreaks::LF, TEXT("LF")},
-    {Configuration::LineBreaks::CR, TEXT("CR")},     {Configuration::LineBreaks::EMPTY, TEXT("")},
-    {Configuration::LineBreaks::MIX, TEXT("混合")},  {Configuration::LineBreaks::UNKNOWN, TEXT("未知")}};
 
 class io_error_ignore : public std::runtime_error {
 public:
@@ -183,7 +63,7 @@ public:
     void SetOutputTarget(Configuration::OutputTarget outputTarget);
     void SetOutputDir(std::tstring outputDir);
     void SetOutputCharset(CharsetCode outputCharset);
-    void SetLineBreaks(Configuration::LineBreaks lineBreak);
+    void SetLineBreaks(LineBreaks lineBreak);
     void SetEnableConvertLineBreak(bool enableLineBreaks);
 
     //
@@ -198,7 +78,7 @@ public:
         bool isIgnore = true; // 是否应该忽略掉
         uint64_t filesize;
         CharsetCode srcCharset;
-        Configuration::LineBreaks srcLineBreak;
+        LineBreaks srcLineBreak;
         std::wstring strPiece;
     };
 
@@ -226,7 +106,7 @@ public:
     struct ConvertResult {
         std::tstring outputFileName;
         std::optional<std::tstring> errInfo;
-        Configuration::LineBreaks targetLineBreaks;
+        LineBreaks targetLineBreaks;
         int outputFileSize;
     };
 
@@ -235,7 +115,7 @@ public:
      * @return <输出文件的文件名, 出错信息>
      */
     ConvertResult Convert(const std::tstring &inputFilename, CharsetCode originCode,
-                          Configuration::LineBreaks originLineBreak) noexcept;
+                          LineBreaks originLineBreak) noexcept;
 
 private:
     std::tstring iniFileName;

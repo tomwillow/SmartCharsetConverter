@@ -198,15 +198,15 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
             setTargetLineBreak = true;
             core.SetEnableConvertLineBreak(true);
             if (tolower(arg) == tolower(std::wstring(L"LF")) || tolower(arg) == tolower(std::wstring(L"Linux"))) {
-                core.SetLineBreaks(Configuration::LineBreaks::LF);
+                core.SetLineBreaks(LineBreaks::LF);
                 break;
             }
             if (tolower(arg) == tolower(std::wstring(L"CRLF")) || tolower(arg) == tolower(std::wstring(L"Windows"))) {
-                core.SetLineBreaks(Configuration::LineBreaks::CRLF);
+                core.SetLineBreaks(LineBreaks::CRLF);
                 break;
             }
             if (tolower(arg) == tolower(std::wstring(L"CR")) || tolower(arg) == tolower(std::wstring(L"Mac"))) {
-                core.SetLineBreaks(Configuration::LineBreaks::CR);
+                core.SetLineBreaks(LineBreaks::CR);
                 break;
             }
             ssErr << L"错误：未能识别的换行符名称：" << arg << L"\n";

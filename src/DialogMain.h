@@ -103,7 +103,7 @@ private:
     struct Item {
         std::tstring filename;
         CharsetCode originCode;
-        Configuration::LineBreaks originLineBreak;
+        LineBreaks originLineBreak;
     };
 
     void StartConvert(const std::vector<std::pair<int, bool>> &restore, const std::vector<Item> &items);
@@ -201,6 +201,6 @@ private:
      */
     void RestoreReadyState(const std::vector<std::pair<int, bool>> &restore) noexcept;
 
-    void AppendListViewItem(std::wstring filename, uint64_t fileSize, CharsetCode charset,
-                            Configuration::LineBreaks lineBreak, std::wstring textPiece) noexcept;
+    void AppendListViewItem(std::wstring filename, uint64_t fileSize, CharsetCode charset, LineBreaks lineBreak,
+                            std::wstring textPiece) noexcept;
 };

@@ -727,19 +727,19 @@ LRESULT DialogMain::OnBnClickedCheckConvertReturn(WORD /*wNotifyCode*/, WORD /*w
 }
 
 LRESULT DialogMain::OnBnClickedRadioCrlf(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/) {
-    core->SetLineBreaks(Configuration::LineBreaks::CRLF);
+    core->SetLineBreaks(LineBreaks::CRLF);
 
     return 0;
 }
 
 LRESULT DialogMain::OnBnClickedRadioLf(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/) {
-    core->SetLineBreaks(Configuration::LineBreaks::LF);
+    core->SetLineBreaks(LineBreaks::LF);
 
     return 0;
 }
 
 LRESULT DialogMain::OnBnClickedRadioCr(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/) {
-    core->SetLineBreaks(Configuration::LineBreaks::CR);
+    core->SetLineBreaks(LineBreaks::CR);
 
     return 0;
 }
@@ -805,8 +805,8 @@ void DialogMain::RestoreReadyState(const std::vector<std::pair<int, bool>> &rest
     GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
 }
 
-void DialogMain::AppendListViewItem(std::wstring filename, uint64_t fileSize, CharsetCode charset,
-                                    Configuration::LineBreaks lineBreak, std::wstring textPiece) noexcept {
+void DialogMain::AppendListViewItem(std::wstring filename, uint64_t fileSize, CharsetCode charset, LineBreaks lineBreak,
+                                    std::wstring textPiece) noexcept {
     auto count = listview.GetItemCount();
     listview.AddItem(count, static_cast<int>(ListViewColumn::INDEX), to_tstring(count + 1).c_str());
     listview.AddItem(count, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
