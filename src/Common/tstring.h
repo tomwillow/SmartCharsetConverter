@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <vector>
+#include <algorithm>
 
 #ifdef _UNICODE
 

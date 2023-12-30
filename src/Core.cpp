@@ -8,105 +8,12 @@
 #include <stdexcept>
 #include <algorithm>
 
-#undef min
-#undef max
-
 using namespace std;
 
 constexpr uint64_t tryReadSize = 100Ui64 * KB;
 
 std::unordered_set<CharsetCode> Configuration::normalCharset = {CharsetCode::UTF8, CharsetCode::UTF8BOM,
                                                                 CharsetCode::GB18030};
-
-std::tstring ToViewCharsetName(CharsetCode code) noexcept {
-    return charsetCodeMap.at(code).viewName;
-}
-
-CharsetCode ToCharsetCode(const std::tstring &name) {
-    // 查找name是否有吻合的viewName
-    auto it =
-        std::find_if(charsetCodeMap.begin(), charsetCodeMap.end(), [&](const std::pair<CharsetCode, MyCharset> &pr) {
-            return tolower(pr.second.viewName) == tolower(name);
-        });
-    if (it != charsetCodeMap.end()) {
-        return it->first;
-    }
-
-    // 查找name是否有吻合的icuName
-    it = std::find_if(charsetCodeMap.begin(), charsetCodeMap.end(), [&](const std::pair<CharsetCode, MyCharset> &pr) {
-        return tolower(pr.second.icuName) == tolower(to_string(name));
-    });
-    if (it != charsetCodeMap.end()) {
-        return it->first;
-    }
-
-    // 查找name是否有吻合的icuNames
-    for (auto &pr : charsetCodeMap) {
-        for (auto &icuName : pr.second.icuNames) {
-            if (tolower(icuName) == tolower(to_string(name))) {
-                return pr.first;
-            }
-        }
-    }
-    throw runtime_error("unsupported: " + to_string(name));
-}
-
-bool HasBom(CharsetCode code) {
-    switch (code) {
-    case CharsetCode::UTF8BOM:
-    case CharsetCode::UTF16LEBOM:
-    case CharsetCode::UTF16BEBOM:
-        return true;
-    }
-    return false;
-}
-
-const char *GetBomData(CharsetCode code) {
-    switch (code) {
-    case CharsetCode::UTF8BOM:
-        return UTF8BOM_DATA;
-    case CharsetCode::UTF16LEBOM:
-        return UTF16LEBOM_DATA;
-    case CharsetCode::UTF16BEBOM:
-        return UTF16BEBOM_DATA;
-    }
-    return nullptr;
-}
-
-int BomSize(CharsetCode code) {
-    switch (code) {
-    case CharsetCode::UTF8BOM:
-        return sizeof(UTF8BOM_DATA);
-    case CharsetCode::UTF16LEBOM:
-        return sizeof(UTF16LEBOM_DATA);
-    case CharsetCode::UTF16BEBOM:
-        return sizeof(UTF16BEBOM_DATA);
-    }
-    return 0;
-}
-
-CharsetCode CheckBom(char *buf, int bufSize) {
-    if (bufSize >= sizeof(UTF8BOM_DATA) && memcmp(buf, UTF8BOM_DATA, sizeof(UTF8BOM_DATA)) == 0) {
-        return CharsetCode::UTF8BOM;
-    }
-    if (bufSize >= sizeof(UTF16LEBOM_DATA) && memcmp(buf, UTF16LEBOM_DATA, sizeof(UTF16LEBOM_DATA)) == 0) {
-        return CharsetCode::UTF8BOM;
-    }
-    if (bufSize >= sizeof(UTF16BEBOM_DATA) && memcmp(buf, UTF16BEBOM_DATA, sizeof(UTF16BEBOM_DATA)) == 0) {
-        return CharsetCode::UTF8BOM;
-    }
-    if (bufSize >= sizeof(UTF32LEBOM_DATA) && memcmp(buf, UTF32LEBOM_DATA, sizeof(UTF32LEBOM_DATA)) == 0) {
-        return CharsetCode::UTF8BOM;
-    }
-    if (bufSize >= sizeof(UTF32BEBOM_DATA) && memcmp(buf, UTF32BEBOM_DATA, sizeof(UTF32BEBOM_DATA)) == 0) {
-        return CharsetCode::UTF8BOM;
-    }
-    return CharsetCode::UNKNOWN;
-}
-
-std::string ToICUCharsetName(CharsetCode code) {
-    return to_string(charsetCodeMap.at(code).icuName);
-}
 
 /*
  * @exception runtime_error ucnv出错。code
@@ -288,144 +195,6 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
     return make_tuple(std::move(target), retLen);
 }
 
-Configuration::LineBreaks GetLineBreaks(const UChar *buf, int len) {
-    Configuration::LineBreaks ans = Configuration::LineBreaks::EMPTY;
-    for (int i = 0; i < len;) {
-        const UChar &c = buf[i];
-        if (c == UChar(u'\r')) {
-            // \r\n
-            if (i < len && buf[i + 1] == UChar(u'\n')) {
-                if (ans == Configuration::LineBreaks::EMPTY) {
-                    ans = Configuration::LineBreaks::CRLF;
-                } else {
-                    if (ans != Configuration::LineBreaks::CRLF) {
-                        ans = Configuration::LineBreaks::MIX;
-                        return ans;
-                    }
-                }
-                i += 2;
-                continue;
-            }
-
-            // \r
-            if (ans == Configuration::LineBreaks::EMPTY) {
-                ans = Configuration::LineBreaks::CR;
-            } else {
-                if (ans != Configuration::LineBreaks::CR) {
-                    ans = Configuration::LineBreaks::MIX;
-                    return ans;
-                }
-            }
-            i++;
-            continue;
-        }
-
-        // \n
-        if (c == UChar(u'\n')) {
-            if (ans == Configuration::LineBreaks::EMPTY) {
-                ans = Configuration::LineBreaks::LF;
-            } else {
-                if (ans != Configuration::LineBreaks::LF) {
-                    ans = Configuration::LineBreaks::MIX;
-                    return ans;
-                }
-            }
-            i++;
-            continue;
-        }
-
-        i++;
-    }
-    return ans;
-}
-
-void Test_GetLineBreaks() {
-    u16string ws;
-
-    ws = u"\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::CR);
-    ws = u"\r\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::CR);
-    ws = u"\r00\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::CR);
-    ws = u"\r\r\n";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::MIX);
-
-    ws = u"\n";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::LF);
-    ws = u"\n\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::MIX);
-    ws = u"\n\n";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::LF);
-    ws = u"\n\n\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::MIX);
-
-    ws = u"\r\n";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::CRLF);
-    ws = u"\r\n\n";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::MIX);
-    ws = u"\r\n\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::MIX);
-
-    ws = u"\n\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == Configuration::LineBreaks::MIX);
-}
-
-void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, Configuration::LineBreaks targetLineBreak) {
-    vector<UChar> out;
-    out.reserve(len);
-
-    vector<UChar> lineBreak;
-    switch (targetLineBreak) {
-    case Configuration::LineBreaks::CRLF:
-        lineBreak = {u'\r', u'\n'};
-        break;
-    case Configuration::LineBreaks::LF:
-        lineBreak = {u'\n'};
-        break;
-    case Configuration::LineBreaks::CR:
-        lineBreak = {u'\r'};
-        break;
-    }
-
-    for (int i = 0; i < len;) {
-        UChar &c = buf.get()[i];
-        if (c == UChar(u'\r')) {
-            // \r\n
-            if (i < len && buf.get()[i + 1] == UChar(u'\n')) {
-                out.insert(out.end(), lineBreak.begin(), lineBreak.end());
-                i += 2;
-                continue;
-            }
-
-            // \r
-            out.insert(out.end(), lineBreak.begin(), lineBreak.end());
-            i++;
-            continue;
-        }
-
-        if (c == UChar(u'\n')) {
-            out.insert(out.end(), lineBreak.begin(), lineBreak.end());
-            i++;
-            continue;
-        }
-
-        out.push_back(c);
-        i++;
-    }
-
-    if (out.size() >= std::numeric_limits<int>::max()) {
-        throw runtime_error("生成文件大小超出限制");
-    }
-
-    int outLen = static_cast<int>(out.size());
-    buf.reset(new UChar[outLen]);
-    memcpy(buf.get(), out.data(), out.size() * sizeof(UChar));
-    len = outLen;
-
-    return;
-}
-
 Core::Core(std::tstring iniFileName, CoreInitOption opt) : iniFileName(iniFileName), opt(opt) {
     // 读ini
     ReadFromIni();
@@ -476,7 +245,7 @@ void Core::SetOutputCharset(CharsetCode outputCharset) {
     WriteToIni();
 }
 
-void Core::SetLineBreaks(Configuration::LineBreaks lineBreak) {
+void Core::SetLineBreaks(LineBreaks lineBreak) {
     config.lineBreak = lineBreak;
     WriteToIni();
 }
@@ -656,7 +425,7 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
             // 成功添加
             listFileNames.insert(filename);
 
-            return AddItemResult{false, fileSize, charsetCode, Configuration::LineBreaks::UNKNOWN, L""};
+            return AddItemResult{false, fileSize, charsetCode, LineBreaks::UNKNOWN, L""};
         }
         }
     }
@@ -719,7 +488,7 @@ void Core::Clear() {
 }
 
 Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode originCode,
-                                  Configuration::LineBreaks originLineBreak) noexcept {
+                                  LineBreaks originLineBreak) noexcept {
     CharsetCode targetCode = config.outputCharset;
 
     ConvertResult ret;
