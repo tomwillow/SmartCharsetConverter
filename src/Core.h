@@ -53,15 +53,15 @@ struct CoreInitOption {
 
 class Core {
 public:
-    Core(std::tstring iniFileName, CoreInitOption opt);
+    Core(std::tstring configFileName, CoreInitOption opt);
 
     const Configuration &GetConfig() const;
 
     void SetFilterMode(Configuration::FilterMode mode);
-    void SetFilterRule(std::tstring rule);
+    void SetFilterRule(const std::string &rule);
 
     void SetOutputTarget(Configuration::OutputTarget outputTarget);
-    void SetOutputDir(std::tstring outputDir);
+    void SetOutputDir(const std::string &outputDir);
     void SetOutputCharset(CharsetCode outputCharset);
     void SetLineBreaks(LineBreaks lineBreak);
     void SetEnableConvertLineBreak(bool enableLineBreaks);
@@ -118,14 +118,14 @@ public:
                           LineBreaks originLineBreak) noexcept;
 
 private:
-    std::tstring iniFileName;
+    std::tstring configFileName;
     CoreInitOption opt;
     Configuration config;
     std::unique_ptr<uchardet, std::function<void(uchardet *)>> det;
 
     std::unordered_set<std::tstring> listFileNames; // 当前列表中的文件
 
-    void ReadFromIni();
+    void ReadConfigFromFile();
 
-    void WriteToIni();
+    void WriteConfigToFile();
 };

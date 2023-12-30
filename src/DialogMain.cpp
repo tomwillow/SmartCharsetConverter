@@ -17,6 +17,8 @@
 
 const std::tstring appTitle = TEXT("智能编码集转换器 v0.8 by Tom Willow");
 
+const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
+
 using namespace std;
 
 DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilenames(filenames) {}
@@ -55,15 +57,15 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
         });
     };
 
-    core = make_unique<Core>(TEXT("SmartCharsetConverter.ini"), coreOpt);
+    core = make_unique<Core>(configFileName, coreOpt);
 
     // 包含/排除指定后缀
     SetFilterMode(core->GetConfig().filterMode);
-    GetDlgItem(IDC_EDIT_INCLUDE_TEXT).SetWindowTextW(core->GetConfig().includeRule.c_str());
+    GetDlgItem(IDC_EDIT_INCLUDE_TEXT).SetWindowTextW(utf8_to_wstring(core->GetConfig().includeRule).c_str());
 
     // target
     SetOutputTarget(core->GetConfig().outputTarget);
-    GetDlgItem(IDC_EDIT_OUTPUT_DIR).SetWindowTextW(core->GetConfig().outputDir.c_str());
+    GetDlgItem(IDC_EDIT_OUTPUT_DIR).SetWindowTextW(utf8_to_wstring(core->GetConfig().outputDir).c_str());
     static_cast<CEdit>(GetDlgItem(IDC_EDIT_OUTPUT_DIR)).SetReadOnly(true);
     //
     comboBoxOther.Attach(GetDlgItem(IDC_COMBO_OTHER_CHARSET).m_hWnd);
@@ -481,7 +483,7 @@ LRESULT DialogMain::OnBnClickedRadioOther(WORD /*wNotifyCode*/, WORD /*wID*/, HW
 
 void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstring &dotExt)> fn) {
     // 后缀字符串
-    auto &extsStr = core->GetConfig().includeRule;
+    auto &extsStr = utf8_to_wstring(core->GetConfig().includeRule);
 
     // 切分
     auto exts = Split(extsStr, TEXT(" ,|"));
@@ -594,11 +596,11 @@ LRESULT DialogMain::OnBnClickedButtonClear(WORD /*wNotifyCode*/, WORD /*wID*/, H
 
 LRESULT DialogMain::OnBnClickedButtonSetOutputDir(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
                                                   BOOL & /*bHandled*/) {
-    tstring dir = core->GetConfig().outputDir;
+    tstring dir = utf8_to_wstring(core->GetConfig().outputDir);
 
     TFolderBrowser folderBrowser(*this);
     if (folderBrowser.Open(dir)) {
-        core->SetOutputDir(dir);
+        core->SetOutputDir(to_utf8(dir));
         GetDlgItem(IDC_EDIT_OUTPUT_DIR).SetWindowTextW(dir.c_str());
     }
 
@@ -699,7 +701,7 @@ LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/
     }
 
     // 保存到core
-    core->SetFilterRule(filterStr);
+    core->SetFilterRule(to_utf8(filterStr));
 
     return 0;
 } catch (runtime_error &err) {

@@ -6,6 +6,9 @@
 
 #include <tstring.h>
 
+// third party
+#include <nlohmann/json.hpp>
+
 // standard lib
 #include <unordered_set>
 
@@ -19,9 +22,9 @@ struct Configuration {
 
     FilterMode filterMode;
     OutputTarget outputTarget;
-    std::tstring includeRule = TEXT("h hpp c cpp cxx txt");
-    std::tstring excludeRule;
-    std::tstring outputDir;
+    std::string includeRule = u8"h hpp c cpp cxx txt";
+    std::string excludeRule;
+    std::string outputDir;
     CharsetCode outputCharset;
     bool enableConvertLineBreaks;
     LineBreaks lineBreak;
@@ -34,3 +37,6 @@ struct Configuration {
         return normalCharset.find(charset) != normalCharset.end();
     }
 };
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Configuration, filterMode, outputTarget, includeRule, excludeRule, outputDir,
+                                   outputCharset, enableConvertLineBreaks, lineBreak)
