@@ -115,3 +115,11 @@ std::tistream &safeGetline(std::tistream &is, std::tstring &t);
  */
 std::vector<std::tstring_view> Split(std::tstring_view s, const std::tstring &dep) noexcept;
 void Split_UnitTest();
+
+template <typename... Args>
+std::string MyPrintf(const std::string &fmtStr, std::size_t reservedBytes, Args... args) {
+    std::string dest(fmtStr.size() + reservedBytes, '\0');
+    snprintf(dest.data(), dest.size(), fmtStr.c_str(), args...);
+    dest.erase(dest.begin() + dest.find_last_not_of('\0') + 1, dest.end());
+    return dest;
+}

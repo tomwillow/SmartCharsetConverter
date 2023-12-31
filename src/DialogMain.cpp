@@ -219,8 +219,8 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
                 filterDotExts.insert(dotExt);
             });
         } catch (const std::runtime_error &err) {
-            MessageBox(to_tstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
-                       MB_OK | MB_ICONERROR);
+            MessageBox(utf8_to_wstring(err.what()).c_str(),
+                       GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(), MB_OK | MB_ICONERROR);
             return {};
         }
         break;
@@ -286,10 +286,8 @@ AddItemsAbort:
     if (!ignored.empty()) {
         stringstream ss;
 
-        std::string fmtStr = GetLanguageService().GetUtf8String(StringId::NON_TEXT_OR_NO_DETECTED);
-        std::string dest(fmtStr.size() + 32LL, '\0');
-        snprintf(dest.data(), dest.size(), fmtStr.c_str(), ignored.size());
-        dest.erase(dest.begin() + dest.find_last_not_of('\0') + 1, dest.end());
+        std::string dest =
+            MyPrintf(GetLanguageService().GetUtf8String(StringId::NON_TEXT_OR_NO_DETECTED), 32LL, ignored.size());
 
         ss << dest << u8"\r\n";
 
@@ -419,36 +417,43 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
 
     // 如果有失败的
     if (failed.empty() == false) {
-        tstringstream ss;
-        ss << TEXT("转换成功 ") << succeed.size() << TEXT(" 个文件。\r\n\r\n");
-        ss << TEXT("以下文件转换失败：\r\n");
+        stringstream ss;
+
+        std::string dest =
+            MyPrintf(GetLanguageService().GetUtf8String(StringId::SUCCEED_SOME_FILES), 32LL, succeed.size());
+
+        ss << dest << u8"\r\n\r\n";
+        ss << GetLanguageService().GetUtf8String(StringId::FAILED_CONVERT_BELOW) + u8"\r\n";
         for (auto &pr : failed) {
-            ss << pr.first << TEXT(" 原因：") << pr.second << TEXT("\r\n");
+            ss << to_utf8(pr.first) << u8" " << GetLanguageService().GetUtf8String(StringId::REASON)
+               << to_utf8(pr.second) << u8"\r\n";
         }
         if (doCancel) {
-            ss << TEXT("\r\n") << TEXT("\r\n") << TEXT("剩余文件由于取消操作所以未做处理。");
+            ss << u8"\r\n\r\n" << GetLanguageService().GetUtf8String(StringId::NO_DEAL_DUE_TO_CANCEL);
         }
 
-        wstring s = ss.str();
+        string s = ss.str();
         PostUIFunc([this, s]() {
-            MessageBox(s.c_str(), TEXT("转换结果"), MB_OK | MB_ICONERROR);
+            MessageBox(utf8_to_wstring(s).c_str(), GetLanguageService().GetWString(StringId::CONVERT_RESULT).c_str(),
+                       MB_OK | MB_ICONERROR);
         });
     } else {
         // 全部成功之后
-        tstringstream ss;
-        ss << TEXT("转换成功 ") << succeed.size() << TEXT(" 个文件。\r\n\r\n");
+        stringstream ss;
+        std::string dest =
+            MyPrintf(GetLanguageService().GetUtf8String(StringId::SUCCEED_SOME_FILES), 32LL, succeed.size());
+        ss << dest << u8"\r\n\r\n";
 
         if (targetCode == CharsetCode::GB18030) {
-            ss << TEXT("\r\n\r\n注意：GB18030在纯英文的情况下和UTF-8编码位重合，所以可能会出现转换后显示为UTF-"
-                       "8编码的情况。");
+            ss << u8"\r\n\r\n" << GetLanguageService().GetUtf8String(StringId::NOTICE_SHOW_AS_UTF8);
         }
         if (doCancel) {
-            ss << TEXT("\r\n") << TEXT("\r\n") << TEXT("剩余文件由于取消操作所以未做处理。");
+            ss << u8"\r\n\r\n" << GetLanguageService().GetUtf8String(StringId::NO_DEAL_DUE_TO_CANCEL);
         }
 
-        wstring s = ss.str();
+        string s = ss.str();
         PostUIFunc([this, s]() {
-            MessageBox(s.c_str(), GetLanguageService().GetWString(StringId::PROMPT).c_str(),
+            MessageBox(utf8_to_wstring(s).c_str(), GetLanguageService().GetWString(StringId::PROMPT).c_str(),
                        MB_OK | MB_ICONINFORMATION);
         });
     }
@@ -519,12 +524,14 @@ void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstr
     // 切分
     auto exts = Split(extsStr, TEXT(" ,|"));
 
-    string filterExampleStr = "支持以下格式：\r\n*.h *.hpp *.c *.cpp *.txt\r\nh hpp c cpp "
-                              "txt\r\nh|hpp|c|cpp\r\n(分隔符允许空格、逗号、竖线，后缀允许带*.或者不带)";
+    string filterExampleStr = GetLanguageService().GetUtf8String(StringId::SUPPORT_FORMAT_BELOW) +
+                              u8"\r\n *.h *.hpp *.c *.cpp *.txt\r\n h hpp c cpp txt\r\n h|hpp|c|cpp\r\n" +
+                              GetLanguageService().GetUtf8String(StringId::SEPERATOR_DESCRIPTION);
 
     // 如果为空
     if (exts.empty()) {
-        throw runtime_error("没有指定要过滤的后缀。\r\n\r\n" + filterExampleStr);
+        throw runtime_error(GetLanguageService().GetUtf8String(StringId::NO_SPECIFY_FILTER_EXTEND) + u8"\r\n\r\n" +
+                            filterExampleStr);
     }
 
     // 逐个检查
@@ -534,7 +541,8 @@ void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstr
         wregex r(pattern);
         wsmatch results;
         if (regex_match(extStr, results, r) == false) {
-            throw runtime_error("指定的后缀过滤器无效：" + to_string(extStr) + "\r\n\r\n" + filterExampleStr);
+            throw runtime_error(GetLanguageService().GetUtf8String(StringId::INVALID_EXTEND_FILTER) +
+                                to_string(extStr) + u8"\r\n\r\n" + filterExampleStr);
         }
 
         fn(tolower(TEXT(".") + results.str(2)));
