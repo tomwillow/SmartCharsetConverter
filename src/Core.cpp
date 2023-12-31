@@ -1,5 +1,7 @@
 #include "Core.h"
 
+#include "Language.h"
+
 #include <FileFunction.h>
 
 #include <unicode/ucnv.h>
@@ -23,9 +25,9 @@ void DealWithUCNVError(UErrorCode err) {
     case U_AMBIGUOUS_ALIAS_WARNING: // windows-1252 时会出这个，暂时忽略
         break;
     case U_INVALID_CHAR_FOUND:
-        throw runtime_error("内容包含无效字符");
+        throw runtime_error(GetLanguageService().GetUtf8String(StringId::INVALID_CHARACTERS));
     default:
-        throw runtime_error("ucnv出错。code=" + to_string(err));
+        throw runtime_error("ucnv error. code=" + to_string(err));
         break;
     }
 }
@@ -168,7 +170,7 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
     while (1) {
         err = U_ZERO_ERROR;
         retLen = ucnv_fromUChars(conv.get(), target.get(), destCap, buf.get(), bufSize, &err);
-        if (err == U_BUFFER_OVERFLOW_ERROR) {
+        if (err == U_BUFFER_OVERFLOW_ERROR || err == U_STRING_NOT_TERMINATED_WARNING) {
             destCap = retLen + 6; // 增加一个尾后0的大小：utf-8 单个字符最大占用字节数
             target.reset(new char[destCap]);
             continue;
@@ -185,9 +187,9 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
 
         auto [buf, bufSize] = Decode(reinterpret_cast<char *>(s), context->unassigned.size() * 4, CharsetCode::UTF32LE);
 
-        auto [ret, retSize] = Encode(buf, bufSize, CharsetCode::GB18030);
+        auto [ret, retSize] = Encode(buf, bufSize, CharsetCode::UTF8);
 
-        throw runtime_error(string("转换到目标编码会丢失字符：") + ret.get());
+        throw runtime_error(GetLanguageService().GetUtf8String(StringId::WILL_LOST_CHARACTERS) + ret.get());
     }
 
     return make_tuple(std::move(target), retLen);
@@ -616,9 +618,9 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
 
         } while (0);
 
-    } catch (runtime_error &e) {
+    } catch (const std::runtime_error &err) {
         // 这个文件失败了
-        ret.errInfo = to_tstring(e.what());
+        ret.errInfo = utf8_to_wstring(err.what());
     }
 
     // 这个文件成功了

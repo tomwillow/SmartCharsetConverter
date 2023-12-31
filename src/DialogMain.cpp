@@ -555,7 +555,7 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
     switch (core->GetConfig().filterMode) {
     case Configuration::FilterMode::NO_FILTER:
     case Configuration::FilterMode::SMART: // 智能识别文本
-        dialogFilter = {{L"所有文件*.*", L"*.*"}};
+        dialogFilter = {{GetLanguageService().GetWString(StringId::ALL_FILES) + L"*.*", L"*.*"}};
         break;
     case Configuration::FilterMode::ONLY_SOME_EXTANT: {
         // 只包括指定后缀
@@ -582,7 +582,7 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
     }
     return 0;
 } catch (runtime_error &err) {
-    MessageBox(to_tstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+    MessageBox(utf8_to_wstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
                MB_OK | MB_ICONERROR);
     return 0;
 }
@@ -598,7 +598,7 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 
     return 0;
 } catch (runtime_error &err) {
-    MessageBox(to_tstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+    MessageBox(utf8_to_wstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
                MB_OK | MB_ICONERROR);
     return 0;
 }
@@ -713,13 +713,15 @@ LRESULT DialogMain::OnSpecifyOriginCharset(WORD /*wNotifyCode*/, WORD wID, HWND 
     }
 
     if (!failed.empty()) {
-        tstring info = TEXT("以下文件设置字符集失败：\r\n");
+        string info = GetLanguageService().GetUtf8String(StringId::FAILED_TO_SET_CHARSET_MANUALLY) + u8"\r\n";
         for (auto &pr : failed) {
-            info += pr.first + TEXT(" 原因：") + pr.second + TEXT("\r\n");
+            info += to_utf8(pr.first) + GetLanguageService().GetUtf8String(StringId::REASON) + to_utf8(pr.second) +
+                    u8"\r\n";
         }
 
         MyMessage *msg = new MyMessage([this, info]() {
-            MessageBox(info.c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+            MessageBox(utf8_to_wstring(info).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+                       MB_OK | MB_ICONERROR);
         });
         PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     }
@@ -736,7 +738,7 @@ LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/
     if (edit.GetWindowTextLengthW() != 0) {
         bool ok = edit.GetWindowTextW(bstr);
         if (!ok)
-            throw runtime_error("出错：内存不足。");
+            throw runtime_error(GetLanguageService().GetUtf8String(StringId::NO_MEMORY));
         filterStr = bstr;
         SysFreeString(bstr);
     }
@@ -746,7 +748,7 @@ LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/
 
     return 0;
 } catch (runtime_error &err) {
-    MessageBox(to_tstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+    MessageBox(utf8_to_wstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
                MB_OK | MB_ICONERROR);
     return 0;
 }
@@ -803,8 +805,9 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
     AddItemsAsync(filenames);
 
     return 0;
-} catch (runtime_error &e) {
-    MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+} catch (const std::runtime_error &err) {
+    MessageBox(utf8_to_wstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+               MB_OK | MB_ICONERROR);
     return 0;
 }
 
@@ -835,7 +838,7 @@ std::vector<pair<int, bool>> DialogMain::SetBusyState() noexcept {
     }
 
     // 开始按钮text变更为“取消”，并额外enable，用于让用户按“取消”
-    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("取消"));
+    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(GetLanguageService().GetWString(StringId::CANCEL).c_str());
     GetDlgItem(IDC_BUTTON_START).EnableWindow(true);
     return restore;
 }
@@ -846,7 +849,7 @@ void DialogMain::RestoreReadyState(const std::vector<std::pair<int, bool>> &rest
         wnd.EnableWindow(pr.second);
     }
 
-    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(TEXT("开始转换"));
+    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(GetLanguageService().GetWString(StringId::START_CONVERT).c_str());
 }
 
 void DialogMain::AppendListViewItem(std::wstring filename, uint64_t fileSize, CharsetCode charset, LineBreaks lineBreak,
