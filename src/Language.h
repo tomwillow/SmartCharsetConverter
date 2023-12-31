@@ -76,6 +76,7 @@ enum class StringId {
     OPEN_WITH_NOTEPAD,
     SPECIFY_ORIGIN_ENCODING,
     REMOVE,
+    SELECT_FOLDER,
 
     END
 };
