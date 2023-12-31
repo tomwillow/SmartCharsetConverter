@@ -109,19 +109,24 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
                        static_cast<int>(ListViewColumn::INDEX));
     listview.SetColumnWidth(0, 40);
 
-    listview.AddColumn(TEXT("文件名"), static_cast<int>(ListViewColumn::FILENAME));
+    listview.AddColumn(GetLanguageService().GetWString(StringId::FILENAME).c_str(),
+                       static_cast<int>(ListViewColumn::FILENAME));
     listview.SetColumnWidth(1, 300);
 
-    listview.AddColumn(TEXT("大小"), static_cast<int>(ListViewColumn::FILESIZE));
+    listview.AddColumn(GetLanguageService().GetWString(StringId::SIZE).c_str(),
+                       static_cast<int>(ListViewColumn::FILESIZE));
     listview.SetColumnWidth(2, 60);
 
-    listview.AddColumn(TEXT("编码"), static_cast<int>(ListViewColumn::ENCODING));
+    listview.AddColumn(GetLanguageService().GetWString(StringId::ENCODING).c_str(),
+                       static_cast<int>(ListViewColumn::ENCODING));
     listview.SetColumnWidth(3, 60);
 
-    listview.AddColumn(TEXT("换行符"), static_cast<int>(ListViewColumn::LINE_BREAK));
+    listview.AddColumn(GetLanguageService().GetWString(StringId::LINE_BREAKS).c_str(),
+                       static_cast<int>(ListViewColumn::LINE_BREAK));
     listview.SetColumnWidth(4, 60);
 
-    listview.AddColumn(TEXT("文本片段"), static_cast<int>(ListViewColumn::TEXT_PIECE));
+    listview.AddColumn(GetLanguageService().GetWString(StringId::TEXT_PIECE).c_str(),
+                       static_cast<int>(ListViewColumn::TEXT_PIECE));
     listview.SetColumnWidth(5, 200);
 
     // 右键菜单
@@ -214,7 +219,8 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
                 filterDotExts.insert(dotExt);
             });
         } catch (const std::runtime_error &err) {
-            MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
+            MessageBox(to_tstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+                       MB_OK | MB_ICONERROR);
             return {};
         }
         break;
@@ -264,38 +270,47 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 AddItemsAbort:
 
     if (!failed.empty()) {
-        tstring info = TEXT("以下文件添加失败：\r\n");
+        tstring info = GetLanguageService().GetWString(StringId::FAILED_ADD_BELOW) + TEXT("\r\n");
         for (auto &pr : failed) {
-            info += pr.first + TEXT(" 原因：") + pr.second + TEXT("\r\n");
+            info += pr.first + TEXT(" ") + GetLanguageService().GetWString(StringId::REASON) + TEXT(" ") + pr.second +
+                    TEXT("\r\n ");
         }
 
         MyMessage *msg = new MyMessage([this, info]() {
-            MessageBox(info.c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+            MessageBox(info.c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+                       MB_OK | MB_ICONERROR);
         });
         PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     }
 
     if (!ignored.empty()) {
-        tstringstream ss;
-        ss << to_tstring(ignored.size()) << TEXT(" 个文件被判定为非文本文件、或者没有探测出字符集：\r\n");
+        stringstream ss;
+
+        std::string fmtStr = GetLanguageService().GetUtf8String(StringId::NON_TEXT_OR_NO_DETECTED);
+        std::string dest(fmtStr.size() + 32LL, '\0');
+        snprintf(dest.data(), dest.size(), fmtStr.c_str(), ignored.size());
+        dest.erase(dest.begin() + dest.find_last_not_of('\0') + 1, dest.end());
+
+        ss << dest << u8"\r\n";
 
         int count = 0;
         for (auto &filename : ignored) {
-            ss << filename << TEXT("\r\n");
+            ss << to_utf8(filename) << u8"\r\n";
             count++;
 
             if (count >= 5) {
-                ss << TEXT("......等");
+                ss << GetLanguageService().GetUtf8String(StringId::AND_SO_ON);
                 break;
             }
         }
 
-        ss << L"\r\n\r\n";
-        ss << L"提示：使用“不过滤”模式再次添加，可以在列表框中点击右键手动指定原编码集。";
+        ss << u8"\r\n\r\n";
+        ss << GetLanguageService().GetUtf8String(StringId::TIPS_USE_NO_FILTER);
 
-        wstring s = ss.str();
+        string s = ss.str();
         PostUIFunc([this, s]() {
-            MessageBox(s.c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
+            MessageBox(utf8_to_wstring(s).c_str(), GetLanguageService().GetWString(StringId::PROMPT).c_str(),
+                       MB_OK | MB_ICONINFORMATION);
         });
         return ignored;
     }
@@ -343,13 +358,13 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
 
     // 如果没有内容
     if (listview.GetItemCount() == 0) {
-        throw runtime_error("没有待转换的文件。");
+        throw runtime_error(GetLanguageService().GetUtf8String(StringId::NO_FILE_TO_CONVERT));
     }
 
     // 检查输出目录
     if (core->GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN) {
         if (core->GetConfig().outputDir.empty()) {
-            throw runtime_error("输出目录无效。");
+            throw runtime_error(GetLanguageService().GetUtf8String(StringId::INVALID_OUTPUT_DIR));
         }
     }
 
@@ -433,14 +448,16 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
 
         wstring s = ss.str();
         PostUIFunc([this, s]() {
-            MessageBox(s.c_str(), TEXT("提示"), MB_OK | MB_ICONINFORMATION);
+            MessageBox(s.c_str(), GetLanguageService().GetWString(StringId::PROMPT).c_str(),
+                       MB_OK | MB_ICONINFORMATION);
         });
     }
 
     return;
 } catch (const runtime_error &err) {
     PostUIFunc([this, err]() {
-        MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
+        MessageBox(utf8_to_wstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+                   MB_OK | MB_ICONERROR);
     });
     return;
 }
@@ -557,7 +574,8 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
     }
     return 0;
 } catch (runtime_error &err) {
-    MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
+    MessageBox(to_tstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+               MB_OK | MB_ICONERROR);
     return 0;
 }
 
@@ -572,7 +590,8 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 
     return 0;
 } catch (runtime_error &err) {
-    MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
+    MessageBox(to_tstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+               MB_OK | MB_ICONERROR);
     return 0;
 }
 
@@ -719,7 +738,8 @@ LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/
 
     return 0;
 } catch (runtime_error &err) {
-    MessageBox(to_tstring(err.what()).c_str(), TEXT("出错"), MB_OK | MB_ICONERROR);
+    MessageBox(to_tstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+               MB_OK | MB_ICONERROR);
     return 0;
 }
 

@@ -22,6 +22,20 @@ enum class StringId {
     BEGIN = 0,
     // 序号
     INDEX,
+    FILENAME,
+    SIZE,
+    ENCODING,
+    LINE_BREAKS,
+    TEXT_PIECE,
+    MSGBOX_ERROR,
+    FAILED_ADD_BELOW,
+    REASON,
+    NON_TEXT_OR_NO_DETECTED,
+    AND_SO_ON,
+    TIPS_USE_NO_FILTER,
+    PROMPT,
+    NO_FILE_TO_CONVERT,
+    INVALID_OUTPUT_DIR,
 
     END
 };
