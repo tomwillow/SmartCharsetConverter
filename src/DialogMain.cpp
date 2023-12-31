@@ -78,6 +78,8 @@ void DialogMain::RefreshInterfaceByCurrentLanguage() noexcept {
     GetDlgItem(IDC_STATIC_SET_OUTPUT).SetWindowTextW(GetLanguageService().GetWString(StringId::SET_OUTPUT).c_str());
     GetDlgItem(IDC_RADIO_TO_ORIGIN).SetWindowTextW(GetLanguageService().GetWString(StringId::OUTPUT_TO_ORIGIN).c_str());
     GetDlgItem(IDC_RADIO_TO_DIR).SetWindowTextW(GetLanguageService().GetWString(StringId::OUTPUT_TO_FOLDER).c_str());
+    GetDlgItem(IDC_BUTTON_SET_OUTPUT_DIR)
+        .SetWindowTextW(GetLanguageService().GetWString(StringId::SELECT_FOLDER).c_str());
     GetDlgItem(IDC_STATIC_SET_OUTPUT_CHARSET)
         .SetWindowTextW(GetLanguageService().GetWString(StringId::SET_OUTPUT_CHARSET).c_str());
     GetDlgItem(IDC_RADIO_OTHER).SetWindowTextW(GetLanguageService().GetWString(StringId::OTHERS).c_str());
