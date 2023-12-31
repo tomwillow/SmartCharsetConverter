@@ -40,3 +40,13 @@ std::tstring TListView::GetItemText(int nItem, int nSubItem) const {
 
     return ans;
 }
+
+void TListView::SetColumnText(int col, const std::tstring &s) noexcept {
+    std::tstring buf(s);
+    buf.push_back(TEXT('\0'));
+    LVCOLUMN lvColumn;
+    lvColumn.mask = LVCF_TEXT;
+    lvColumn.iSubItem = col;
+    lvColumn.pszText = buf.data();
+    SetColumn(col, &lvColumn);
+}

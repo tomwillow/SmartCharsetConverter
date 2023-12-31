@@ -60,16 +60,7 @@ void DialogMain::OnClose() {
     EndDialog(0);
 }
 
-BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
-    // 设置窗口的大小图标
-    // 大图标：按下alt+tab键切换窗口时对应的图标
-    // 小图标：就是窗口左上角对应的那个图标
-    HICON hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1));
-    ::SendMessage(m_hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-    ::SendMessage(m_hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
-
-    SetWindowText(appTitle.c_str());
-
+void DialogMain::RefreshInterfaceByCurrentLanguage() noexcept {
     // set controls by language settings
     GetDlgItem(IDC_STATIC_FILE_LISTS).SetWindowTextW(GetLanguageService().GetWString(StringId::FILE_LISTS).c_str());
     GetDlgItem(IDC_STATIC_SET_FILTER_MODE)
@@ -94,6 +85,30 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
         .SetWindowTextW(GetLanguageService().GetWString(StringId::CHANGE_LINE_BREAKS).c_str());
     GetDlgItem(IDC_BUTTON_START).SetWindowTextW(GetLanguageService().GetWString(StringId::START_CONVERT).c_str());
     GetDlgItem(IDC_BUTTON_CLEAR).SetWindowTextW(GetLanguageService().GetWString(StringId::CLEAR_LISTS).c_str());
+
+    listview.SetColumnText(static_cast<int>(ListViewColumn::INDEX),
+                           GetLanguageService().GetWString(StringId::INDEX).c_str());
+    listview.SetColumnText(static_cast<int>(ListViewColumn::FILENAME),
+                           GetLanguageService().GetWString(StringId::FILENAME).c_str());
+    listview.SetColumnText(static_cast<int>(ListViewColumn::FILESIZE),
+                           GetLanguageService().GetWString(StringId::SIZE).c_str());
+    listview.SetColumnText(static_cast<int>(ListViewColumn::ENCODING),
+                           GetLanguageService().GetWString(StringId::ENCODING).c_str());
+    listview.SetColumnText(static_cast<int>(ListViewColumn::LINE_BREAK),
+                           GetLanguageService().GetWString(StringId::LINE_BREAKS).c_str());
+    listview.SetColumnText(static_cast<int>(ListViewColumn::TEXT_PIECE),
+                           GetLanguageService().GetWString(StringId::TEXT_PIECE).c_str());
+}
+
+BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
+    // 设置窗口的大小图标
+    // 大图标：按下alt+tab键切换窗口时对应的图标
+    // 小图标：就是窗口左上角对应的那个图标
+    HICON hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(IDI_ICON1));
+    ::SendMessage(m_hWnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+    ::SendMessage(m_hWnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+
+    SetWindowText(appTitle.c_str());
 
     BOOL bHandle = true;
 
@@ -166,6 +181,8 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
     ::DragAcceptFiles(listview, true);
 
     setlocale(LC_CTYPE, "");
+
+    RefreshInterfaceByCurrentLanguage();
 
     CenterWindow();
 
