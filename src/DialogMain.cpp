@@ -182,6 +182,8 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
         specifyOriginCharsetMenu.AppendItem(id, ToViewCharsetName(code));
     }
 
+    selectLanguageMenu = std::make_unique<TPopupMenu>(IDR_MENU_SELECT_LANGUAGES);
+
     // 启用拖放
     ::DragAcceptFiles(listview, true);
 
@@ -680,6 +682,13 @@ LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, H
 LRESULT DialogMain::OnBnClickedButtonClear(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/) {
     listview.DeleteAllItems();
     core->Clear();
+    return 0;
+}
+
+LRESULT DialogMain::OnBnClickedButtonSettings(WORD, WORD, HWND, BOOL &) {
+    // 弹出右键菜单
+    selectLanguageMenu->Popup(m_hWnd);
+
     return 0;
 }
 
