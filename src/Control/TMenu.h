@@ -23,6 +23,8 @@ public:
 
     std::wstring GetItemString(int pos) noexcept;
 
+    void SetItemString(int pos, const std::wstring &s) noexcept;
+
     TMenu &GetChild(int itemId);
 
 protected:
