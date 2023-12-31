@@ -70,6 +70,19 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
 
     SetWindowText(appTitle.c_str());
 
+    // set controls by language settings
+    GetDlgItem(IDC_STATIC_FILE_LISTS).SetWindowTextW(GetLanguageService().GetWString(StringId::FILE_LISTS).c_str());
+    GetDlgItem(IDC_STATIC_SET_FILTER_MODE)
+        .SetWindowTextW(GetLanguageService().GetWString(StringId::SET_FILTER_MODE).c_str());
+    GetDlgItem(IDC_RADIO_STRETEGY_NO_FILTER)
+        .SetWindowTextW(GetLanguageService().GetWString(StringId::NO_FILTER).c_str());
+    GetDlgItem(IDC_RADIO_STRETEGY_SMART)
+        .SetWindowTextW(GetLanguageService().GetWString(StringId::SMART_FILE_DETECTION).c_str());
+    GetDlgItem(IDC_RADIO_STRETEGY_MANUAL)
+        .SetWindowTextW(GetLanguageService().GetWString(StringId::USE_FILE_EXTENSION).c_str());
+    GetDlgItem(IDC_STATIC_ADD_FILES_OR_FOLDER)
+        .SetWindowTextW(GetLanguageService().GetWString(StringId::ADD_FILES_OR_FOLDER).c_str());
+
     BOOL bHandle = true;
 
     // 包含/排除指定后缀
