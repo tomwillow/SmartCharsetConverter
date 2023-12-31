@@ -57,7 +57,9 @@ v0.71 修复命令行用不了的bug。
 v0.72 解决添加大文件会卡死的问题（只探测文件前100KB）。
       后缀过滤模式现在支持更多的模式了（支持以`*.` `.` `空格` `|`分隔）。修复后缀过滤模式的其他问题。
 
-v0.8 重新编排界面。TODO 支持多语言。增加语言选择，增加配置文件。
+v0.8 重新编排界面。
+      增加配置文件，现在界面改动会保留在配置文件中了。
+      TODO 支持多语言。增加语言选择。
 
 # TODO
 
@@ -73,6 +75,24 @@ v0.8 重新编排界面。TODO 支持多语言。增加语言选择，增加配�
 3. 修改 build_on_win32.bat 以适配你的 vcpkg 安装目录。
 4. 执行 build_on_win32.bat 生成.sln。
 5. 打开 ../build_SmartCharsetConverter/SmartCharsetConverter.sln。
+
+# 添加语言包
+
+> 语言包只影响程序的界面，和程序的功能无关。
+
+如果您想为本程序添加新的语言包，可以遵循以下步骤：
+
+1. 在src/Resource/lang_embed下找到xxx.json文件。
+2. 复制xxx.json文件并修改内容。文件名可以随意取，程序并不依赖语言文件的文件名。
+3. 修改内容时注意langId字段，从[[MS-LCID]: Windows Language Code Identifier (LCID) Reference](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/70feba9f-294e-491e-b6eb-56532684c37f?redirectedfrom=MSDN)处下载pdf，翻阅至`2.2  LCID Structure - Language ID (2 bytes)`一节，找到目标语言对应的Language ID。`例如：0x409对应于en-US，0x804对应于zh-CN。`然后把16进制转换为10进制填入langId字段。`例如0x409则填入1033，0x804则填入2052`。
+      这个Language ID和操作系统设置有关，正确填写的话，程序启动时会根据操作系统设置自动加载对应的语言文件（前提条件是没有在程序中设置过语言，如果在程序中设置过语言，那么以设置的为准）。
+> 如果你不知道langId应该填什么，那么可以填0。
+4. 把你的xxx.json语言文件放置在SmartCharsetConverter.exe所在目录的lang目录(如果没有则新建一个)下，程序启动时会自动检查并加载。
+> 注意：程序中内置了一些语言包，如果lang目录下的语言包的langId和内置的某个语言包一样，那么程序将以lang目录下的语言包文件为准。
+
+现在你可以启动程序查看效果了！
+
+> 如果想要让程序内置你的语言包，可以提pull requests或者联系作者(tomwillow@qq.com)来给你内置。
 
 # Reference
 

@@ -28,6 +28,8 @@ struct Configuration {
     CharsetCode outputCharset;
     bool enableConvertLineBreaks;
     LineBreaks lineBreak;
+    std::string language;
+    // if member variables is added, it must be synchronized at NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE below.
 
     Configuration()
         : filterMode(FilterMode::SMART), outputTarget(OutputTarget::ORIGIN), outputCharset(CharsetCode::UTF8),
@@ -39,4 +41,4 @@ struct Configuration {
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(Configuration, filterMode, outputTarget, includeRule, excludeRule, outputDir,
-                                   outputCharset, enableConvertLineBreaks, lineBreak)
+                                   outputCharset, enableConvertLineBreaks, lineBreak, language)

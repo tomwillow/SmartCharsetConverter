@@ -17,6 +17,12 @@ int main() {
 #else
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR szCmdLine, int nCmdShow) {
 #endif
+
+#ifndef NDEBUG
+    Split_UnitTest();
+    Test_GetLineBreaks();
+#endif
+
     // 得到命令行参数
     const vector<wstring> args = GetCommandLineArgs();
 
@@ -45,9 +51,6 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR szCmdLine, int nC
 
     // GUI模式
     try {
-        Split_UnitTest();
-        Test_GetLineBreaks();
-
         InitCommonControls();
         SupportHighDPI();
 
@@ -62,7 +65,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR szCmdLine, int nC
         }
 
         return 0;
-    } catch (exception &e) {
+    } catch (const std::exception &e) {
         wstring content = to_wstring(e.what());
         MessageBox(0, content.c_str(), L"Error", MB_OK | MB_ICONERROR);
         return -1;
