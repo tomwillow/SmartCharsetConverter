@@ -1,8 +1,11 @@
 #include "DialogMain.h"
 
+// self
+#include "Control/TMenu.h"
+#include "Language.h"
+
 #include <tstring.h>
 #include <FileFunction.h>
-#include "Control/TMenu.h"
 
 #include <cassert>
 
@@ -15,13 +18,37 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("智能编码集转换器 v0.8 by Tom Willow");
+const std::tstring appTitle = TEXT("SmartCharsetConverter v0.8 by Tom Willow");
 
 const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
 
 using namespace std;
 
-DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilenames(filenames) {}
+DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilenames(filenames) {
+
+    CoreInitOption coreOpt;
+    coreOpt.fnUIUpdateItem = [this](int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
+                                    std::wstring lineBreakStr, std::wstring textPiece) {
+        PostUIFunc([=]() {
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::FILESIZE), fileSizeStr.c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::ENCODING), charsetStr.c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreakStr.c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::TEXT_PIECE), textPiece.c_str());
+        });
+    };
+
+    try {
+        core = make_unique<Core>(configFileName, coreOpt);
+
+        //
+        InitLanguageService([this]() -> std::string {
+            return core->GetConfig().language;
+        });
+    } catch (const nlohmann::json::exception &err) { throw; } catch (const std::exception &err) {
+        throw;
+    }
+}
 
 DialogMain::~DialogMain() {}
 
@@ -44,20 +71,6 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
     SetWindowText(appTitle.c_str());
 
     BOOL bHandle = true;
-
-    CoreInitOption coreOpt;
-    coreOpt.fnUIUpdateItem = [this](int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
-                                    std::wstring lineBreakStr, std::wstring textPiece) {
-        PostUIFunc([=]() {
-            listview.SetItemText(index, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
-            listview.SetItemText(index, static_cast<int>(ListViewColumn::FILESIZE), fileSizeStr.c_str());
-            listview.SetItemText(index, static_cast<int>(ListViewColumn::ENCODING), charsetStr.c_str());
-            listview.SetItemText(index, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreakStr.c_str());
-            listview.SetItemText(index, static_cast<int>(ListViewColumn::TEXT_PIECE), textPiece.c_str());
-        });
-    };
-
-    core = make_unique<Core>(configFileName, coreOpt);
 
     // 包含/排除指定后缀
     SetFilterMode(core->GetConfig().filterMode);
@@ -92,7 +105,8 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
     listview.ModifyStyle(0, LVS_REPORT);
     listview.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 
-    listview.AddColumn(TEXT("序号"), static_cast<int>(ListViewColumn::INDEX));
+    listview.AddColumn(GetLanguageService().GetWString(StringId::INDEX).c_str(),
+                       static_cast<int>(ListViewColumn::INDEX));
     listview.SetColumnWidth(0, 40);
 
     listview.AddColumn(TEXT("文件名"), static_cast<int>(ListViewColumn::FILENAME));

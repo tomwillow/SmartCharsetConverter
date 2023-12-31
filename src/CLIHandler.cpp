@@ -75,6 +75,8 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
         }
     });
 
+    // ==================== 命令行已挂载 =====================
+
     enum class TaskType { PURE_PRINT, CONVERT };
     TaskType taskType = TaskType::CONVERT;
     bool setInput = false;
