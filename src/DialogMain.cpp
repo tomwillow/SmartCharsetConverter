@@ -228,8 +228,8 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
         assert(0);
     }
 
-    vector<pair<tstring, tstring>> failed; // 失败的文件
-    vector<tstring> ignored;               // 忽略的文件
+    vector<pair<tstring, string>> failed; // 失败的文件
+    vector<tstring> ignored;              // 忽略的文件
 
     auto AddItemNoException = [&](const std::tstring &filename) {
         try {
@@ -240,8 +240,8 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
             PostUIFunc([filename, ret, this]() {
                 AppendListViewItem(filename, ret.filesize, ret.srcCharset, ret.srcLineBreak, ret.strPiece);
             });
-        } catch (io_error_ignore) { ignored.push_back(filename); } catch (runtime_error &e) {
-            failed.push_back({filename, to_tstring(e.what())});
+        } catch (io_error_ignore) { ignored.push_back(filename); } catch (const runtime_error &err) {
+            failed.push_back({filename, err.what()});
         }
     };
 
@@ -270,14 +270,14 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 AddItemsAbort:
 
     if (!failed.empty()) {
-        tstring info = GetLanguageService().GetWString(StringId::FAILED_ADD_BELOW) + TEXT("\r\n");
+        string info = GetLanguageService().GetUtf8String(StringId::FAILED_ADD_BELOW) + u8"\r\n";
         for (auto &pr : failed) {
-            info += pr.first + TEXT(" ") + GetLanguageService().GetWString(StringId::REASON) + TEXT(" ") + pr.second +
-                    TEXT("\r\n ");
+            info += to_utf8(pr.first) + u8" " + GetLanguageService().GetUtf8String(StringId::REASON) + u8" " +
+                    pr.second + u8"\r\n ";
         }
 
         MyMessage *msg = new MyMessage([this, info]() {
-            MessageBox(info.c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+            MessageBox(utf8_to_wstring(info).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
                        MB_OK | MB_ICONERROR);
         });
         PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
@@ -333,9 +333,10 @@ void DialogMain::AddItemsAsync(const std::vector<std::tstring> &filenames) noexc
 
         try {
             AddItems(filenames);
-        } catch (const runtime_error &e) {
-            PostUIFunc([this, e]() {
-                MessageBox(to_tstring(e.what()).c_str(), TEXT("Error"), MB_OK | MB_ICONERROR);
+        } catch (const runtime_error &err) {
+            PostUIFunc([this, err]() {
+                MessageBox(utf8_to_wstring(err.what()).c_str(),
+                           GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(), MB_OK | MB_ICONERROR);
             });
         }
     });

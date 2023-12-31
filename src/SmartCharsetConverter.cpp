@@ -60,14 +60,13 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR szCmdLine, int nC
             if (ret == -1) {
                 auto code = GetLastError();
                 throw runtime_error(string("DoModal fail. \ncode = ") + to_string(code) + string("\ninfo = ") +
-                                    to_string(GetLastErrorString(code)));
+                                    to_utf8(GetLastErrorString(code)));
             }
         }
 
         return 0;
-    } catch (const std::exception &e) {
-        wstring content = to_wstring(e.what());
-        MessageBox(0, content.c_str(), L"Error", MB_OK | MB_ICONERROR);
+    } catch (const std::exception &err) {
+        MessageBox(0, utf8_to_wstring(err.what()).c_str(), L"Error", MB_OK | MB_ICONERROR);
         return -1;
     }
 }

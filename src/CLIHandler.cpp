@@ -15,6 +15,8 @@
 using std::wcerr;
 using std::wcout;
 
+const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
+
 const wchar_t usage[] = LR"(
 SmartCharsetConverter --help [<options>]
 SmartCharsetConverter --input <path>... --target_charset <charset> [--target_linebreak <linebreak>] [--output_origin | --output_dir <dir>]
@@ -85,7 +87,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
     bool setOutput = false;
 
     CoreInitOption coreInitOpt;
-    Core core(TEXT("SmartCharsetConverter.ini"), coreInitOpt);
+    Core core(configFileName, coreInitOpt);
 
     core.SetFilterMode(Configuration::FilterMode::NO_FILTER);
 

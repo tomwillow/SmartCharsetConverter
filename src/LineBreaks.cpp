@@ -1,5 +1,7 @@
 #include "LineBreaks.h"
 
+#include "Language.h"
+
 #include <stdexcept>
 
 LineBreaks GetLineBreaks(const UChar *buf, int len) {
@@ -129,7 +131,7 @@ void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, LineBreaks target
     }
 
     if (out.size() >= std::numeric_limits<int>::max()) {
-        throw std::runtime_error("生成文件大小超出限制");
+        throw std::runtime_error(GetLanguageService().GetUtf8String(StringId::FILE_SIZE_OUT_OF_LIMIT));
     }
 
     int outLen = static_cast<int>(out.size());
