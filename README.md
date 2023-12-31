@@ -84,6 +84,7 @@ v0.8 重新编排界面。
 
 1. 在src/Resource/lang_embed下找到xxx.json文件。
 2. 复制xxx.json文件并修改内容。文件名可以随意取，程序并不依赖语言文件的文件名。
+> xxx.json文件必须是utf-8编码。
 3. 修改内容时注意langId字段，从[[MS-LCID]: Windows Language Code Identifier (LCID) Reference](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/70feba9f-294e-491e-b6eb-56532684c37f?redirectedfrom=MSDN)处下载pdf，翻阅至`2.2  LCID Structure - Language ID (2 bytes)`一节，找到目标语言对应的Language ID。`例如：0x409对应于en-US，0x804对应于zh-CN。`然后把16进制转换为10进制填入langId字段。`例如0x409则填入1033，0x804则填入2052`。
       这个Language ID和操作系统设置有关，正确填写的话，程序启动时会根据操作系统设置自动加载对应的语言文件（前提条件是没有在程序中设置过语言，如果在程序中设置过语言，那么以设置的为准）。
 > 如果你不知道langId应该填什么，那么可以填0。
