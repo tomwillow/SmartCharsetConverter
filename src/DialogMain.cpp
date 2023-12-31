@@ -366,8 +366,8 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
         }
     }
 
-    vector<pair<tstring, tstring>> failed; // 失败文件/失败原因
-    vector<tstring> succeed;               // 成功的文件
+    vector<pair<tstring, string>> failed; // 失败文件/失败原因
+    vector<tstring> succeed;              // 成功的文件
 
     // 目标编码
     auto targetCode = core->GetConfig().outputCharset;
@@ -425,8 +425,8 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
         ss << dest << u8"\r\n\r\n";
         ss << GetLanguageService().GetUtf8String(StringId::FAILED_CONVERT_BELOW) + u8"\r\n";
         for (auto &pr : failed) {
-            ss << to_utf8(pr.first) << u8" " << GetLanguageService().GetUtf8String(StringId::REASON)
-               << to_utf8(pr.second) << u8"\r\n";
+            ss << to_utf8(pr.first) << u8" " << GetLanguageService().GetUtf8String(StringId::REASON) << pr.second
+               << u8"\r\n";
         }
         if (doCancel) {
             ss << u8"\r\n\r\n" << GetLanguageService().GetUtf8String(StringId::NO_DEAL_DUE_TO_CANCEL);

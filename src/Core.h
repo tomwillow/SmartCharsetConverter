@@ -105,7 +105,7 @@ public:
 
     struct ConvertResult {
         std::tstring outputFileName;
-        std::optional<std::tstring> errInfo;
+        std::optional<std::string> errInfo;
         LineBreaks targetLineBreaks;
         int outputFileSize;
     };

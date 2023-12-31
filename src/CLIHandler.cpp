@@ -306,7 +306,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
             wcout << L"  字符集: " << ToViewCharsetName(addedItem.srcCharset) << L"\n";
             wcout << L"  换行符: " << lineBreaksMap.at(addedItem.srcLineBreak) << L"\n";
             SetConsoleColor(ConsoleColor::RED);
-            wcerr << L"转换失败。原因: " << ret.errInfo.value() << L"\n";
+            wcerr << L"转换失败。原因: " << utf8_to_wstring(ret.errInfo.value()) << L"\n";
             wcerr << L"\n";
             SetConsoleColor();
             failed++;
