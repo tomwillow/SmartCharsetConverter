@@ -48,27 +48,23 @@ void TMenu::InsertItem(int posId, int newItemid, const std::wstring &s) noexcept
     assert(ok);
 }
 
-std::wstring TMenu::GetItemString(int pos) noexcept {
-    MENUITEMINFO menuItemInfo = {0};
-
-    // 第一次，先拿到cch，即文本长度
-    menuItemInfo.cbSize = sizeof(MENUITEMINFO);
-    menuItemInfo.fMask = MIIM_STRING;
-    BOOL ok = GetMenuItemInfo(hMenu, pos, TRUE, &menuItemInfo);
-    assert(ok);
-
-    // 增加长度，以容纳尾后0
-    menuItemInfo.cch++;
-    std::wstring ws(menuItemInfo.cch, L'\0');
-
-    // 把字符串指针指向ws，让系统往ws里写内容
-    menuItemInfo.dwTypeData = const_cast<wchar_t *>(ws.data());
-    ok = GetMenuItemInfo(hMenu, pos, TRUE, &menuItemInfo);
-    assert(ok);
-    return ws;
+std::wstring TMenu::GetItemTextByPosition(int pos) noexcept {
+    return GetItemTextByPositionOrId(true, pos);
 }
 
-void TMenu::SetItemString(int pos, const std::wstring &s) noexcept {
+std::wstring TMenu::GetItemTextById(int id) noexcept {
+    return GetItemTextByPositionOrId(false, id);
+}
+
+void TMenu::SetItemTextByPosition(int pos, const std::wstring &s) noexcept {
+    SetItemTextByPositionOrId(true, pos, s);
+}
+
+void TMenu::SetItemTextById(int id, const std::wstring &s) noexcept {
+    SetItemTextByPositionOrId(false, id, s);
+}
+
+void TMenu::SetItemTextByPositionOrId(bool byPosition, int posOrId, const std::wstring &s) noexcept {
     std::wstring ws(s);
     ws.push_back(L'\0');
 
@@ -78,12 +74,32 @@ void TMenu::SetItemString(int pos, const std::wstring &s) noexcept {
     menuItemInfo.fMask = MIIM_STRING;
     menuItemInfo.cch = ws.size();
     menuItemInfo.dwTypeData = const_cast<wchar_t *>(ws.data());
-    BOOL ok = SetMenuItemInfo(hMenu, pos, TRUE, &menuItemInfo);
+    BOOL ok = SetMenuItemInfo(hMenu, posOrId, byPosition, &menuItemInfo);
     assert(ok);
 }
 
 TMenu &TMenu::GetChild(int itemId) {
     return children.at(itemId);
+}
+
+std::wstring TMenu::GetItemTextByPositionOrId(bool byPosition, int posOrId) noexcept {
+    MENUITEMINFO menuItemInfo = {0};
+
+    // 第一次，先拿到cch，即文本长度
+    menuItemInfo.cbSize = sizeof(MENUITEMINFO);
+    menuItemInfo.fMask = MIIM_STRING;
+    BOOL ok = GetMenuItemInfo(hMenu, posOrId, byPosition, &menuItemInfo);
+    assert(ok);
+
+    // 增加长度，以容纳尾后0
+    menuItemInfo.cch++;
+    std::wstring ws(menuItemInfo.cch, L'\0');
+
+    // 把字符串指针指向ws，让系统往ws里写内容
+    menuItemInfo.dwTypeData = const_cast<wchar_t *>(ws.data());
+    ok = GetMenuItemInfo(hMenu, posOrId, byPosition, &menuItemInfo);
+    assert(ok);
+    return ws;
 }
 
 TPopupMenu::TPopupMenu(int menuId) noexcept {

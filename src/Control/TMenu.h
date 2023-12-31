@@ -21,15 +21,21 @@ public:
 
     void InsertItem(int posId, int newItemid, const std::wstring &s) noexcept;
 
-    std::wstring GetItemString(int pos) noexcept;
+    std::wstring GetItemTextByPosition(int pos) noexcept;
+    std::wstring GetItemTextById(int id) noexcept;
 
-    void SetItemString(int pos, const std::wstring &s) noexcept;
+    void SetItemTextByPosition(int pos, const std::wstring &s) noexcept;
+    void SetItemTextById(int id, const std::wstring &s) noexcept;
 
     TMenu &GetChild(int itemId);
 
 protected:
     HMENU hMenu;
     std::map<int, TMenu> children;
+
+    std::wstring GetItemTextByPositionOrId(bool byPosition, int posOrId) noexcept;
+
+    void SetItemTextByPositionOrId(bool byPosition, int posOrId, const std::wstring &s) noexcept;
 };
 
 class TPopupMenu : public TMenu {
