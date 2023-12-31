@@ -345,9 +345,8 @@ CharsetCode ToCharsetCodeFinal(std::string charsetStr, const char *buf, int bufS
         try {
             code = ToCharsetCode(to_wstring(charsetStr));
         } catch (...) {
-            string info = "暂不支持：";
-            info += charsetStr;
-            info += "，请联系作者。";
+            string info = MyPrintf(GetLanguageService().GetUtf8String(StringId::INVALID_CHARACTERS),
+                                   charsetStr.size() + 1LL, charsetStr.c_str());
             throw runtime_error(info);
         }
     }
@@ -401,7 +400,7 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
 
     // 如果重复了
     if (listFileNames.find(filename) != listFileNames.end()) {
-        throw runtime_error("重复添加");
+        throw runtime_error(GetLanguageService().GetUtf8String(StringId::ADD_REDUNDANTLY));
     }
 
     // 读入文件，只读入部分。因为读入大文件会占用太长时间。
@@ -508,7 +507,7 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
 
         // 原编码集
         if (originCode == CharsetCode::UNKNOWN) {
-            throw runtime_error("未探测出编码集");
+            throw runtime_error(GetLanguageService().GetUtf8String(StringId::NO_DETECTED_ENCODING));
         }
 
         // 返回原字符集和目标字符集的条件为不需要转换的情形
@@ -535,7 +534,8 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
                 if (GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR) {
                     bool ok = CopyFile(inputFilename.c_str(), ret.outputFileName.c_str(), false);
                     if (!ok) {
-                        throw runtime_error("写入失败：" + to_string(ret.outputFileName));
+                        throw runtime_error(GetLanguageService().GetUtf8String(StringId::FAILED_TO_WRITE_FILE) +
+                                            to_utf8(ret.outputFileName));
                     }
                 }
 
@@ -560,7 +560,7 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
                 auto [raw, rawSize] = ReadFileToBuffer(inputFilename);
 
                 if (rawSize >= std::numeric_limits<int>::max()) {
-                    throw runtime_error("文件大小超出限制");
+                    throw runtime_error(GetLanguageService().GetUtf8String(StringId::FILE_SIZE_OUT_OF_LIMIT));
                 }
 
                 // 根据BOM偏移
@@ -590,7 +590,8 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
                 FILE *fp = nullptr;
                 errno_t err = _tfopen_s(&fp, ret.outputFileName.c_str(), TEXT("wb"));
                 if (fp == nullptr) {
-                    throw runtime_error("打开文件失败：" + to_string(ret.outputFileName));
+                    throw runtime_error(GetLanguageService().GetUtf8String(StringId::FAILED_TO_OPEN_FILE) +
+                                        to_utf8(ret.outputFileName));
                 }
                 unique_ptr<FILE, function<void(FILE *)>> upFile(fp, [](FILE *fp) {
                     fclose(fp);
@@ -604,7 +605,8 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
                     size_t wrote = fwrite(bomData, BomSize(targetCode), 1, fp);
                     ret.outputFileSize += BomSize(targetCode);
                     if (wrote != 1) {
-                        throw runtime_error("写入失败：" + to_string(ret.outputFileName));
+                        throw runtime_error(GetLanguageService().GetUtf8String(StringId::FAILED_TO_WRITE_FILE) +
+                                            to_utf8(ret.outputFileName));
                     }
                 }
 
@@ -612,7 +614,8 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
                 size_t wrote = fwrite(outputBuf.get(), outputBufSize, 1, fp);
                 ret.outputFileSize += outputBufSize;
                 if (outputBufSize != 0 && wrote != 1) {
-                    throw runtime_error("写入失败：" + to_string(ret.outputFileName));
+                    throw runtime_error(GetLanguageService().GetUtf8String(StringId::FAILED_TO_WRITE_FILE) +
+                                        to_utf8(ret.outputFileName));
                 }
             }
 
