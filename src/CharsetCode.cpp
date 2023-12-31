@@ -33,7 +33,7 @@ CharsetCode ToCharsetCode(const std::tstring &name) {
             }
         }
     }
-    throw std::runtime_error("unsupported: " + to_string(name));
+    throw std::runtime_error("unsupported: " + to_utf8(name));
 }
 
 std::string ToICUCharsetName(CharsetCode code) noexcept {

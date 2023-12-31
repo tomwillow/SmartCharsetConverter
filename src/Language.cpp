@@ -17,7 +17,7 @@ const char DEFAULT_LANGUAGE[] = u8"English";
 LanguagePack LoadLanguageFile(const std::wstring &filename) {
     std::ifstream ifs(to_string(filename));
     if (!ifs) {
-        throw std::runtime_error("open file fail: " + to_string(filename));
+        throw std::runtime_error("open file fail: " + to_utf8(filename));
     }
 
     nlohmann::json j = nlohmann::json::parse(ifs);
