@@ -51,17 +51,35 @@ void TMenu::InsertItem(int posId, int newItemid, const std::wstring &s) noexcept
 std::wstring TMenu::GetItemString(int pos) noexcept {
     MENUITEMINFO menuItemInfo = {0};
 
+    // 第一次，先拿到cch，即文本长度
     menuItemInfo.cbSize = sizeof(MENUITEMINFO);
     menuItemInfo.fMask = MIIM_STRING;
     BOOL ok = GetMenuItemInfo(hMenu, pos, TRUE, &menuItemInfo);
     assert(ok);
 
+    // 增加长度，以容纳尾后0
     menuItemInfo.cch++;
-    std::wstring ws(menuItemInfo.cch, '\0');
+    std::wstring ws(menuItemInfo.cch, L'\0');
+
+    // 把字符串指针指向ws，让系统往ws里写内容
     menuItemInfo.dwTypeData = const_cast<wchar_t *>(ws.data());
     ok = GetMenuItemInfo(hMenu, pos, TRUE, &menuItemInfo);
     assert(ok);
     return ws;
+}
+
+void TMenu::SetItemString(int pos, const std::wstring &s) noexcept {
+    std::wstring ws(s);
+    ws.push_back(L'\0');
+
+    MENUITEMINFO menuItemInfo = {0};
+
+    menuItemInfo.cbSize = sizeof(MENUITEMINFO);
+    menuItemInfo.fMask = MIIM_STRING;
+    menuItemInfo.cch = ws.size();
+    menuItemInfo.dwTypeData = const_cast<wchar_t *>(ws.data());
+    BOOL ok = SetMenuItemInfo(hMenu, pos, TRUE, &menuItemInfo);
+    assert(ok);
 }
 
 TMenu &TMenu::GetChild(int itemId) {
