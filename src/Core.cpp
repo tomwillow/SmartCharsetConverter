@@ -623,7 +623,7 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
 
     } catch (const std::runtime_error &err) {
         // 这个文件失败了
-        ret.errInfo = utf8_to_wstring(err.what());
+        ret.errInfo = err.what();
     }
 
     // 这个文件成功了
