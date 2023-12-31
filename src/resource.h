@@ -31,9 +31,11 @@
 #define IDC_BUTTON1                     1058
 #define IDC_BUTTON_SETTINGS             1058
 #define IDC_STATIC_FILE_LISTS           1059
-#define IDC_STATIC_SET_FILTER           1060
 #define IDC_STATIC_SET_FILTER_MODE      1060
 #define IDC_STATIC_ADD_FILES_OR_FOLDER  1061
+#define IDC_STATIC_SET                  1062
+#define IDC_STATIC_SET_OUTPUT           1062
+#define IDC_STATIC_SET_OUTPUT_CHARSET   1063
 #define ID_OPEN_WITH_NOTEPAD            40003
 #define ID_REMOVE_ITEM                  40004
 #define ID_40005                        40005
@@ -45,7 +47,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        107
 #define _APS_NEXT_COMMAND_VALUE         40007
-#define _APS_NEXT_CONTROL_VALUE         1062
+#define _APS_NEXT_CONTROL_VALUE         1064
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

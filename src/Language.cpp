@@ -53,6 +53,7 @@ LanguageService::LanguageService(std::function<std::string(void)> fnGetLanguageF
             lang = DEFAULT_LANGUAGE;
         }
     }
+    lang = DEFAULT_LANGUAGE;
 
     currentLang = languages.at(lang).get();
 
