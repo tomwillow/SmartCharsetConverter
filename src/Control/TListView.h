@@ -16,6 +16,8 @@ public:
     MESSAGE_HANDLER(WM_DROPFILES, OnDropFiles)
     END_MSG_MAP()
 
+    void SetColumnText(int col, const std::tstring &s) noexcept;
+
     std::vector<int> GetSelectedItems() const;
 
     std::tstring GetItemText(int nItem, int nSubItem) const;

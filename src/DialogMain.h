@@ -79,6 +79,8 @@ private:
 
     ThreadPool thPool;
 
+    void RefreshInterfaceByCurrentLanguage() noexcept;
+
     BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 
     void SetFilterMode(Configuration::FilterMode mode);
