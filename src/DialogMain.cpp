@@ -82,6 +82,18 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
         .SetWindowTextW(GetLanguageService().GetWString(StringId::USE_FILE_EXTENSION).c_str());
     GetDlgItem(IDC_STATIC_ADD_FILES_OR_FOLDER)
         .SetWindowTextW(GetLanguageService().GetWString(StringId::ADD_FILES_OR_FOLDER).c_str());
+    GetDlgItem(IDC_BUTTON_ADD_FILES).SetWindowTextW(GetLanguageService().GetWString(StringId::ADD_FILES).c_str());
+    GetDlgItem(IDC_BUTTON_ADD_DIR).SetWindowTextW(GetLanguageService().GetWString(StringId::ADD_FOLDER).c_str());
+    GetDlgItem(IDC_STATIC_SET_OUTPUT).SetWindowTextW(GetLanguageService().GetWString(StringId::SET_OUTPUT).c_str());
+    GetDlgItem(IDC_RADIO_TO_ORIGIN).SetWindowTextW(GetLanguageService().GetWString(StringId::OUTPUT_TO_ORIGIN).c_str());
+    GetDlgItem(IDC_RADIO_TO_DIR).SetWindowTextW(GetLanguageService().GetWString(StringId::OUTPUT_TO_FOLDER).c_str());
+    GetDlgItem(IDC_STATIC_SET_OUTPUT_CHARSET)
+        .SetWindowTextW(GetLanguageService().GetWString(StringId::SET_OUTPUT_CHARSET).c_str());
+    GetDlgItem(IDC_RADIO_OTHER).SetWindowTextW(GetLanguageService().GetWString(StringId::OTHERS).c_str());
+    GetDlgItem(IDC_CHECK_CONVERT_RETURN)
+        .SetWindowTextW(GetLanguageService().GetWString(StringId::CHANGE_LINE_BREAKS).c_str());
+    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(GetLanguageService().GetWString(StringId::START_CONVERT).c_str());
+    GetDlgItem(IDC_BUTTON_CLEAR).SetWindowTextW(GetLanguageService().GetWString(StringId::CLEAR_LISTS).c_str());
 
     BOOL bHandle = true;
 
@@ -124,7 +136,7 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
 
     listview.AddColumn(GetLanguageService().GetWString(StringId::FILENAME).c_str(),
                        static_cast<int>(ListViewColumn::FILENAME));
-    listview.SetColumnWidth(1, 300);
+    listview.SetColumnWidth(1, 280);
 
     listview.AddColumn(GetLanguageService().GetWString(StringId::SIZE).c_str(),
                        static_cast<int>(ListViewColumn::FILESIZE));
@@ -136,7 +148,7 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
 
     listview.AddColumn(GetLanguageService().GetWString(StringId::LINE_BREAKS).c_str(),
                        static_cast<int>(ListViewColumn::LINE_BREAK));
-    listview.SetColumnWidth(4, 60);
+    listview.SetColumnWidth(4, 80);
 
     listview.AddColumn(GetLanguageService().GetWString(StringId::TEXT_PIECE).c_str(),
                        static_cast<int>(ListViewColumn::TEXT_PIECE));
