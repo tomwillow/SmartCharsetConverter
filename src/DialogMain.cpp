@@ -98,6 +98,11 @@ void DialogMain::RefreshInterfaceByCurrentLanguage() noexcept {
                            GetLanguageService().GetWString(StringId::LINE_BREAKS).c_str());
     listview.SetColumnText(static_cast<int>(ListViewColumn::TEXT_PIECE),
                            GetLanguageService().GetWString(StringId::TEXT_PIECE).c_str());
+
+    rightMenu->SetItemTextById(ID_OPEN_WITH_NOTEPAD, GetLanguageService().GetWString(StringId::OPEN_WITH_NOTEPAD));
+    rightMenu->SetItemTextById(ID_SPECIFY_ORIGIN_CHARSET,
+                               GetLanguageService().GetWString(StringId::SPECIFY_ORIGIN_ENCODING));
+    rightMenu->SetItemTextById(ID_REMOVE_ITEM, GetLanguageService().GetWString(StringId::REMOVE));
 }
 
 BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
