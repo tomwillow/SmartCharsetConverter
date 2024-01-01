@@ -54,7 +54,11 @@ LanguageService::LanguageService(std::function<std::string(void)> fnGetLanguageF
         }
     }
 
-    currentLang = languages.at(lang).get();
+    if (languages.find(lang) == languages.end()) {
+        throw std::runtime_error("language json file is lost. language name = " + lang +
+                                 "\r\nplease try to remove configuration json file.");
+    }
+    currentLang = languages[lang].get();
 
     // check language file
     CheckLanguagePack(*currentLang);
