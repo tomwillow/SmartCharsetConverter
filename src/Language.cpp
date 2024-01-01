@@ -1,6 +1,7 @@
 #include "Language.h"
 
 #include "CommandLineParser.h"
+#include "ResourceLoader.h"
 
 #include <tstring.h>
 
@@ -29,8 +30,7 @@ LanguagePack LoadLanguageFile(const std::wstring &filename) {
     return langPack;
 }
 
-LanguageService::LanguageService(std::function<std::string(void)> fnGetLanguageFromConfig)
-    : fnGetLanguageFromConfig(fnGetLanguageFromConfig) {
+LanguageService::LanguageService(LanguageServiceOption option) : option(option) {
     /*
         加载流程：
         先从内置的json语言文件加载。
@@ -43,7 +43,7 @@ LanguageService::LanguageService(std::function<std::string(void)> fnGetLanguageF
 
     LoadLanguageNameFromDir("lang");
 
-    std::string lang = fnGetLanguageFromConfig();
+    std::string lang = option.fnGetLanguageFromConfig();
     if (lang.empty()) {
         LANGID langId = GetUserDefaultLangID();
 
@@ -76,15 +76,38 @@ std::wstring LanguageService::GetWString(StringId id) const noexcept {
     return utf8_to_wstring(GetUtf8String(id));
 }
 
-void LanguageService::LoadLanguageNameFromInnerRCFile() noexcept {}
+void LanguageService::LoadLanguageNameFromInnerRCFile() noexcept {
+    for (auto id : option.resourceIds) {
+        std::vector<char> jsonData = LoadCustomFileFromResource(id, option.resourceType);
+        jsonData.push_back('\0');
+
+        nlohmann::json j = nlohmann::json::parse(jsonData.data());
+
+        LanguagePack langPack;
+        from_json(j, langPack);
+
+#ifndef NDEBUG
+        // check file content at Debug
+        CheckLanguagePack(langPack);
+#endif
+
+        auto langName = langPack.language;
+        languages.emplace(langName, std::make_unique<LanguagePack>(std::move(langPack)));
+    }
+}
 
 void LanguageService::LoadLanguageNameFromDir(const std::string &dir) {
     // 得到命令行参数
     const std::vector<std::wstring> args = GetCommandLineArgs();
     std::wstring selfPath = args[0];
-    std::filesystem::path selfDir = std::filesystem::u8path(to_utf8(selfPath)).parent_path();
+    std::filesystem::path exeDir = std::filesystem::u8path(to_utf8(selfPath)).parent_path();
 
-    for (auto path : std::filesystem::directory_iterator(selfDir / dir)) {
+    std::filesystem::path langDir = exeDir / dir;
+    if (!std::filesystem::is_directory(langDir)) {
+        return;
+    }
+
+    for (auto path : std::filesystem::directory_iterator(exeDir / dir)) {
         LanguagePack langPack;
         try {
             langPack = LoadLanguageFile(path.path().wstring());
@@ -146,8 +169,8 @@ void CheckLanguagePack(const LanguagePack &langPack) {
     }
 }
 
-void InitLanguageService(std::function<std::string(void)> fnGetLanguageFromConfig) {
-    GetLanguageServicePtr() = new LanguageService(fnGetLanguageFromConfig);
+void InitLanguageService(LanguageServiceOption option) {
+    GetLanguageServicePtr() = new LanguageService(option);
 }
 
 void ReleaseLanguageService() noexcept {
