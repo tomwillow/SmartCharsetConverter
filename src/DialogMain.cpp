@@ -42,9 +42,13 @@ DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilena
         core = make_unique<Core>(configFileName, coreOpt);
 
         //
-        InitLanguageService([this]() -> std::string {
+        LanguageServiceOption option;
+        option.fnGetLanguageFromConfig = [this]() -> std::string {
             return core->GetConfig().language;
-        });
+        };
+        option.resourceIds = {IDR_LANGUAGEJSON_ENGLISH, IDR_LANGUAGEJSON_SIMPLIFIED_CHINESE};
+        option.resourceType = L"LanguageJson";
+        InitLanguageService(option);
     } catch (const nlohmann::json::exception &err) { throw; } catch (const std::exception &err) {
         throw;
     }

@@ -98,12 +98,18 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LanguagePack, language, langId, author, versi
  */
 void CheckLanguagePack(const LanguagePack &langPack);
 
+struct LanguageServiceOption {
+    std::function<std::string(void)> fnGetLanguageFromConfig;
+    std::wstring resourceType;
+    std::vector<int> resourceIds;
+};
+
 class LanguageService {
 public:
     /**
      * @exception json解析失败抛出异常
      */
-    LanguageService(std::function<std::string(void)> fnGetLanguageFromConfig);
+    LanguageService(LanguageServiceOption option);
 
     std::string GetCurrentLanguage() const noexcept;
 
@@ -122,10 +128,10 @@ public:
     const std::unordered_map<std::string, std::unique_ptr<LanguagePack>> &GetLanguagesTable() const noexcept;
 
 private:
+    LanguageServiceOption option;
     std::vector<std::string> avaliableLanguages;
     LanguagePack *currentLang;
     std::unordered_map<std::string, std::unique_ptr<LanguagePack>> languages;
-    std::function<std::string(void)> fnGetLanguageFromConfig;
 
     void LoadLanguageNameFromInnerRCFile() noexcept;
 
@@ -139,7 +145,7 @@ private:
 /**
  * @exception json解析失败抛出异常
  */
-void InitLanguageService(std::function<std::string(void)> fnGetLanguageFromConfig);
+void InitLanguageService(LanguageServiceOption option);
 
 void ReleaseLanguageService() noexcept;
 
