@@ -55,8 +55,9 @@ LanguageService::LanguageService(LanguageServiceOption option) : option(option) 
     }
 
     if (languages.find(lang) == languages.end()) {
-        throw std::runtime_error("language json file is lost. language name = " + lang +
-                                 "\r\nplease try to remove configuration json file.");
+        throw std::runtime_error(
+            "language json file is lost. language name = " + lang +
+            "\r\n\r\nTip: Remove the configuration json file could make program load default language.");
     }
     currentLang = languages[lang].get();
 
@@ -122,7 +123,8 @@ void LanguageService::LoadLanguageNameFromDir(const std::string &dir) {
         }
 
         auto langName = langPack.language;
-        languages.emplace(langName, std::make_unique<LanguagePack>(std::move(langPack)));
+        // make external language file override inner language file from the .rc file
+        languages[langName] = std::make_unique<LanguagePack>(std::move(langPack));
     }
 }
 
