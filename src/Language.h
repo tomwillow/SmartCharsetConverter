@@ -92,6 +92,10 @@ struct LanguagePack {
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(LanguagePack, language, langId, author, version, date, data)
 
+/**
+ * 校验语言包。检查是否所有的StringId都有对应的字段。
+ * @exception std::runtime_error 校验失败抛出异常。
+ */
 void CheckLanguagePack(const LanguagePack &langPack);
 
 class LanguageService {
@@ -103,9 +107,19 @@ public:
 
     std::string GetCurrentLanguage() const noexcept;
 
+    /**
+     * 设置当前语言。会校验语言包，如果校验失败抛出异常。
+     * @exception std::runtime_error 校验失败
+     */
+    void SetCurrentLanguage(const std::string &languageName);
+
     const std::string &GetUtf8String(StringId id) const noexcept;
 
     std::wstring GetWString(StringId id) const noexcept;
+
+    std::vector<std::string> GetLanguageArray() const noexcept;
+
+    const std::unordered_map<std::string, std::unique_ptr<LanguagePack>> &GetLanguagesTable() const noexcept;
 
 private:
     std::vector<std::string> avaliableLanguages;

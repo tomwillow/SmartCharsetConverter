@@ -36,7 +36,7 @@ LanguageService::LanguageService(std::function<std::string(void)> fnGetLanguageF
         先从内置的json语言文件加载。
         然后加载外置的json语言文件。如果和内置的重复，那么覆盖内置的。
 
-        等待配置读取当前语言，如果没有设置，
+        从配置读取当前语言，如果没有设置，
         那么读取系统语言。如果系统语言没有对应的语言包，那么加载英语。
     */
     LoadLanguageNameFromInnerRCFile();
@@ -53,7 +53,6 @@ LanguageService::LanguageService(std::function<std::string(void)> fnGetLanguageF
             lang = DEFAULT_LANGUAGE;
         }
     }
-    lang = DEFAULT_LANGUAGE;
 
     currentLang = languages.at(lang).get();
 
@@ -111,6 +110,21 @@ std::string LanguageService::GetLanguageNameByLangIdFromLoadedLanguages(int lang
         }
     }
     return "";
+}
+
+void LanguageService::SetCurrentLanguage(const std::string &languageName) {
+    currentLang = languages.at(languageName).get();
+
+    // check language file
+    CheckLanguagePack(*currentLang);
+}
+
+std::vector<std::string> LanguageService::GetLanguageArray() const noexcept {
+    std::vector<std::string> ret;
+    for (auto &pr : languages) {
+        ret.push_back(pr.first);
+    }
+    return ret;
 }
 
 LanguageService *&GetLanguageServicePtr() noexcept {

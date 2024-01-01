@@ -250,6 +250,11 @@ void Core::SetLineBreaks(LineBreaks lineBreak) {
     WriteConfigToFile();
 }
 
+void Core::SetLanguage(const std::string &language) noexcept {
+    config.language = language;
+    WriteConfigToFile();
+}
+
 void Core::SetEnableConvertLineBreak(bool enableLineBreaks) {
     config.enableConvertLineBreaks = enableLineBreaks;
     WriteConfigToFile();

@@ -179,12 +179,17 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
     // 右键菜单
     rightMenu = std::make_unique<TPopupMenu>(IDR_MENU_RIGHT);
     TMenu &specifyOriginCharsetMenu = rightMenu->SetItemToBeContainer(ID_SPECIFY_ORIGIN_CHARSET);
-    for (auto id = SPECIFY_ORIGIN_CHARSET_ID_START; id < SPECIFY_ORIGIN_CHARSET_ID_END; ++id) {
-        CharsetCode code = CommandIdToCharsetCode(id);
-        specifyOriginCharsetMenu.AppendItem(id, ToViewCharsetName(code));
+    for (auto commandId = SPECIFY_ORIGIN_CHARSET_ID_START; commandId < SPECIFY_ORIGIN_CHARSET_ID_END; ++commandId) {
+        CharsetCode code = CommandIdToCharsetCode(commandId);
+        specifyOriginCharsetMenu.AppendItem(commandId, ToViewCharsetName(code));
     }
 
     selectLanguageMenu = std::make_unique<TPopupMenu>(IDR_MENU_SELECT_LANGUAGES);
+    TMenu &languageSubMenu = selectLanguageMenu->SetItemToBeContainer(ID_LANGUAGE);
+    for (auto commandId = SELECT_LANUAGE_ID_START; commandId < GetSelectLanguageIdEnd(); ++commandId) {
+        std::string languageName = CommandIdToLanguageName(commandId);
+        languageSubMenu.AppendItem(commandId, utf8_to_wstring(languageName));
+    }
 
     // 启用拖放
     ::DragAcceptFiles(listview, true);
@@ -784,6 +789,24 @@ LRESULT DialogMain::OnSpecifyOriginCharset(WORD /*wNotifyCode*/, WORD wID, HWND 
         });
         PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
     }
+    return 0;
+}
+
+LRESULT DialogMain::OnSelectLanguage(WORD, WORD wID, HWND, BOOL &) {
+    std::string languageName = CommandIdToLanguageName(wID);
+
+    try {
+        GetLanguageService().SetCurrentLanguage(languageName);
+    } catch (const std::runtime_error &err) {
+        MessageBox(utf8_to_wstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+                   MB_OK | MB_ICONERROR);
+        return 0;
+    }
+
+    core->SetLanguage(languageName);
+
+    RefreshInterfaceByCurrentLanguage();
+
     return 0;
 }
 
