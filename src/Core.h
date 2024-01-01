@@ -63,8 +63,9 @@ public:
     void SetOutputTarget(Configuration::OutputTarget outputTarget);
     void SetOutputDir(const std::string &outputDir);
     void SetOutputCharset(CharsetCode outputCharset);
-    void SetLineBreaks(LineBreaks lineBreak);
     void SetEnableConvertLineBreak(bool enableLineBreaks);
+    void SetLineBreaks(LineBreaks lineBreak);
+    void SetLanguage(const std::string &language) noexcept;
 
     //
     /**
