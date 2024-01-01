@@ -15,6 +15,7 @@
 #include <nlohmann/json.hpp>
 
 // standard
+#include <map>
 #include <unordered_map>
 #include <functional>
 
@@ -131,7 +132,7 @@ private:
     LanguageServiceOption option;
     std::vector<std::string> avaliableLanguages;
     LanguagePack *currentLang;
-    std::unordered_map<std::string, std::unique_ptr<LanguagePack>> languages;
+    std::map<std::string, std::unique_ptr<LanguagePack>> languages;
 
     void LoadLanguageNameFromInnerRCFile() noexcept;
 
