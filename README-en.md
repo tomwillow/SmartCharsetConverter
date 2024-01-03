@@ -65,6 +65,8 @@ v0.8 Rearrange the interface (thanks to [Carlos Sánchez](https://github.com/c-s
        Support multiple languages (built-in Simplified Chinese and English).
        Add multi-language selection(to click "hammer" button - Language).
 
+v0.81 Add Spanish language pack support (thanks to [Carlos Sánchez](https://github.com/c-sanchez)).
+
 # Build
 
 1. Confirm the compilation environment: win10+ x64, Visual Studio 2019+, cmake.
