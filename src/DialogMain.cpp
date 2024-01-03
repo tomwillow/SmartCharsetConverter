@@ -18,9 +18,12 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("SmartCharsetConverter v0.8 by Tom Willow");
+const std::tstring appTitle = TEXT("SmartCharsetConverter v0.81 by Tom Willow");
 
 const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
+
+const std::vector<int> innerLanguageIds = {IDR_LANGUAGEJSON_ENGLISH, IDR_LANGUAGEJSON_SIMPLIFIED_CHINESE,
+                                           IDR_LANGUAGEJSON_SPANISH};
 
 using namespace std;
 
@@ -46,7 +49,7 @@ DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilena
         option.fnGetLanguageFromConfig = [this]() -> std::string {
             return core->GetConfig().language;
         };
-        option.resourceIds = {IDR_LANGUAGEJSON_ENGLISH, IDR_LANGUAGEJSON_SIMPLIFIED_CHINESE};
+        option.resourceIds = innerLanguageIds;
         option.resourceType = L"LanguageJson";
         InitLanguageService(option);
     } catch (const nlohmann::json::exception &err) { throw; } catch (const std::exception &err) {
@@ -138,8 +141,6 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
         CharsetCode code = static_cast<CharsetCode>(icode);
         comboBoxOther.AddString(ToViewCharsetName(code).c_str());
         comboBoxOther.SetItemData(i, static_cast<int>(code));
-        int i2 = comboBoxOther.GetItemData(i);
-        int n = 10;
     }
     comboBoxOther.SetCurSel(0);
 

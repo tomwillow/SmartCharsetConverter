@@ -7,7 +7,7 @@ This program is used to automatically detect the encoding of files and convert i
 Function:
 
 * Batch conversion to UTF-8/UTF-8 BOM/GB18030, etc.
-* Convert line breaks to CRLF/LF/CR 
+* Convert line breaks to CRLF/LF/CR
 * Check whether characters are lost to ensure that the conversion process is reversible
 * Support command line (use $ ./SmartCharsetConverter --help for details)
 * Multi-language support (click the "hammer" button in the bottom right corner to switch languages)
@@ -62,7 +62,7 @@ v0.72 solves the problem of getting stuck when adding large files (only the firs
 
 v0.8 Rearrange the interface (thanks to [Carlos Sánchez](https://github.com/c-sanchez)).
        Add configuration file, and changing settings will trigger the saving of configuration file.
-       Support multiple languages (built-in Simplified Chinese and English). 
+       Support multiple languages (built-in Simplified Chinese and English).
        Add multi-language selection(to click "hammer" button - Language).
 
 # Build
@@ -81,10 +81,13 @@ If you want to add a new language pack to this program, you can follow these ste
 
 1. Find the xxx.json files under src/Resource/lang_embed.
 2. Copy the xxx.json file and modify its content. The new json file can be rename arbitrarily, because the program does not depend on the file name of the language file.
+
 > The xxx.json file must be UTF-8 encoding.
+
 3. Modify the `langId` field: Download the pdf from [[MS-LCID]: Windows Language Code Identifier (LCID) Reference](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/70feba9f-294e-491e-b6eb-56532684c37f?redirectedfrom=MSDN), find the section `2.2 LCID Structure - Language ID (2 bytes)`, and find the Language ID corresponding to the target language. `For example: 0x409 corresponds to en-US, 0x804 corresponds to zh-CN. `Then convert hexadecimal to decimal and fill in the `langId` field. `For example, 0x409 is filled in with 1033, and 0x804 is filled with 2052`.
-       This Language ID is related to the user's operating system. If filled in correctly, the corresponding language file will be automatically loaded according to the operating system settings when the program starts (the prerequisite is that the language has not been set in the configuration file. If the language has been set in, the `language` field at the configuration file is preferred).
+   This Language ID is related to the user's operating system. If filled in correctly, the corresponding language file will be automatically loaded according to the operating system settings when the program starts (the prerequisite is that the language has not been set in the configuration file. If the language has been set in, the `language` field at the configuration file is preferred).
 4. Place your xxx.json language file in the `lang` directory of the directory where SmartCharsetConverter.exe is located (if it does not exist, create a new). The program will automatically check and load it when it starts.
+
 > Note: There are some language packages built into the program (located in `src/Resource/lang_embed`). If the `language` field of the language package in the lang directory is the same as one built-in language package, the external language package json file will be preferred.
 
 Now you can launch the program and see the results!
@@ -110,7 +113,7 @@ Now you can launch the program and see the results!
 
 # Thanks
 
-Thanks to [Carlos Sánchez](https://github.com/c-sanchez) for providing the interface design.
+Thanks to [Carlos Sánchez](https://github.com/c-sanchez) for providing the interface design and Spanish language pack.
 
 # E-mail
 

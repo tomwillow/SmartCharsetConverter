@@ -110,7 +110,7 @@ v0.8 重新编排界面(感谢[Carlos Sánchez](https://github.com/c-sanchez))�
 
 # 致谢
 
-感谢[Carlos Sánchez](https://github.com/c-sanchez)提供的界面设计。
+感谢[Carlos Sánchez](https://github.com/c-sanchez)提供的界面设计和西班牙语语言包。
 
 # E-mail
 
