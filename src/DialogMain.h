@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Core.h"
+#include "Core/Core.h"
 #include "ThreadPool/ThreadPool.h"
 #include "Control/TMenu.h"
-#include "Language.h"
+#include "Core/Language.h"
 
 #include "resource.h"
 

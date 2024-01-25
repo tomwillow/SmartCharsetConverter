@@ -1,6 +1,6 @@
 #include "CLIHandler.h"
 
-#include "Core.h"
+#include "Core/Core.h"
 #include "tstring.h"
 #include "FileFunction.h"
 #include "ConsoleSettings.h"

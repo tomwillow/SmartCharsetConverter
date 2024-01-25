@@ -1,6 +1,7 @@
 {
   "dependencies": [
     "icu",
-    "nlohmann-json"
+    "nlohmann-json",
+    "gtest"
   ]
 }

@@ -2,7 +2,7 @@
 
 // self
 #include "Control/TMenu.h"
-#include "Language.h"
+#include "Core/Language.h"
 
 #include <tstring.h>
 #include <FileFunction.h>
