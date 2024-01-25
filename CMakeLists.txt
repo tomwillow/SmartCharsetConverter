@@ -61,12 +61,17 @@ file(GLOB TEST_CODE
 enable_testing()
 add_executable(CoreUnitTest ${TEST_CODE})
 target_link_libraries(CoreUnitTest 
-	PRIVATE 
+	PRIVATE
 	GTest::gtest 
 	GTest::gtest_main 
 	GTest::gmock 
 	GTest::gmock_main
+	Core
 	)
+# 添加include目录
+target_include_directories(CoreUnitTest PUBLIC
+	${PROJECT_SOURCE_DIR}/src
+)
 	
 include(GoogleTest)
 gtest_discover_tests(CoreUnitTest)
@@ -110,10 +115,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 target_include_directories(Core PRIVATE
 	${PROJECT_SOURCE_DIR}/src
 )
-
-# add nlohmann/json library
-find_package(nlohmann_json CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
 
 # 添加.rc
 target_sources(${PROJECT_NAME} PRIVATE src/SmartCharsetConverter.rc)
