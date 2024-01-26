@@ -36,6 +36,10 @@ TEST(Core, DetectEncoding) {
 
         auto got = to_utf8(ToViewCharsetName(charsetCode));
 
+        std::cout << "file: " << filename << std::endl;
+        std::cout << "detect: " << to_utf8(ToViewCharsetName(charsetCode)) << std::endl;
+        std::cout << "expected: " << expectedEncoding << std::endl;
+        std::cout << std::endl;
         EXPECT_EQ(got, expectedEncoding);
     }
 }
