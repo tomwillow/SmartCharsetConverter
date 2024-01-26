@@ -29,6 +29,8 @@ find_package(GTest CONFIG REQUIRED)
 
 # === Core ===
 file(GLOB CORE_CODE
+	src/Common/*.h
+	src/Common/*.cpp
 	src/Core/*.h
 	src/Core/*.cpp
 	)
@@ -52,6 +54,9 @@ target_include_directories(Core PUBLIC
 )
 
 # === CoreUnitTest ===
+set(SmartCharsetConverter_TEST_DIR "${PROJECT_SOURCE_DIR}/sample")
+configure_file(src/test/config.h.in config.h @ONLY)
+include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 file(GLOB TEST_CODE
 	src/test/*.h
@@ -62,10 +67,7 @@ enable_testing()
 add_executable(CoreUnitTest ${TEST_CODE})
 target_link_libraries(CoreUnitTest 
 	PRIVATE
-	GTest::gtest 
-	GTest::gtest_main 
-	GTest::gmock 
-	GTest::gmock_main
+	GTest::gtest_main
 	Core
 	)
 # 添加include目录
@@ -86,8 +88,6 @@ add_library(guicon STATIC
 
 # 添加代码
 file(GLOB COMMON_CODE
-	src/Common/*.h
-	src/Common/*.cpp
 	src/Control/*.h
 	src/Control/*.cpp
 	src/ThreadPool/*.h
