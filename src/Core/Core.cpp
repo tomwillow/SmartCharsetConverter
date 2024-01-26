@@ -6,6 +6,7 @@
 
 #include <unicode/ucnv.h>
 #include <unicode/ucsdet.h>
+#include <compact_enc_det/compact_enc_det.h>
 
 #include <stdexcept>
 #include <algorithm>
@@ -318,6 +319,23 @@ std::unordered_set<CharsetCode> DetectByMine(const char *buf, int bufSize) {
     return ret;
 }
 
+
+/**
+* @exception runtime_error 如果CED中定义的名称在CharsetCode中没有定义，将抛出异常
+*/
+std::tuple<CharsetCode,bool> DetectByCED(const char *buf, int len) {
+    int bytes_consumed;
+    bool is_reliable;
+    Encoding encoding =  CompactEncDet::DetectEncoding(buf, len, nullptr, // URL hint
+                                         nullptr,           // HTTP hint
+                                         nullptr,           // Meta hint
+                                         UNKNOWN_ENCODING, UNKNOWN_LANGUAGE, CompactEncDet::WEB_CORPUS,
+                                         false, // Include 7-bit encodings?
+                                         &bytes_consumed, &is_reliable);
+    // 这里如果CED识别出的名字在CharsetCode中没有定义，将抛出异常
+    return {ToCharsetCode(string_to_wstring(EncodingName(encoding))), is_reliable};
+}
+
 CharsetCode ToCharsetCodeFinal(std::string charsetStr, const char *buf, int bufSize) {
 
     // filter
@@ -378,6 +396,13 @@ std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(con
         // uchardet如果有95及以上的信心，那么直接相信它
         code = ToCharsetCodeFinal(uchardetResult, buf, bufSize);
     } else {
+        // ucsdet和uchardet都没把握
+        
+        auto [cedResult, reliable] = DetectByCED(buf, bufSize);
+        if (reliable) {
+            code = cedResult;
+        }
+
         // auto codes = DetectByMine(buf, bufSize);
         // 判断不出，code维持在unknown
     }

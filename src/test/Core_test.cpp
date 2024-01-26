@@ -3,10 +3,10 @@
 #include <Core/Core.h>
 #include <Common/FileFunction.h>
 
+#include <gtest/gtest.h>
+
 #include <filesystem>
 #include <unordered_map>
-
-#include <gtest/gtest.h>
 
 TEST(Core, GetEncoding) {
     SetConsoleOutputCP(65001); // …Ë÷√¥˙¬Î“≥Œ™UTF-8
@@ -35,6 +35,7 @@ TEST(Core, GetEncoding) {
         auto [charsetCode, _1, _2] = core.GetEncoding(buf.get(), len);
 
         auto got = to_utf8(ToViewCharsetName(charsetCode));
+
         EXPECT_EQ(got, expectedEncoding);
     }
 }

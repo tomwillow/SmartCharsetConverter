@@ -67,9 +67,9 @@ public:
     void SetLineBreaks(LineBreaks lineBreak);
     void SetLanguage(const std::string &language) noexcept;
 
-    //
     /**
-     * @brief 读取最大100KB字节，返回编码集，Unicode文本，文本长度
+     * 探测编码集。
+     * return 探测出的编码集，根据探测出的编码集解码出的Unicode文本片段(最大64bytes)，文本片段长度
      * @exception file_io_error 读文件失败
      * @exception runtime_error ucnv出错。code
      */
