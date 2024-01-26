@@ -319,19 +319,18 @@ std::unordered_set<CharsetCode> DetectByMine(const char *buf, int bufSize) {
     return ret;
 }
 
-
 /**
-* @exception runtime_error 如果CED中定义的名称在CharsetCode中没有定义，将抛出异常
-*/
-std::tuple<CharsetCode,bool> DetectByCED(const char *buf, int len) {
+ * @exception runtime_error 如果CED中定义的名称在CharsetCode中没有定义，将抛出异常
+ */
+std::tuple<CharsetCode, bool> DetectByCED(const char *buf, int len) {
     int bytes_consumed;
     bool is_reliable;
-    Encoding encoding =  CompactEncDet::DetectEncoding(buf, len, nullptr, // URL hint
-                                         nullptr,           // HTTP hint
-                                         nullptr,           // Meta hint
-                                         UNKNOWN_ENCODING, UNKNOWN_LANGUAGE, CompactEncDet::WEB_CORPUS,
-                                         false, // Include 7-bit encodings?
-                                         &bytes_consumed, &is_reliable);
+    Encoding encoding = CompactEncDet::DetectEncoding(buf, len, nullptr, // URL hint
+                                                      nullptr,           // HTTP hint
+                                                      nullptr,           // Meta hint
+                                                      UNKNOWN_ENCODING, UNKNOWN_LANGUAGE, CompactEncDet::WEB_CORPUS,
+                                                      false, // Include 7-bit encodings?
+                                                      &bytes_consumed, &is_reliable);
     // 这里如果CED识别出的名字在CharsetCode中没有定义，将抛出异常
     return {ToCharsetCode(string_to_wstring(EncodingName(encoding))), is_reliable};
 }
@@ -384,45 +383,37 @@ CharsetCode ToCharsetCodeFinal(std::string charsetStr, const char *buf, int bufS
     return code;
 }
 
-std::tuple<CharsetCode, std::unique_ptr<UChar[]>, int32_t> Core::GetEncoding(const char *buf, int bufSize) const {
+CharsetCode Core::GetEncoding(const char *buf, int bufSize) const {
     if (bufSize == 0) {
-        return {CharsetCode::EMPTY, unique_ptr<UChar[]>(new UChar[1]{L'\0'}), 0};
+        return CharsetCode::EMPTY;
     }
 
-    bufSize = std::min(bufSize, static_cast<int>(tryReadSize));
-
     auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf, bufSize);
-
-    auto [uchardetResult, uchardetConfidence] = DetectByUCharDet(det.get(), buf, bufSize);
 
     CharsetCode code = CharsetCode::UNKNOWN;
 
     if (ucsdetConfidence >= 95 && ucsdetResult.find("UTF") != string::npos) {
         // ucsdet如果判定为UTF-8/UTF-16BE|LE等，那么相信它
-        code = ToCharsetCodeFinal(ucsdetResult, buf, bufSize);
-    } else if (uchardetConfidence >= 95) {
+        return ToCharsetCodeFinal(ucsdetResult, buf, bufSize);
+    }
+
+    auto [uchardetResult, uchardetConfidence] = DetectByUCharDet(det.get(), buf, bufSize);
+    if (uchardetConfidence >= 95) {
         // uchardet如果有95及以上的信心，那么直接相信它
-        code = ToCharsetCodeFinal(uchardetResult, buf, bufSize);
-    } else {
-        // ucsdet和uchardet都没把握
-        
-        auto [cedResult, reliable] = DetectByCED(buf, bufSize);
-        if (reliable) {
-            code = cedResult;
-        }
-
-        // auto codes = DetectByMine(buf, bufSize);
-        // 判断不出，code维持在unknown
+        return ToCharsetCodeFinal(uchardetResult, buf, bufSize);
     }
 
-    if (code == CharsetCode::UNKNOWN) {
-        return make_tuple(code, nullptr, 0);
+    // ucsdet和uchardet都没把握
+
+    auto [cedResult, reliable] = DetectByCED(buf, bufSize);
+    if (reliable) {
+        code = cedResult;
     }
 
-    // 根据uchardet得出的字符集解码
-    auto partContentAndSize = Decode(buf, std::min(64, static_cast<int>(bufSize)), code);
+    // auto codes = DetectByMine(buf, bufSize);
+    // 判断不出，code维持在unknown
 
-    return make_tuple(code, std::move(get<0>(partContentAndSize)), get<1>(partContentAndSize));
+    return code;
 }
 
 Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts) {
@@ -445,10 +436,18 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
     auto [buf, bufSize] = ReadFileToBuffer(filename, tryReadSize);
 
     // 识别字符集
-    auto [charsetCode, content, contentSize] = GetEncoding(buf.get(), bufSize);
+    auto charsetCode = GetEncoding(buf.get(), bufSize);
+
+    std::unique_ptr<UChar[]> content;
+    int64_t contentSize;
+
+    switch (charsetCode) {
+    case CharsetCode::EMPTY:
+        std::tie(content, contentSize) = std::make_tuple(std::unique_ptr<UChar[]>(new UChar[1]{L'\0'}), 0);
+        break;
 
     // 如果没有识别出编码集
-    if (charsetCode == CharsetCode::UNKNOWN) {
+    case (CharsetCode::UNKNOWN): {
         switch (GetConfig().filterMode) {
         // 如果是智能模式或者后缀模式，不添加这个文件，但要抛出异常，让UI弹出提示
         case Configuration::FilterMode::SMART:
@@ -466,7 +465,12 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
             return AddItemResult{false, fileSize, charsetCode, LineBreaks::UNKNOWN, L""};
         }
         }
+        break;
     }
+    }
+
+    // 根据uchardet得出的字符集解码
+    std::tie(content, contentSize) = Decode(buf.get(), std::min(64, static_cast<int>(bufSize)), charsetCode);
 
     auto fileSize = GetFileSize(filename);
 

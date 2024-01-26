@@ -32,7 +32,7 @@ TEST(Core, GetEncoding) {
 
     for (auto [filename, expectedEncoding] : table) {
         auto [buf, len] = ReadFileToBuffer(utf8_to_wstring(filename));
-        auto [charsetCode, _1, _2] = core.GetEncoding(buf.get(), len);
+        auto charsetCode = core.GetEncoding(buf.get(), len);
 
         auto got = to_utf8(ToViewCharsetName(charsetCode));
 
