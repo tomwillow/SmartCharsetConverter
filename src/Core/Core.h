@@ -73,6 +73,14 @@ public:
      * @exception file_io_error 读文件失败
      * @exception runtime_error ucnv出错。code
      */
+    CharsetCode DetectEncodingPlain(const char *buf, int bufSize) const;
+
+    /**
+     * 探测编码集。
+     * return 探测出的编码集，根据探测出的编码集解码出的Unicode文本片段(最大64bytes)，文本片段长度
+     * @exception file_io_error 读文件失败
+     * @exception runtime_error ucnv出错。code
+     */
     CharsetCode DetectEncoding(const char *buf, int bufSize) const;
 
     struct AddItemResult {

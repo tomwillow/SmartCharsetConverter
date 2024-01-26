@@ -383,7 +383,7 @@ CharsetCode ToCharsetCodeFinal(std::string charsetStr, const char *buf, int bufS
     return code;
 }
 
-CharsetCode Core::DetectEncoding(const char *buf, int bufSize) const {
+CharsetCode Core::DetectEncodingPlain(const char *buf, int bufSize) const {
     if (bufSize == 0) {
         return CharsetCode::EMPTY;
     }
@@ -414,6 +414,10 @@ CharsetCode Core::DetectEncoding(const char *buf, int bufSize) const {
     // 判断不出，code维持在unknown
 
     return code;
+}
+
+CharsetCode Core::DetectEncoding(const char *buf, int bufSize) const {
+    return DetectEncodingPlain(buf, bufSize);
 }
 
 Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts) {
