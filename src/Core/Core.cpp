@@ -336,6 +336,14 @@ std::tuple<CharsetCode,bool> DetectByCED(const char *buf, int len) {
     return {ToCharsetCode(string_to_wstring(EncodingName(encoding))), is_reliable};
 }
 
+void RemoveASCII(std::vector<char> &data) noexcept {
+    auto itor = std::partition(data.begin(), data.end(), [](char c) {
+        return !(c & 0b10000000);
+    });
+
+    data.erase(itor, data.end());
+}
+
 CharsetCode ToCharsetCodeFinal(std::string charsetStr, const char *buf, int bufSize) {
 
     // filter
