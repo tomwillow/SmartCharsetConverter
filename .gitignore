@@ -3,5 +3,3 @@ output/
 build/
 vcpkg_installed/
 *.aps
-
-sample/
