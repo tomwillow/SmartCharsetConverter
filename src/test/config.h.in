@@ -1,0 +1,1 @@
+#cmakedefine SmartCharsetConverter_TEST_DIR "@SmartCharsetConverter_TEST_DIR@"
