@@ -51,7 +51,7 @@ const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
     {CharsetCode::NOT_SUPPORTED, MyCharset{TEXT("不支持"), "-", {}}},
     {CharsetCode::UTF8, MyCharset{TEXT("UTF-8"), "UTF-8", {"ASCII", "ANSI", "UTF8"}}},
     {CharsetCode::UTF8BOM, MyCharset{TEXT("UTF-8 BOM"), "UTF-8", {}}},
-    {CharsetCode::GB18030, MyCharset{TEXT("GB18030"), "GB18030", {}}},
+    {CharsetCode::GB18030, MyCharset{TEXT("GB18030"), "GB18030", {"GB"}}},
 
     {CharsetCode::UTF16LE, MyCharset{TEXT("UTF-16LE"), "UTF-16LE", {}}},
     {CharsetCode::UTF16LEBOM, MyCharset{TEXT("UTF-16LE BOM"), "UTF-16LE", {}}},

@@ -336,8 +336,8 @@ std::tuple<CharsetCode, bool> DetectByCED(const char *buf, int len) {
 }
 
 void RemoveASCII(std::vector<char> &data) noexcept {
-    auto itor = std::partition(data.begin(), data.end(), [](char c) {
-        return !(c & 0b10000000);
+    auto itor = std::stable_partition(data.begin(), data.end(), [](char c) {
+        return (c & 0b10000000);
     });
 
     data.erase(itor, data.end());
@@ -383,7 +383,7 @@ CharsetCode ToCharsetCodeFinal(std::string charsetStr, const char *buf, int bufS
     return code;
 }
 
-CharsetCode Core::DetectEncodingPlain(const char *buf, int bufSize) const {
+CharsetCode Core::DetectEncodingPlain(const char *buf, int bufSize, int times) const {
     if (bufSize == 0) {
         return CharsetCode::EMPTY;
     }
@@ -410,14 +410,21 @@ CharsetCode Core::DetectEncodingPlain(const char *buf, int bufSize) const {
         code = cedResult;
     }
 
-    // auto codes = DetectByMine(buf, bufSize);
-    // 判断不出，code维持在unknown
+    if (times > 0) {
+        // 第2次尝试失败，认命了
+        return code;
+    }
 
-    return code;
+    // 裁掉ASCII，再战！
+    std::vector<char> data(bufSize);
+    std::memcpy(data.data(), buf, bufSize);
+
+    RemoveASCII(data);
+    return DetectEncodingPlain(data.data(), data.size(), 1);
 }
 
 CharsetCode Core::DetectEncoding(const char *buf, int bufSize) const {
-    return DetectEncodingPlain(buf, bufSize);
+    return DetectEncodingPlain(buf, bufSize, 0);
 }
 
 Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts) {

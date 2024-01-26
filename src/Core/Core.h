@@ -73,7 +73,7 @@ public:
      * @exception file_io_error 读文件失败
      * @exception runtime_error ucnv出错。code
      */
-    CharsetCode DetectEncodingPlain(const char *buf, int bufSize) const;
+    CharsetCode DetectEncodingPlain(const char *buf, int bufSize, int times) const;
 
     /**
      * 探测编码集。
