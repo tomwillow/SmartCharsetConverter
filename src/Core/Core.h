@@ -73,7 +73,7 @@ public:
      * @exception file_io_error 读文件失败
      * @exception runtime_error ucnv出错。code
      */
-    CharsetCode GetEncoding(const char *buf, int bufSize) const;
+    CharsetCode DetectEncoding(const char *buf, int bufSize) const;
 
     struct AddItemResult {
         bool isIgnore = true; // 是否应该忽略掉

@@ -383,7 +383,7 @@ CharsetCode ToCharsetCodeFinal(std::string charsetStr, const char *buf, int bufS
     return code;
 }
 
-CharsetCode Core::GetEncoding(const char *buf, int bufSize) const {
+CharsetCode Core::DetectEncoding(const char *buf, int bufSize) const {
     if (bufSize == 0) {
         return CharsetCode::EMPTY;
     }
@@ -436,7 +436,7 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
     auto [buf, bufSize] = ReadFileToBuffer(filename, tryReadSize);
 
     // 识别字符集
-    auto charsetCode = GetEncoding(buf.get(), bufSize);
+    auto charsetCode = DetectEncoding(buf.get(), bufSize);
 
     std::unique_ptr<UChar[]> content;
     int64_t contentSize;

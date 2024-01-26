@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <unordered_map>
 
-TEST(Core, GetEncoding) {
+TEST(Core, DetectEncoding) {
     SetConsoleOutputCP(65001); // …Ë÷√¥˙¬Î“≥Œ™UTF-8
 
     std::string expectedFileName = std::string(SmartCharsetConverter_TEST_DIR) + "/expected.txt";
@@ -32,7 +32,7 @@ TEST(Core, GetEncoding) {
 
     for (auto [filename, expectedEncoding] : table) {
         auto [buf, len] = ReadFileToBuffer(utf8_to_wstring(filename));
-        auto charsetCode = core.GetEncoding(buf.get(), len);
+        auto charsetCode = core.DetectEncoding(buf.get(), len);
 
         auto got = to_utf8(ToViewCharsetName(charsetCode));
 
