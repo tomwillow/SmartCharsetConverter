@@ -2,3 +2,11 @@
 编译说明.txt GB18030
 虚拟机环境.txt UTF-8
 澤野弘之.lrc GB18030
+readme.txt EUC-JP
+LogRecord.h GB18030
+TBarTool.cpp UTF-8
+TBarTool_GB.cpp GB18030
+TDraw.h GB18030
+TMenu.cpp GB18030
+连杆.cpp GB18030
+DialogAnimation.h GB18030

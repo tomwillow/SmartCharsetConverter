@@ -9,7 +9,7 @@
 #include <unordered_map>
 
 TEST(Core, DetectEncoding) {
-    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+    SetConsoleOutputCP(65001); // 璁剧疆浠ｇ爜椤典负UTF-8
 
     std::string expectedFileName = std::string(SmartCharsetConverter_TEST_DIR) + "/expected.txt";
     std::ifstream ifs(expectedFileName);
@@ -36,6 +36,7 @@ TEST(Core, DetectEncoding) {
 
         auto got = to_utf8(ToViewCharsetName(charsetCode));
 
+        std::cout << std::string(20, '=') << std::endl;
         std::cout << "file: " << filename << std::endl;
         std::cout << "detect: " << to_utf8(ToViewCharsetName(charsetCode)) << std::endl;
         std::cout << "expected: " << expectedEncoding << std::endl;
