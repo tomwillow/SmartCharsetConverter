@@ -475,13 +475,15 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
 
             return AddItemResult{false, fileSize, charsetCode, LineBreaks::UNKNOWN, L""};
         }
+        default:
+            assert(0);
         }
         break;
     }
+    default:
+        // 根据uchardet得出的字符集解码
+        std::tie(content, contentSize) = Decode(buf.get(), std::min(64, static_cast<int>(bufSize)), charsetCode);
     }
-
-    // 根据uchardet得出的字符集解码
-    std::tie(content, contentSize) = Decode(buf.get(), std::min(64, static_cast<int>(bufSize)), charsetCode);
 
     auto fileSize = GetFileSize(filename);
 
