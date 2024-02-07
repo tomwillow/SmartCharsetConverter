@@ -331,8 +331,24 @@ std::tuple<CharsetCode, bool> DetectByCED(const char *buf, int len) {
                                                       UNKNOWN_ENCODING, UNKNOWN_LANGUAGE, CompactEncDet::WEB_CORPUS,
                                                       false, // Include 7-bit encodings?
                                                       &bytes_consumed, &is_reliable);
+
+    // 如果认为是二进制文件，那么取信它
+    if (encoding == Encoding::BINARYENC) {
+        return {CharsetCode::UNKNOWN, true};
+    }
+
     // 这里如果CED识别出的名字在CharsetCode中没有定义，将抛出异常
-    return {ToCharsetCode(string_to_wstring(EncodingName(encoding))), is_reliable};
+    CharsetCode code;
+    try {
+        code = ToCharsetCode(string_to_wstring(EncodingName(encoding)));
+
+    } catch (const std::runtime_error &err) {
+        if (is_reliable) {
+            throw;
+        }
+        return {CharsetCode::UNKNOWN, true};
+    }
+    return {code, is_reliable};
 }
 
 void RemoveASCII(std::vector<char> &data) noexcept {
@@ -390,8 +406,6 @@ CharsetCode Core::DetectEncodingPlain(const char *buf, int bufSize, int times) c
 
     auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf, bufSize);
 
-    CharsetCode code = CharsetCode::UNKNOWN;
-
     if (ucsdetConfidence >= 95 && ucsdetResult.find("UTF") != string::npos) {
         // ucsdet如果判定为UTF-8/UTF-16BE|LE等，那么相信它
         return ToCharsetCodeFinal(ucsdetResult, buf, bufSize);
@@ -404,15 +418,20 @@ CharsetCode Core::DetectEncodingPlain(const char *buf, int bufSize, int times) c
     }
 
     // ucsdet和uchardet都没把握
+    return CharsetCode::UNKNOWN;
+
+    /*
+    // update: CED的探测结果不稳定，而且可能出现识别出错但reliable==true的情况，
+    //          暂时先不用CED了。
 
     auto [cedResult, reliable] = DetectByCED(buf, bufSize);
     if (reliable) {
-        code = cedResult;
+        return cedResult;
     }
 
     if (times > 0) {
         // 第2次尝试失败，认命了
-        return code;
+        return CharsetCode::UNKNOWN;
     }
 
     // 裁掉ASCII，再战！
@@ -421,6 +440,8 @@ CharsetCode Core::DetectEncodingPlain(const char *buf, int bufSize, int times) c
 
     RemoveASCII(data);
     return DetectEncodingPlain(data.data(), data.size(), 1);
+
+    */
 }
 
 CharsetCode Core::DetectEncoding(const char *buf, int bufSize) const {
