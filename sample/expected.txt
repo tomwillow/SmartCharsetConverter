@@ -10,3 +10,4 @@ TDraw.h GB18030
 TMenu.cpp GB18030
 连杆.cpp GB18030
 DialogAnimation.h GB18030
+ubuntu-22.04.2-desktop-amd64.iso.torrent 未知
