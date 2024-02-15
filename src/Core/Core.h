@@ -33,7 +33,7 @@ std::tuple<std::unique_ptr<UChar[]>, int> Decode(const char *str, int len, Chars
 /**
  * @brief 把unicode串编码为指定字符集
  * @return 字符串指针，文本长度
- * @exception runtime_error ucnv出错。code
+ * @exception runtime_error ucnv出错/出现了不能转换的字符
  */
 std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, int bufSize,
                                                 CharsetCode targetCode);

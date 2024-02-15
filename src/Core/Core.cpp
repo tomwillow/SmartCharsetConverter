@@ -182,6 +182,7 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
         }
     }
 
+    // 如果存在不能转换的字符，那么抛出异常
     if (!context->unassigned.empty()) {
         context->unassigned.push_back(0);
         auto s = context->unassigned.data();
