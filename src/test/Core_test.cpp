@@ -2,6 +2,7 @@
 
 #include <Core/Core.h>
 #include <Common/FileFunction.h>
+#include <Common/ConsoleSettings.h>
 
 #include <gtest/gtest.h>
 
@@ -36,11 +37,18 @@ TEST(Core, DetectEncoding) {
 
         auto got = to_utf8(ToViewCharsetName(charsetCode));
 
+        if (got == expectedEncoding) {
+            SetConsoleColor(ConsoleColor::GREEN);
+        } else {
+            SetConsoleColor(ConsoleColor::RED);
+        }
         std::cout << std::string(20, '=') << std::endl;
         std::cout << "file: " << filename << std::endl;
         std::cout << "detect: " << to_utf8(ToViewCharsetName(charsetCode)) << std::endl;
         std::cout << "expected: " << expectedEncoding << std::endl;
         std::cout << std::endl;
         EXPECT_EQ(got, expectedEncoding);
+
+        SetConsoleColor();
     }
 }
