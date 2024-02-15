@@ -12,7 +12,8 @@ enum class CharsetCode {
     NOT_SUPPORTED,
 
     //
-    UTF8,
+    UTF8, // this line's order should not be changed. see DialogMain.cpp line 142: for (int icode =
+          // static_cast<int>(CharsetCode::UTF8), i = 0;
     UTF8BOM,
 
     UTF16BE,

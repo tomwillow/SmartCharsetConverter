@@ -134,13 +134,22 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
     SetOutputTarget(core->GetConfig().outputTarget);
     GetDlgItem(IDC_EDIT_OUTPUT_DIR).SetWindowTextW(utf8_to_wstring(core->GetConfig().outputDir).c_str());
     static_cast<CEdit>(GetDlgItem(IDC_EDIT_OUTPUT_DIR)).SetReadOnly(true);
-    //
+
+    // 要从列表框“其他”中排除的字符集（也就是 能直接通过单选按钮选中的字符集）
+    const std::vector<CharsetCode> comboBoxOtherExcludes = {CharsetCode::UTF8, CharsetCode::UTF8BOM,
+                                                            CharsetCode::GB18030};
     comboBoxOther.Attach(GetDlgItem(IDC_COMBO_OTHER_CHARSET).m_hWnd);
-    for (int icode = static_cast<int>(CharsetCode::GB18030) + 1, i = 0;
-         icode < static_cast<int>(CharsetCode::ISO_8859_1); ++icode, ++i) {
+    for (int icode = static_cast<int>(CharsetCode::UTF8), i = 0;
+         icode < static_cast<int>(CharsetCode::CHARSET_CODE_END); ++icode) {
         CharsetCode code = static_cast<CharsetCode>(icode);
+        if (std::find(comboBoxOtherExcludes.begin(), comboBoxOtherExcludes.end(), code) !=
+            comboBoxOtherExcludes.end()) {
+            continue;
+        }
+
         comboBoxOther.AddString(ToViewCharsetName(code).c_str());
         comboBoxOther.SetItemData(i, static_cast<int>(code));
+        i++;
     }
     comboBoxOther.SetCurSel(0);
 
@@ -245,6 +254,11 @@ void DialogMain::SetOutputTarget(Configuration::OutputTarget outputTarget) {
 }
 
 void DialogMain::SetOutputCharset(CharsetCode charset) {
+    assert(charset != CharsetCode::UNKNOWN);
+    assert(charset != CharsetCode::EMPTY);
+    assert(charset != CharsetCode::NOT_SUPPORTED);
+    assert(charset != CharsetCode::CHARSET_CODE_END);
+
     core->SetOutputCharset(charset);
     bool isNormalCharset = Configuration::IsNormalCharset(charset);
 
