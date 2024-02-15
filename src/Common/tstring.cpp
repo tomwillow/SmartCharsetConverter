@@ -145,12 +145,8 @@ std::string utf8_to_string(const std::string &str) {
 
 std::wstring utf8_to_wstring(const std::string &str) {
     int nwLen = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), -1, NULL, 0);
-    wchar_t *pwBuf = new wchar_t[nwLen + 1];
-    memset(pwBuf, 0, nwLen * 2 + 2);
-    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), pwBuf, nwLen);
-
-    std::wstring ret = pwBuf;
-    delete[] pwBuf;
+    std::wstring ret(nwLen - 1, L'\0'); // -1是为了排除掉上一步预计算时添加的尾后0的长度
+    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.size()), ret.data(), nwLen);
 
     return ret;
 }

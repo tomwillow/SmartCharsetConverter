@@ -18,7 +18,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("SmartCharsetConverter v0.81 by Tom Willow");
+const std::tstring appTitle = TEXT("SmartCharsetConverter v0.82 by Tom Willow");
 
 const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
 
@@ -792,14 +792,14 @@ LRESULT DialogMain::OnSpecifyOriginCharset(WORD /*wNotifyCode*/, WORD wID, HWND 
         auto filename = listview.GetItemText(index, static_cast<int>(ListViewColumn::FILENAME));
         try {
             core->SpecifyItemCharset(index, filename, code);
-        } catch (const std::runtime_error &err) { failed.push_back({filename, to_tstring(err.what())}); }
+        } catch (const std::runtime_error &err) { failed.push_back({filename, utf8_to_wstring(err.what())}); }
     }
 
     if (!failed.empty()) {
         string info = GetLanguageService().GetUtf8String(StringId::FAILED_TO_SET_CHARSET_MANUALLY) + u8"\r\n";
         for (auto &pr : failed) {
-            info += to_utf8(pr.first) + GetLanguageService().GetUtf8String(StringId::REASON) + to_utf8(pr.second) +
-                    u8"\r\n";
+            info += to_utf8(pr.first) + u8" " + GetLanguageService().GetUtf8String(StringId::REASON) +
+                    to_utf8(pr.second) + u8"\r\n";
         }
 
         MyMessage *msg = new MyMessage([this, info]() {

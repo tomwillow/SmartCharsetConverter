@@ -27,6 +27,8 @@ void DealWithUCNVError(UErrorCode err) {
         break;
     case U_INVALID_CHAR_FOUND:
         throw runtime_error(GetLanguageService().GetUtf8String(StringId::INVALID_CHARACTERS));
+    case U_ILLEGAL_CHAR_FOUND:
+        throw runtime_error(GetLanguageService().GetUtf8String(StringId::INVALID_CHARACTERS));
     default:
         throw runtime_error("ucnv error. code=" + to_string(err));
         break;
@@ -52,6 +54,9 @@ tuple<unique_ptr<UChar[]>, int> Decode(const char *str, int len, CharsetCode cod
 
     int32_t cap = len + 1;
     unique_ptr<UChar[]> target(new UChar[cap]);
+
+    ucnv_setToUCallBack(conv.get(), UCNV_TO_U_CALLBACK_STOP, NULL, NULL, NULL, &err);
+    DealWithUCNVError(err);
 
     // 解码
     int retLen = ucnv_toUChars(conv.get(), target.get(), cap, str, len, &err);

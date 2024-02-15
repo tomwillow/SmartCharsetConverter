@@ -67,6 +67,8 @@ v0.8 Rearrange the interface (thanks to [Carlos Sánchez](https://github.com/c-s
 
 v0.81 Add Spanish language pack support (thanks to [Carlos Sánchez](https://github.com/c-sanchez)).
 
+v0.82 Check if characters will be lost when specifying encoding manually.
+
 # Build
 
 1. Confirm the compilation environment: win10+ x64, Visual Studio 2019+, cmake.

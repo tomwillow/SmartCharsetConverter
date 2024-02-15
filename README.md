@@ -65,6 +65,7 @@ v0.8 重新编排界面(感谢[Carlos Sánchez](https://github.com/c-sanchez))�
       支持多语言（内置简体中文和英文）。增加多语言选择。
 
 v0.81 增加西班牙语支持(感谢[Carlos Sánchez](https://github.com/c-sanchez))。
+v0.82 现在手动指定字符集会检查是否丢失字符。
 
 # 构建方法
 
