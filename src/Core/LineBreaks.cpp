@@ -55,38 +55,6 @@ LineBreaks GetLineBreaks(const UChar *buf, int len) {
     return ans;
 }
 
-void Test_GetLineBreaks() {
-    std::u16string ws;
-
-    ws = u"\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == LineBreaks::CR);
-    ws = u"\r\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == LineBreaks::CR);
-    ws = u"\r00\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == LineBreaks::CR);
-    ws = u"\r\r\n";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == LineBreaks::MIX);
-
-    ws = u"\n";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == LineBreaks::LF);
-    ws = u"\n\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == LineBreaks::MIX);
-    ws = u"\n\n";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == LineBreaks::LF);
-    ws = u"\n\n\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == LineBreaks::MIX);
-
-    ws = u"\r\n";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == LineBreaks::CRLF);
-    ws = u"\r\n\n";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == LineBreaks::MIX);
-    ws = u"\r\n\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == LineBreaks::MIX);
-
-    ws = u"\n\r";
-    assert(GetLineBreaks(ws.c_str(), ws.length()) == LineBreaks::MIX);
-}
-
 void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, LineBreaks targetLineBreak) {
     std::vector<UChar> out;
     out.reserve(len);

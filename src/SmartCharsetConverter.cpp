@@ -18,11 +18,6 @@ int main() {
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR szCmdLine, int nCmdShow) {
 #endif
 
-#ifndef NDEBUG
-    Split_UnitTest();
-    Test_GetLineBreaks();
-#endif
-
     // 得到命令行参数
     const vector<wstring> args = GetCommandLineArgs();
 

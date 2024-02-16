@@ -16,8 +16,6 @@ enum class LineBreaks { CRLF, LF, CR, EMPTY, MIX, UNKNOWN };
 // 识别换行符
 LineBreaks GetLineBreaks(const UChar *buf, int len);
 
-void Test_GetLineBreaks();
-
 // 变更换行符
 void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, LineBreaks targetLineBreak);
 

@@ -114,7 +114,6 @@ std::tistream &safeGetline(std::tistream &is, std::tstring &t);
  * dep填入分隔符，可以支持多种分隔符。例如"\n\t"。
  */
 std::vector<std::tstring_view> Split(std::tstring_view s, const std::tstring &dep) noexcept;
-void Split_UnitTest();
 
 template <typename... Args>
 std::string MyPrintf(const std::string &fmtStr, std::size_t reservedBytes, Args... args) {

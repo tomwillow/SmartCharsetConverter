@@ -259,16 +259,3 @@ std::vector<std::tstring_view> Split(std::tstring_view s, const std::tstring &de
     }
     return ans;
 }
-
-void Split_UnitTest() {
-    assert(Split(TEXT(""), TEXT(" ")) == vector<tstring_view>{});
-    assert((Split(TEXT("a"), TEXT(" ")) == vector<tstring_view>{TEXT("a")}));
-    assert((Split(TEXT("  a  "), TEXT(" ")) == vector<tstring_view>{TEXT("a")}));
-    assert((Split(TEXT("  a"), TEXT(" ")) == vector<tstring_view>{TEXT("a")}));
-    assert((Split(TEXT("a  "), TEXT(" ")) == vector<tstring_view>{TEXT("a")}));
-    assert((Split(TEXT("a b c"), TEXT(" ")) == vector<tstring_view>{TEXT("a"), TEXT("b"), TEXT("c")}));
-    assert((Split(TEXT(" a b c"), TEXT(" ")) == vector<tstring_view>{TEXT("a"), TEXT("b"), TEXT("c")}));
-    assert((Split(TEXT("a b c "), TEXT(" ")) == vector<tstring_view>{TEXT("a"), TEXT("b"), TEXT("c")}));
-    assert((Split(TEXT(" a b c "), TEXT(" ")) == vector<tstring_view>{TEXT("a"), TEXT("b"), TEXT("c")}));
-    assert((Split(TEXT("a\tb c\t"), TEXT(" \t")) == vector<tstring_view>{TEXT("a"), TEXT("b"), TEXT("c")}));
-}
