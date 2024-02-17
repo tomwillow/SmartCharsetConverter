@@ -12,14 +12,10 @@ namespace viet {
 
 enum class Encoding { UTF8, VNI, VPS, VISCII, TCVN3 };
 
-struct Rune {
-    std::string utf8;
-    std::string vni;
-    char vps;
-    char viscii;
-    std::string tcvn3;
-    std::string description;
-};
+void Init() noexcept;
+
+bool CheckEncoding(const char *str, int len, Encoding encoding) noexcept;
+bool CheckEncoding(const std::string &str, Encoding encoding) noexcept;
 
 std::string ConvertToUtf8(const std::string &data, Encoding srcEncoding);
 

@@ -1,6 +1,9 @@
 #include "Vietnamese.h"
 
 #include <unordered_map>
+#include <cassert>
+
+namespace viet {
 
 constexpr std::size_t DATA_LENGTH = 134;
 
@@ -226,12 +229,124 @@ const std::array<std::string, DATA_LENGTH> descriptionTable = {
     "LATIN SMALL LETTER Y WITH TILDE",
 };
 
-const std::unordered_map<std::string, std::string> tcvn3ToUtf8 = {{"\xa5\xee", ""}};
+std::unordered_map<std::string, std::string> vniToUtf8;
+std::unordered_map<char, std::string> vpsToUtf8;
+std::unordered_map<char, std::string> viscii3ToUtf8;
+std::unordered_map<std::string, std::string> tcvn3ToUtf8;
 
-std::string viet::ConvertToUtf8(const std::string &data, Encoding srcEncoding) {
+struct Rune {
+    std::string utf8;
+    std::string vni;
+    char vps;
+    char viscii;
+    std::string tcvn3;
+    std::string description;
+};
+
+std::unordered_map<std::string, Rune> utf8ToOthers;
+
+bool &Initialized() noexcept {
+    static bool initialized = false;
+    return initialized;
+}
+
+void Init() noexcept {
+    if (Initialized())
+        return;
+
+    for (int i = 0; i < DATA_LENGTH; ++i) {
+        vniToUtf8[vniTable[i]] = utf8Table[i];
+        vpsToUtf8[vpsTable[i]] = utf8Table[i];
+        viscii3ToUtf8[visciiTable[i]] = utf8Table[i];
+        tcvn3ToUtf8[tcvn3Table[i]] = utf8Table[i];
+
+        utf8ToOthers[utf8Table[i]] =
+            Rune{utf8Table[i], vniTable[i], vpsTable[i], visciiTable[i], tcvn3Table[i], descriptionTable[i]};
+    }
+    Initialized() = true;
+}
+
+void CheckInit() noexcept {
+    assert(Initialized() && "viet module is not initialized");
+}
+
+bool CheckEncoding(const char *str, int len, Encoding encoding) noexcept {
+    CheckInit();
+    if (encoding == Encoding::VPS || encoding == Encoding::VISCII) {
+        const std::unordered_map<char, std::string> *dict = nullptr;
+        switch (encoding) {
+        case Encoding::VPS:
+            dict = &vpsToUtf8;
+            break;
+        case Encoding::VISCII:
+            dict = &viscii3ToUtf8;
+            break;
+        }
+
+        for (int i = 0; i < len; ++i) {
+            auto c = str[i];
+            if (isascii(c)) {
+                continue;
+            }
+            if (dict->find(c) == dict->end()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    const std::unordered_map<std::string, std::string> *dict = nullptr;
+    switch (encoding) {
+    case Encoding::VNI:
+        dict = &vniToUtf8;
+        break;
+    case Encoding::TCVN3:
+        dict = &tcvn3ToUtf8;
+        break;
+    default:
+        assert(0 && "unsupported encoding");
+        break;
+    }
+
+    for (std::size_t i = 0; i < len; ++i) {
+        char c = str[i];
+        if (isascii(c)) {
+            continue;
+        }
+
+        std::string word(1, c);
+
+        if (dict->find(word) != dict->end()) {
+            continue;
+        }
+
+        i++;
+        if (i == len)
+            break;
+
+        word += str[i];
+        if (dict->find(word) != dict->end()) {
+            continue;
+        }
+
+        return false;
+    }
+
+    return true;
+}
+
+bool CheckEncoding(const std::string &str, Encoding encoding) noexcept {
+    return CheckEncoding(str.c_str(), str.size(), encoding);
+}
+
+std::string ConvertToUtf8(const std::string &data, Encoding srcEncoding) {
+    CheckInit();
     return std::string();
 }
 
-std::string viet::ConvertFromUtf8(const std::string &data, Encoding destEncoding) {
+std::string ConvertFromUtf8(const std::string &data, Encoding destEncoding) {
+    CheckInit();
     return std::string();
 }
+
+} // namespace viet
