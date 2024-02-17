@@ -20,7 +20,7 @@ TEST(Vietnamese, Convert) {
     auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
     auto gotEncoding = core.DetectEncoding(buf.get(), bufSize);
     auto got = to_utf8(ToViewCharsetName(gotEncoding));
-    std::wstring expectedEncoding = L"TCVN3";
+    std::string expectedEncoding = u8"TCVN3";
     EXPECT_EQ(got, expectedEncoding);
 
     // convert

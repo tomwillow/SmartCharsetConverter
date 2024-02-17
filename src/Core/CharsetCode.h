@@ -30,6 +30,7 @@ enum class CharsetCode {
     SHIFT_JIS,
     EUC_JP,
     WINDOWS_1252,
+    WINDOWS_1258, // Vietnamese
     ISO_8859_1,
 
     CHARSET_CODE_END
@@ -66,6 +67,7 @@ const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
     {CharsetCode::SHIFT_JIS, MyCharset{TEXT("SHIFT-JIS"), "SHIFT-JIS", {"SHIFT_JIS"}}},
     {CharsetCode::EUC_JP, MyCharset{TEXT("EUC-JP"), "EUC-JP", {"EUC-JP"}}},
     {CharsetCode::WINDOWS_1252, MyCharset{TEXT("WINDOWS-1252"), "WINDOWS-1252", {}}},
+    {CharsetCode::WINDOWS_1258, MyCharset{TEXT("WINDOWS-1258"), "WINDOWS-1258", {}}},
     {CharsetCode::ISO_8859_1, MyCharset{TEXT("ISO-8859-1"), "ISO-8859-1", {}}}};
 
 std::tstring ToViewCharsetName(CharsetCode code) noexcept;
