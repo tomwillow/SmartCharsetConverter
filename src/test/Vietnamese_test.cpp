@@ -61,6 +61,20 @@ TEST(Vietnamese, BuiltinConvertFromUtf8) {
     ASSERT_EQ(tcvn3StrGot, tcvn3StrExpected);
 }
 
+TEST(Vietnamese, BuiltinConvertOtherToOther) {
+    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+    viet::Init();
+
+    std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
+    auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
+
+    std::string vniStr = viet::Convert(buf.get(), bufSize, viet::Encoding::TCVN3, viet::Encoding::VNI);
+    std::string tcvnStrGot = viet::Convert(vniStr, viet::Encoding::VNI, viet::Encoding::TCVN3);
+
+    ASSERT_EQ(bufSize, tcvnStrGot.size());
+    ASSERT_EQ(std::string(buf.get(), bufSize), tcvnStrGot);
+}
+
 TEST(Vietnamese, OuterConvert) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
     viet::Init();

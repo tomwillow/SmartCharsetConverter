@@ -229,18 +229,18 @@ const std::array<std::string, DATA_LENGTH> descriptionTable = {
     "LATIN SMALL LETTER Y WITH TILDE",
 };
 
-std::unordered_map<std::string, std::string> vniToUtf8;
-std::unordered_map<char, std::string> vpsToUtf8;
-std::unordered_map<char, std::string> viscii3ToUtf8;
-std::unordered_map<std::string, std::string> tcvn3ToUtf8;
+std::unordered_map<std::string_view, std::string_view> vniToUtf8;
+std::unordered_map<char, std::string_view> vpsToUtf8;
+std::unordered_map<char, std::string_view> viscii3ToUtf8;
+std::unordered_map<std::string_view, std::string_view> tcvn3ToUtf8;
 
 struct Rune {
-    std::string utf8;
-    std::string vni;
+    const std::string_view utf8;
+    const std::string_view vni;
     char vps;
     char viscii;
-    std::string tcvn3;
-    std::string description;
+    const std::string_view tcvn3;
+    const std::string_view description;
 
     void AddToString(std::string &out, Encoding targetEncoding) const noexcept {
         switch (targetEncoding) {
@@ -262,7 +262,7 @@ struct Rune {
     }
 };
 
-std::unordered_map<std::string, Rune> utf8ToOthers;
+std::unordered_map<std::string_view, Rune> utf8ToOthers;
 
 bool &Initialized() noexcept {
     static bool initialized = false;
@@ -279,8 +279,10 @@ void Init() noexcept {
         viscii3ToUtf8[visciiTable[i]] = utf8Table[i];
         tcvn3ToUtf8[tcvn3Table[i]] = utf8Table[i];
 
-        utf8ToOthers[utf8Table[i]] =
-            Rune{utf8Table[i], vniTable[i], vpsTable[i], visciiTable[i], tcvn3Table[i], descriptionTable[i]};
+        std::string_view sv = utf8Table[i];
+
+        utf8ToOthers.emplace(utf8Table[i],
+            Rune{utf8Table[i], vniTable[i], vpsTable[i], visciiTable[i], tcvn3Table[i], descriptionTable[i]});
     }
     Initialized() = true;
 }
@@ -292,7 +294,7 @@ void CheckInit() noexcept {
 bool CheckEncoding(const char *str, int len, Encoding encoding) noexcept {
     CheckInit();
     if (encoding == Encoding::VPS || encoding == Encoding::VISCII) {
-        const std::unordered_map<char, std::string> *dict = nullptr;
+        const std::unordered_map<char, std::string_view> *dict = nullptr;
         switch (encoding) {
         case Encoding::VPS:
             dict = &vpsToUtf8;
@@ -314,7 +316,7 @@ bool CheckEncoding(const char *str, int len, Encoding encoding) noexcept {
         return true;
     }
 
-    const std::unordered_map<std::string, std::string> *dict = nullptr;
+    const std::unordered_map<std::string_view, std::string_view> *dict = nullptr;
     switch (encoding) {
     case Encoding::VNI:
         dict = &vniToUtf8;
@@ -363,7 +365,7 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
     std::string ret;
 
     if (srcEncoding == Encoding::VPS || srcEncoding == Encoding::VISCII) {
-        const std::unordered_map<char, std::string> *dict = nullptr;
+        const std::unordered_map<char, std::string_view> *dict = nullptr;
         switch (srcEncoding) {
         case Encoding::VPS:
             dict = &vpsToUtf8;
@@ -390,7 +392,7 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
         return ret;
     }
 
-    const std::unordered_map<std::string, std::string> *dict = nullptr;
+    const std::unordered_map<std::string_view, std::string_view> *dict = nullptr;
     switch (srcEncoding) {
     case Encoding::VNI:
         dict = &vniToUtf8;
@@ -435,7 +437,7 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
     return ret;
 }
 
-std::string ConvertFromUtf8(const std::string &utf8Str, Encoding destEncoding) {
+std::string ConvertFromUtf8(const std::string_view &utf8Str, Encoding destEncoding) {
     CheckInit();
     std::string ret;
 
@@ -452,7 +454,7 @@ std::string ConvertFromUtf8(const std::string &utf8Str, Encoding destEncoding) {
         if (i == srcSize)
             break;
 
-        std::string word = utf8Str.substr(i - 1, 2);
+        std::string word{utf8Str.substr(i - 1, 2)};
         auto iter = utf8ToOthers.find(word);
         if (iter != utf8ToOthers.end()) {
             iter->second.AddToString(ret, destEncoding);
@@ -475,6 +477,30 @@ std::string ConvertFromUtf8(const std::string &utf8Str, Encoding destEncoding) {
         throw ParseError(word, i);
     }
     return ret;
+}
+
+std::string Convert(const char *src, int srcSize, Encoding srcEncoding, Encoding destEncoding) {
+    if (srcEncoding == destEncoding) {
+        return std::string(src, srcSize);
+    }
+
+    // utf8 -> other
+    if (srcEncoding == Encoding::UTF8) {
+        return ConvertFromUtf8(std::string_view(src, srcSize), destEncoding);
+    }
+
+    // other -> utf8
+    if (destEncoding == Encoding::UTF8) {
+        return ConvertToUtf8(src, srcSize, srcEncoding);
+    }
+
+    // other -> other
+    auto temp = ConvertToUtf8(src, srcSize, srcEncoding);
+    return ConvertFromUtf8(temp, destEncoding);
+}
+
+std::string Convert(std::string_view src, Encoding srcEncoding, Encoding destEncoding) {
+    return Convert(src.data(), src.size(), srcEncoding, destEncoding);
 }
 
 } // namespace viet

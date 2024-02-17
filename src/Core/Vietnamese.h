@@ -38,6 +38,18 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding);
  * Convert to TCVN3 etc. encodings from utf8 string.
  * @exception ParseError thrown when parse fail.
  */
-std::string ConvertFromUtf8(const std::string &utf8Str, Encoding destEncoding);
+std::string ConvertFromUtf8(const std::string_view &utf8Str, Encoding destEncoding);
+
+/**
+ * Convert any Vietnamese encoding(include utf8) to any Vietnamese encoding.
+ * @exception ParseError thrown when parse fail.
+ */
+std::string Convert(const char *src, int srcSize, Encoding srcEncoding, Encoding destEncoding);
+
+/**
+ * Convert any Vietnamese encoding(include utf8) to any Vietnamese encoding.
+ * @exception ParseError thrown when parse fail.
+ */
+std::string Convert(std::string_view src, Encoding srcEncoding, Encoding destEncoding);
 
 } // namespace viet
