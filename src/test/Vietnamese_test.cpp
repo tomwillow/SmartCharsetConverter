@@ -25,7 +25,43 @@ TEST(Vietnamese, CheckEncoding) {
     EXPECT_TRUE(viet::CheckEncoding(buf.get(), bufSize, viet::Encoding::TCVN3));
 }
 
-TEST(Vietnamese, Convert) {
+TEST(Vietnamese, BuiltinConvertToUtf8) {
+    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+    viet::Init();
+
+    std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
+    auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
+    std::string utf8Str = viet::ConvertToUtf8(buf.get(), bufSize, viet::Encoding::TCVN3);
+    // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-got.txt", utf8Str.c_str(),
+    //                    utf8Str.size());
+
+    std::wstring expectFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-utf8.txt";
+    auto [utf8Buf, utf8BufSize] = ReadFileToBuffer(expectFilename);
+    std::string utf8ExpectStr(utf8Buf.get(), utf8BufSize);
+
+    ASSERT_EQ(utf8Str.size(), utf8BufSize);
+    ASSERT_EQ(utf8Str, utf8ExpectStr);
+}
+
+TEST(Vietnamese, BuiltinConvertFromUtf8) {
+    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+    viet::Init();
+
+    std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-utf8.txt";
+    auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
+    std::string tcvn3StrGot = viet::ConvertFromUtf8(std::string(buf.get(), bufSize), viet::Encoding::TCVN3);
+    // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-got.txt", utf8Str.c_str(),
+    //                    utf8Str.size());
+
+    std::wstring expectFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
+    auto [tcvn3BufExpected, tcvn3BufExpectedSize] = ReadFileToBuffer(expectFilename);
+    std::string tcvn3StrExpected(tcvn3BufExpected.get(), tcvn3BufExpectedSize);
+
+    ASSERT_EQ(tcvn3StrGot.size(), tcvn3BufExpectedSize);
+    ASSERT_EQ(tcvn3StrGot, tcvn3StrExpected);
+}
+
+TEST(Vietnamese, OuterConvert) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
     viet::Init();
 

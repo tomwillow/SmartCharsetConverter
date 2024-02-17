@@ -241,6 +241,25 @@ struct Rune {
     char viscii;
     std::string tcvn3;
     std::string description;
+
+    void AddToString(std::string &out, Encoding targetEncoding) const noexcept {
+        switch (targetEncoding) {
+        case Encoding::VNI:
+            out += vni;
+            break;
+        case Encoding::VPS:
+            out += vps;
+            break;
+        case Encoding::VISCII:
+            out += viscii;
+            break;
+        case Encoding::TCVN3:
+            out += tcvn3;
+            break;
+        default:
+            assert(0 && "unsupported encoding");
+        }
+    }
 };
 
 std::unordered_map<std::string, Rune> utf8ToOthers;
@@ -339,14 +358,123 @@ bool CheckEncoding(const std::string &str, Encoding encoding) noexcept {
     return CheckEncoding(str.c_str(), str.size(), encoding);
 }
 
-std::string ConvertToUtf8(const std::string &data, Encoding srcEncoding) {
+std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
     CheckInit();
-    return std::string();
+    std::string ret;
+
+    if (srcEncoding == Encoding::VPS || srcEncoding == Encoding::VISCII) {
+        const std::unordered_map<char, std::string> *dict = nullptr;
+        switch (srcEncoding) {
+        case Encoding::VPS:
+            dict = &vpsToUtf8;
+            break;
+        case Encoding::VISCII:
+            dict = &viscii3ToUtf8;
+            break;
+        }
+
+        for (int i = 0; i < srcSize; ++i) {
+            auto c = src[i];
+            if (isascii(c)) {
+                ret += c;
+                continue;
+            }
+
+            auto iter = dict->find(c);
+            if (iter == dict->end()) {
+                throw ParseError(std::string(1, c), i);
+            }
+
+            ret += iter->second;
+        }
+        return ret;
+    }
+
+    const std::unordered_map<std::string, std::string> *dict = nullptr;
+    switch (srcEncoding) {
+    case Encoding::VNI:
+        dict = &vniToUtf8;
+        break;
+    case Encoding::TCVN3:
+        dict = &tcvn3ToUtf8;
+        break;
+    default:
+        assert(0 && "unsupported encoding");
+        break;
+    }
+
+    for (std::size_t i = 0; i < srcSize; ++i) {
+        char c = src[i];
+        if (isascii(c)) {
+            ret += c;
+            continue;
+        }
+
+        std::string word(1, c);
+
+        auto iter = dict->find(word);
+        if (iter != dict->end()) {
+            ret += iter->second;
+            continue;
+        }
+
+        i++;
+        if (i == srcSize)
+            break;
+
+        word += src[i];
+        iter = dict->find(word);
+        if (iter != dict->end()) {
+            ret += iter->second;
+            continue;
+        }
+
+        throw ParseError(word, i);
+    }
+
+    return ret;
 }
 
-std::string ConvertFromUtf8(const std::string &data, Encoding destEncoding) {
+std::string ConvertFromUtf8(const std::string &utf8Str, Encoding destEncoding) {
     CheckInit();
-    return std::string();
+    std::string ret;
+
+    auto srcSize = utf8Str.size();
+    for (std::size_t i = 0; i < srcSize;) {
+        char c = utf8Str[i];
+        if (isascii(c)) {
+            ret += c;
+            i++;
+            continue;
+        }
+
+        i++;
+        if (i == srcSize)
+            break;
+
+        std::string word = utf8Str.substr(i - 1, 2);
+        auto iter = utf8ToOthers.find(word);
+        if (iter != utf8ToOthers.end()) {
+            iter->second.AddToString(ret, destEncoding);
+            i++;
+            continue;
+        }
+
+        i++;
+        if (i == srcSize)
+            break;
+
+        word += utf8Str[i];
+        iter = utf8ToOthers.find(word);
+        if (iter != utf8ToOthers.end()) {
+            iter->second.AddToString(ret, destEncoding);
+            i++;
+            continue;
+        }
+
+        throw ParseError(word, i);
+    }
+    return ret;
 }
 
 } // namespace viet
