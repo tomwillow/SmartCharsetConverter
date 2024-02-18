@@ -32,6 +32,7 @@ const std::array<std::string, DATA_LENGTH> utf8Table = {
     "\xe1\xbb\xb9",
 };
 
+// overlapped with ASCII
 const std::array<std::string, DATA_LENGTH> vniTable = {
     "\x41\xD8", "\x41\xD9", "\x41\xC2", "\x41\xD5", "\x45\xD8", "\x45\xD9", "\x45\xC2", "\xCC",     "\xCD",
     "\x4F\xD8", "\x4F\xD9", "\x4F\xC2", "\x4F\xD5", "\x55\xD8", "\x55\xD9", "\x59\xD9", "\x61\xF8", "\x61\xF9",
@@ -50,6 +51,7 @@ const std::array<std::string, DATA_LENGTH> vniTable = {
     "\x59\xD8", "\x79\xF8", "\xCE",     "\xEE",     "\x59\xDB", "\x79\xFB", "\x59\xD5", "\x79\xF5",
 };
 
+// overlapped with ASCII
 const std::array<char, DATA_LENGTH> vpsTable = {
     '\x80', '\xC1', '\xC2', '\x82', '\xD7', '\xC9', '\xCA', '\xB5', '\xB4', '\xBC', '\xB9', '\xD4', '\xBE', '\xA8',
     '\xDA', '\xDD', '\xE0', '\xE1', '\xE2', '\xE3', '\xE8', '\xE9', '\xEA', '\xEC', '\xED', '\xF2', '\xF3', '\xF4',
@@ -63,6 +65,7 @@ const std::array<char, DATA_LENGTH> vpsTable = {
     '\xB2', '\xFF', '\x19', '\x9C', '\xFD', '\x9B', '\xB3', '\xCF',
 };
 
+// overlapped with ASCII
 const std::array<char, DATA_LENGTH> visciiTable = {
     '\xC0', '\xC1', '\xC2', '\xC3', '\xC8', '\xC9', '\xCA', '\xCC', '\xCD', '\xD2', '\xD3', '\xD4', '\xA0', '\xD9',
     '\xDA', '\xDD', '\xE0', '\xE1', '\xE2', '\xE3', '\xE8', '\xE9', '\xEA', '\xEC', '\xED', '\xF2', '\xF3', '\xF4',
