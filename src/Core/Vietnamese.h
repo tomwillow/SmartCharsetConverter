@@ -56,6 +56,9 @@ private:
     std::string errMsg;
 };
 
+/**
+* All FUNCTIONS BELOW SHOULD CALL THIS FIRSTLY.
+*/
 void Init() noexcept;
 
 bool CheckEncoding(const char *str, int len, Encoding encoding) noexcept;
