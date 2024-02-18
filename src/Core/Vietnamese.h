@@ -33,18 +33,11 @@ inline std::string_view to_string(Encoding encoding) noexcept {
     return "";
 }
 
-class ParseError : public std::runtime_error {
+class ConvertError : public std::runtime_error {
 public:
-    ParseError(std::string content, int position, Encoding srcEncoding, Encoding destEncoding)
-        : std::runtime_error("parse error"), content(content), position(position), srcEncoding(srcEncoding),destEncoding(destEncoding) {
-        errMsg = std::string("[") + to_string(srcEncoding).data() + "->" + to_string(destEncoding).data() +
-                 "] parse error at position " + std::to_string(position);
-        errMsg += "\n";
-        errMsg += "with content:\n";
-        errMsg += content;
-    }
+    ConvertError(std::string content, int position, Encoding srcEncoding, Encoding destEncoding) noexcept;
 
-    virtual const char* what() const noexcept override {
+    virtual const char *what() const noexcept override {
         return errMsg.c_str();
     }
 
@@ -57,8 +50,8 @@ private:
 };
 
 /**
-* All FUNCTIONS BELOW SHOULD CALL THIS FIRSTLY.
-*/
+ * All FUNCTIONS BELOW SHOULD CALL THIS FIRSTLY.
+ */
 void Init() noexcept;
 
 bool CheckEncoding(const char *str, int len, Encoding encoding) noexcept;
@@ -66,25 +59,25 @@ bool CheckEncoding(const std::string &str, Encoding encoding) noexcept;
 
 /**
  * Convert TCVN3 etc. encodings to utf8 string.
- * @exception ParseError thrown when parse fail.
+ * @exception ConvertError thrown when parse fail.
  */
 std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding);
 
 /**
  * Convert to TCVN3 etc. encodings from utf8 string.
- * @exception ParseError thrown when parse fail.
+ * @exception ConvertError thrown when parse fail.
  */
 std::string ConvertFromUtf8(const std::string_view &utf8Str, Encoding destEncoding);
 
 /**
  * Convert any Vietnamese encoding(include utf8) to any Vietnamese encoding.
- * @exception ParseError thrown when parse fail.
+ * @exception ConvertError thrown when parse fail.
  */
 std::string Convert(const char *src, int srcSize, Encoding srcEncoding, Encoding destEncoding);
 
 /**
  * Convert any Vietnamese encoding(include utf8) to any Vietnamese encoding.
- * @exception ParseError thrown when parse fail.
+ * @exception ConvertError thrown when parse fail.
  */
 std::string Convert(std::string_view src, Encoding srcEncoding, Encoding destEncoding);
 

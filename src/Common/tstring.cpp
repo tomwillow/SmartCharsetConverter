@@ -151,6 +151,23 @@ std::wstring utf8_to_wstring(const std::string &str) {
     return ret;
 }
 
+std::string to_hex(char c) noexcept {
+    std::string ret;
+    auto to_hex_in_16 = [](char n) noexcept -> char {
+        if (!(n >= 0 && n <= 15)) {
+            assert(0);
+        }
+        if (n >= 0 && n <= 9) {
+            return n + '0';
+        } else {
+            return (n - 10) + 'A';
+        }
+    };
+    ret += to_hex_in_16(static_cast<unsigned char>(c) >> 4); // high 4 bits
+    ret += to_hex_in_16(c & 0b00001111);                     // low 4 bits
+    return ret;
+}
+
 // 未测试
 void FixEndLine(std::tstring &s) {
     tstring temp;

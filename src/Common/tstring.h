@@ -103,6 +103,8 @@ std::string to_utf8(const std::string &str);
 std::string utf8_to_string(const std::string &str);
 std::wstring utf8_to_wstring(const std::string &str);
 
+std::string to_hex(char c) noexcept;
+
 std::string to_hex(const char *buf, int bufSize);
 std::string to_hex(std::string s);
 std::wstring to_hex(std::wstring s);

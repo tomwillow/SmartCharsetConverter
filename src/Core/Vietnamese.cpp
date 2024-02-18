@@ -1,5 +1,7 @@
 #include "Vietnamese.h"
 
+#include "tstring.h"
+
 #include <unordered_map>
 #include <cassert>
 
@@ -264,6 +266,19 @@ struct Rune {
 
 std::unordered_map<std::string_view, Rune> utf8ToOthers;
 
+ConvertError::ConvertError(std::string content, int position, Encoding srcEncoding, Encoding destEncoding) noexcept
+    : std::runtime_error("parse error"), content(content), position(position), srcEncoding(srcEncoding),
+      destEncoding(destEncoding) {
+    errMsg = std::string("[") + to_string(srcEncoding).data() + "->" + to_string(destEncoding).data() +
+             "] convert error at position " + std::to_string(position);
+    errMsg += "\n";
+    errMsg += "with content:\n";
+    for (auto c : content) {
+        errMsg += "\\x";
+        errMsg += to_hex(c);
+    }
+}
+
 bool &Initialized() noexcept {
     static bool initialized = false;
     return initialized;
@@ -281,8 +296,8 @@ void Init() noexcept {
 
         std::string_view sv = utf8Table[i];
 
-        utf8ToOthers.emplace(utf8Table[i],
-            Rune{utf8Table[i], vniTable[i], vpsTable[i], visciiTable[i], tcvn3Table[i], descriptionTable[i]});
+        utf8ToOthers.emplace(utf8Table[i], Rune{utf8Table[i], vniTable[i], vpsTable[i], visciiTable[i], tcvn3Table[i],
+                                                descriptionTable[i]});
     }
     Initialized() = true;
 }
@@ -384,7 +399,7 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
 
             auto iter = dict->find(c);
             if (iter == dict->end()) {
-                throw ParseError(std::string(1, c), i, srcEncoding, Encoding::UTF8);
+                throw ConvertError(std::string(1, c), i, srcEncoding, Encoding::UTF8);
             }
 
             ret += iter->second;
@@ -431,7 +446,7 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
             continue;
         }
 
-        throw ParseError(word, i, srcEncoding, Encoding::UTF8);
+        throw ConvertError(word, i, srcEncoding, Encoding::UTF8);
     }
 
     return ret;
@@ -474,7 +489,7 @@ std::string ConvertFromUtf8(const std::string_view &utf8Str, Encoding destEncodi
             continue;
         }
 
-        throw ParseError(word, i, Encoding::UTF8, destEncoding);
+        throw ConvertError(word, i, Encoding::UTF8, destEncoding);
     }
     return ret;
 }
