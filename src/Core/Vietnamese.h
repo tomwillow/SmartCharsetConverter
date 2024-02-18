@@ -7,20 +7,53 @@
 
 #include <array>
 #include <string>
+#include <string_view>
 #include <stdexcept>
+#include <cassert>
 
 namespace viet {
 
 enum class Encoding { UTF8, VNI, VPS, VISCII, TCVN3 };
 
+inline std::string_view to_string(Encoding encoding) noexcept {
+    switch (encoding) {
+    case Encoding::UTF8:
+        return "UTF8";
+    case Encoding::VNI:
+        return "VNI";
+    case Encoding::VPS:
+        return "VPS";
+    case Encoding::VISCII:
+        return "VISCII";
+    case Encoding::TCVN3:
+        return "TCVN3";
+    default:
+        assert(0 && "unsupported encoding");
+    }
+    return "";
+}
+
 class ParseError : public std::runtime_error {
 public:
-    ParseError(std::string content, int position)
-        : std::runtime_error("parse error"), content(content), position(position) {}
+    ParseError(std::string content, int position, Encoding srcEncoding, Encoding destEncoding)
+        : std::runtime_error("parse error"), content(content), position(position), srcEncoding(srcEncoding),destEncoding(destEncoding) {
+        errMsg = std::string("[") + to_string(srcEncoding).data() + "->" + to_string(destEncoding).data() +
+                 "] parse error at position " + std::to_string(position);
+        errMsg += "\n";
+        errMsg += "with content:\n";
+        errMsg += content;
+    }
+
+    virtual const char* what() const noexcept override {
+        return errMsg.c_str();
+    }
 
 private:
     std::string content;
     int position;
+    Encoding srcEncoding;
+    Encoding destEncoding;
+    std::string errMsg;
 };
 
 void Init() noexcept;

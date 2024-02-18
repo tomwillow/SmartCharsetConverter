@@ -384,7 +384,7 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
 
             auto iter = dict->find(c);
             if (iter == dict->end()) {
-                throw ParseError(std::string(1, c), i);
+                throw ParseError(std::string(1, c), i, srcEncoding, Encoding::UTF8);
             }
 
             ret += iter->second;
@@ -431,7 +431,7 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
             continue;
         }
 
-        throw ParseError(word, i);
+        throw ParseError(word, i, srcEncoding, Encoding::UTF8);
     }
 
     return ret;
@@ -474,7 +474,7 @@ std::string ConvertFromUtf8(const std::string_view &utf8Str, Encoding destEncodi
             continue;
         }
 
-        throw ParseError(word, i);
+        throw ParseError(word, i, Encoding::UTF8, destEncoding);
     }
     return ret;
 }
