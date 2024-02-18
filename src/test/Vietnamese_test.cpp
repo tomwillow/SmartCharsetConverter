@@ -61,18 +61,31 @@ TEST(Vietnamese, BuiltinConvertFromUtf8) {
     ASSERT_EQ(tcvn3StrGot, tcvn3StrExpected);
 }
 
-TEST(Vietnamese, BuiltinConvertOtherToOther) {
-    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+/**
+ * @exception file_io_error
+ *            ConvertError
+ */
+void TestBuiltinConvertOtherToOther(viet::Encoding middleEncoding) {
     viet::Init();
 
     std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
     auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
 
-    std::string vniStr = viet::Convert(buf.get(), bufSize, viet::Encoding::TCVN3, viet::Encoding::VNI);
-    std::string tcvnStrGot = viet::Convert(vniStr, viet::Encoding::VNI, viet::Encoding::TCVN3);
+    std::string vniStr;
+    EXPECT_NO_THROW(vniStr = viet::Convert(buf.get(), bufSize, viet::Encoding::TCVN3, middleEncoding));
+    std::string tcvnStrGot;
+    EXPECT_NO_THROW(tcvnStrGot = viet::Convert(vniStr, middleEncoding, viet::Encoding::TCVN3));
 
-    ASSERT_EQ(bufSize, tcvnStrGot.size());
-    ASSERT_EQ(std::string(buf.get(), bufSize), tcvnStrGot);
+    EXPECT_EQ(bufSize, tcvnStrGot.size());
+    EXPECT_EQ(std::string(buf.get(), bufSize), tcvnStrGot);
+}
+
+TEST(Vietnamese, BuiltinConvertOtherToOther) {
+    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+
+    TestBuiltinConvertOtherToOther(viet::Encoding::VNI);
+    TestBuiltinConvertOtherToOther(viet::Encoding::VPS);
+    TestBuiltinConvertOtherToOther(viet::Encoding::VISCII);
 }
 
 TEST(Vietnamese, OuterConvert) {
