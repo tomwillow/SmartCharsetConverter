@@ -10,6 +10,7 @@
 
 #include <filesystem>
 #include <unordered_map>
+#include <random>
 
 TEST(Vietnamese, CheckEncoding) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
@@ -86,6 +87,40 @@ TEST(Vietnamese, BuiltinConvertOtherToOther) {
     TestBuiltinConvertOtherToOther(viet::Encoding::VNI);
     TestBuiltinConvertOtherToOther(viet::Encoding::VPS);
     TestBuiltinConvertOtherToOther(viet::Encoding::VISCII);
+}
+
+TEST(Vietnamese, ConvertFuzz) {
+    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+
+    const int count = 1024;
+    std::string randUtf8Str;
+    std::default_random_engine eng(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    std::uniform_int_distribution<int> unif(0, viet::internal::TABLE_LENGTH - 1);
+    for (int i = 0; i < count; ++i) {
+        int index = unif(eng);
+        randUtf8Str += viet::internal::utf8Table[index];
+    }
+
+    {
+        std::string dialect = viet::ConvertFromUtf8(randUtf8Str, viet::Encoding::VNI);
+        std::string gotUtf8 = viet::ConvertToUtf8(dialect.c_str(), dialect.size(), viet::Encoding::VNI);
+        EXPECT_EQ(gotUtf8, randUtf8Str);
+    }
+    {
+        std::string dialect = viet::ConvertFromUtf8(randUtf8Str, viet::Encoding::VPS);
+        std::string gotUtf8 = viet::ConvertToUtf8(dialect.c_str(), dialect.size(), viet::Encoding::VPS);
+        EXPECT_EQ(gotUtf8, randUtf8Str);
+    }
+    {
+        std::string dialect = viet::ConvertFromUtf8(randUtf8Str, viet::Encoding::VISCII);
+        std::string gotUtf8 = viet::ConvertToUtf8(dialect.c_str(), dialect.size(), viet::Encoding::VISCII);
+        EXPECT_EQ(gotUtf8, randUtf8Str);
+    }
+    {
+        std::string dialect = viet::ConvertFromUtf8(randUtf8Str, viet::Encoding::TCVN3);
+        std::string gotUtf8 = viet::ConvertToUtf8(dialect.c_str(), dialect.size(), viet::Encoding::TCVN3);
+        EXPECT_EQ(gotUtf8, randUtf8Str);
+    }
 }
 
 TEST(Vietnamese, OuterConvert) {
