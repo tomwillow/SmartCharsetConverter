@@ -7,9 +7,9 @@
 
 namespace viet {
 
-constexpr std::size_t DATA_LENGTH = 134;
+namespace internal {
 
-const std::array<std::string, DATA_LENGTH> utf8Table = {
+const std::array<std::string, TABLE_LENGTH> utf8Table = {
     "\xc3\x80",     "\xc3\x81",     "\xc3\x82",     "\xc3\x83",     "\xc3\x88",     "\xc3\x89",     "\xc3\x8a",
     "\xc3\x8c",     "\xc3\x8d",     "\xc3\x92",     "\xc3\x93",     "\xc3\x94",     "\xc3\x95",     "\xc3\x99",
     "\xc3\x9a",     "\xc3\x9d",     "\xc3\xa0",     "\xc3\xa1",     "\xc3\xa2",     "\xc3\xa3",     "\xc3\xa8",
@@ -32,8 +32,10 @@ const std::array<std::string, DATA_LENGTH> utf8Table = {
     "\xe1\xbb\xb9",
 };
 
+}
+
 // overlapped with ASCII
-const std::array<std::string, DATA_LENGTH> vniTable = {
+const std::array<std::string, internal::TABLE_LENGTH> vniTable = {
     "\x41\xD8", "\x41\xD9", "\x41\xC2", "\x41\xD5", "\x45\xD8", "\x45\xD9", "\x45\xC2", "\xCC",     "\xCD",
     "\x4F\xD8", "\x4F\xD9", "\x4F\xC2", "\x4F\xD5", "\x55\xD8", "\x55\xD9", "\x59\xD9", "\x61\xF8", "\x61\xF9",
     "\x61\xE2", "\x61\xF5", "\x65\xF8", "\x65\xF9", "\x65\xE2", "\xEC",     "\xED",     "\x6F\xF8", "\x6F\xF9",
@@ -52,7 +54,7 @@ const std::array<std::string, DATA_LENGTH> vniTable = {
 };
 
 // overlapped with ASCII
-const std::array<char, DATA_LENGTH> vpsTable = {
+const std::array<char, internal::TABLE_LENGTH> vpsTable = {
     '\x80', '\xC1', '\xC2', '\x82', '\xD7', '\xC9', '\xCA', '\xB5', '\xB4', '\xBC', '\xB9', '\xD4', '\xBE', '\xA8',
     '\xDA', '\xDD', '\xE0', '\xE1', '\xE2', '\xE3', '\xE8', '\xE9', '\xEA', '\xEC', '\xED', '\xF2', '\xF3', '\xF4',
     '\xF5', '\xF9', '\xFA', '\x9A', '\x88', '\xE6', '\xF1', '\xC7', '\xB8', '\xEF', '\xAC', '\xDB', '\xF7', '\xD6',
@@ -66,7 +68,7 @@ const std::array<char, DATA_LENGTH> vpsTable = {
 };
 
 // overlapped with ASCII
-const std::array<char, DATA_LENGTH> visciiTable = {
+const std::array<char, internal::TABLE_LENGTH> visciiTable = {
     '\xC0', '\xC1', '\xC2', '\xC3', '\xC8', '\xC9', '\xCA', '\xCC', '\xCD', '\xD2', '\xD3', '\xD4', '\xA0', '\xD9',
     '\xDA', '\xDD', '\xE0', '\xE1', '\xE2', '\xE3', '\xE8', '\xE9', '\xEA', '\xEC', '\xED', '\xF2', '\xF3', '\xF4',
     '\xF5', '\xF9', '\xFA', '\xFD', '\xC5', '\xE5', '\xD0', '\xF0', '\xCE', '\xEE', '\x9D', '\xFB', '\xB4', '\xBD',
@@ -79,7 +81,7 @@ const std::array<char, DATA_LENGTH> visciiTable = {
     '\x9F', '\xCF', '\x1E', '\xDC', '\x14', '\xD6', '\x19', '\xDB',
 };
 
-const std::array<std::string, DATA_LENGTH> tcvn3Table = {
+const std::array<std::string, internal::TABLE_LENGTH> tcvn3Table = {
     "\x41\xB5", "\x41\xB8", "\xA2",     "\x41\xB7", "\x45\xCC", "\x45\xD0", "\xA3",     "\x49\xD7", "\x49\xDD",
     "\x4F\xDF", "\x4F\xE3", "\xA4",     "\x4F\xE2", "\x55\xEF", "\x55\xF3", "\x59\xFD", "\xB5",     "\xB8",
     "\xA9",     "\xB7",     "\xCC",     "\xD0",     "\xAA",     "\xD7",     "\xDD",     "\xDF",     "\xE3",
@@ -97,7 +99,7 @@ const std::array<std::string, DATA_LENGTH> tcvn3Table = {
     "\x59\xFA", "\xFA",     "\x59\xFE", "\xFE",     "\x59\xFB", "\xFB",     "\x59\xFC", "\xFC",
 };
 
-const std::array<std::string, DATA_LENGTH> descriptionTable = {
+const std::array<std::string, internal::TABLE_LENGTH> descriptionTable = {
     "LATIN CAPITAL LETTER A WITH GRAVE",
     "LATIN CAPITAL LETTER A WITH ACUTE",
     "LATIN CAPITAL LETTER A WITH CIRCUMFLEX",
@@ -291,16 +293,16 @@ void Init() noexcept {
     if (Initialized())
         return;
 
-    for (int i = 0; i < DATA_LENGTH; ++i) {
-        vniToUtf8[vniTable[i]] = utf8Table[i];
-        vpsToUtf8[vpsTable[i]] = utf8Table[i];
-        viscii3ToUtf8[visciiTable[i]] = utf8Table[i];
-        tcvn3ToUtf8[tcvn3Table[i]] = utf8Table[i];
+    for (int i = 0; i < internal::TABLE_LENGTH; ++i) {
+        vniToUtf8[vniTable[i]] = internal::utf8Table[i];
+        vpsToUtf8[vpsTable[i]] = internal::utf8Table[i];
+        viscii3ToUtf8[visciiTable[i]] = internal::utf8Table[i];
+        tcvn3ToUtf8[tcvn3Table[i]] = internal::utf8Table[i];
 
-        std::string_view sv = utf8Table[i];
+        std::string_view sv = internal::utf8Table[i];
 
-        utf8ToOthers.emplace(utf8Table[i], Rune{utf8Table[i], vniTable[i], vpsTable[i], visciiTable[i], tcvn3Table[i],
-                                                descriptionTable[i]});
+        utf8ToOthers.emplace(internal::utf8Table[i], Rune{internal::utf8Table[i], vniTable[i], vpsTable[i],
+                                                          visciiTable[i], tcvn3Table[i], descriptionTable[i]});
     }
     Initialized() = true;
 }

@@ -13,6 +13,12 @@
 
 namespace viet {
 
+namespace internal {
+constexpr std::size_t TABLE_LENGTH = 134;
+
+extern const std::array<std::string, TABLE_LENGTH> utf8Table;
+} // namespace internal
+
 enum class Encoding { UTF8, VNI, VPS, VISCII, TCVN3 };
 
 inline std::string_view to_string(Encoding encoding) noexcept {
