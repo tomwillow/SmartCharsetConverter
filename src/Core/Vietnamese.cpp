@@ -423,33 +423,38 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
         break;
     }
 
-    for (std::size_t i = 0; i < srcSize; ++i) {
-        char c = src[i];
-        if (isascii(c)) {
-            ret += c;
-            continue;
+    for (std::size_t i = 0; i < srcSize;) {
+        // 由于VNI和TCVN3均存在第1个char落在ASCII码表范围内的问题，所以先判断2字节
+        if (i + 1 < srcSize) {
+            std::string_view word(src + i, 2);
+            auto iter = dict->find(word);
+            if (iter != dict->end()) {
+                ret += iter->second;
+                i += 2;
+                continue;
+            }
+
+            // fallthrough
         }
 
-        std::string word(1, c);
+        // 由于VNI存在单个char和ASCII码表重叠的问题，所以先判断
+        std::string_view word(src + i, 1);
 
         auto iter = dict->find(word);
         if (iter != dict->end()) {
             ret += iter->second;
+            i++;
             continue;
         }
 
-        i++;
-        if (i == srcSize)
-            break;
-
-        word += src[i];
-        iter = dict->find(word);
-        if (iter != dict->end()) {
-            ret += iter->second;
+        char c = src[i];
+        if (isascii(c)) {
+            ret += c;
+            i++;
             continue;
         }
 
-        throw ConvertError(word, i, srcEncoding, Encoding::UTF8);
+        throw ConvertError(std::string(word), i, srcEncoding, Encoding::UTF8);
     }
 
     return ret;
