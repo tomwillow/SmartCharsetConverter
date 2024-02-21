@@ -32,8 +32,6 @@ const std::array<std::string, TABLE_LENGTH> utf8Table = {
     "\xe1\xbb\xb9",
 };
 
-}
-
 // overlapped with ASCII
 const std::array<std::string, internal::TABLE_LENGTH> vniTable = {
     "\x41\xD8", "\x41\xD9", "\x41\xC2", "\x41\xD5", "\x45\xD8", "\x45\xD9", "\x45\xC2", "\xCC",     "\xCD",
@@ -81,7 +79,12 @@ const std::array<char, internal::TABLE_LENGTH> visciiTable = {
     '\x9F', '\xCF', '\x1E', '\xDC', '\x14', '\xD6', '\x19', '\xDB',
 };
 
-const std::array<std::string, internal::TABLE_LENGTH> tcvn3Table = {
+// NOTICE: TCVN3 is not double-byte, but due to the nature of its encoding, capital letters (vowels) are mapped to a
+// separate, capital font that is similar to the normal, lowercase one. As such, the hex code and character
+// representation of TCVN3 capital letters in the table is not correct—it is shown here for the purpose of illustration.
+// Users must take this peculiarity into account when converting files in TCVN3 format to Unicode; some post-conversion
+// editing is necessary.
+const std::array<std::string, TABLE_LENGTH> tcvn3Table = {
     "\x41\xB5", "\x41\xB8", "\xA2",     "\x41\xB7", "\x45\xCC", "\x45\xD0", "\xA3",     "\x49\xD7", "\x49\xDD",
     "\x4F\xDF", "\x4F\xE3", "\xA4",     "\x4F\xE2", "\x55\xEF", "\x55\xF3", "\x59\xFD", "\xB5",     "\xB8",
     "\xA9",     "\xB7",     "\xCC",     "\xD0",     "\xAA",     "\xD7",     "\xDD",     "\xDF",     "\xE3",
@@ -236,6 +239,8 @@ const std::array<std::string, internal::TABLE_LENGTH> descriptionTable = {
     "LATIN SMALL LETTER Y WITH TILDE",
 };
 
+} // namespace internal
+
 std::unordered_map<std::string_view, std::string_view> vniToUtf8;
 std::unordered_map<char, std::string_view> vpsToUtf8;
 std::unordered_map<char, std::string_view> viscii3ToUtf8;
@@ -294,16 +299,23 @@ void Init() noexcept {
         return;
 
     for (int i = 0; i < internal::TABLE_LENGTH; ++i) {
-        vniToUtf8[vniTable[i]] = internal::utf8Table[i];
-        vpsToUtf8[vpsTable[i]] = internal::utf8Table[i];
-        viscii3ToUtf8[visciiTable[i]] = internal::utf8Table[i];
-        tcvn3ToUtf8[tcvn3Table[i]] = internal::utf8Table[i];
+        vniToUtf8[internal::vniTable[i]] = internal::utf8Table[i];
+        vpsToUtf8[internal::vpsTable[i]] = internal::utf8Table[i];
+        viscii3ToUtf8[internal::visciiTable[i]] = internal::utf8Table[i];
+        tcvn3ToUtf8[internal::tcvn3Table[i]] = internal::utf8Table[i];
 
         std::string_view sv = internal::utf8Table[i];
 
-        utf8ToOthers.emplace(internal::utf8Table[i], Rune{internal::utf8Table[i], vniTable[i], vpsTable[i],
-                                                          visciiTable[i], tcvn3Table[i], descriptionTable[i]});
+        utf8ToOthers.emplace(internal::utf8Table[i],
+                             Rune{internal::utf8Table[i], internal::vniTable[i], internal::vpsTable[i],
+                                  internal::visciiTable[i], internal::tcvn3Table[i], internal::descriptionTable[i]});
     }
+    assert(vniToUtf8.size() == internal::TABLE_LENGTH);
+    assert(vpsToUtf8.size() == internal::TABLE_LENGTH);
+    assert(viscii3ToUtf8.size() == internal::TABLE_LENGTH);
+    assert(tcvn3ToUtf8.size() == internal::TABLE_LENGTH);
+    assert(utf8ToOthers.size() == internal::TABLE_LENGTH);
+
     Initialized() = true;
 }
 
@@ -382,6 +394,10 @@ bool CheckEncoding(const std::string &str, Encoding encoding) noexcept {
 
 std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
     CheckInit();
+    if (srcEncoding == Encoding::UTF8) {
+        return std::string(src, srcSize);
+    }
+
     std::string ret;
 
     if (srcEncoding == Encoding::VPS || srcEncoding == Encoding::VISCII) {
@@ -397,68 +413,91 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
 
         for (int i = 0; i < srcSize; ++i) {
             auto c = src[i];
+            // VPS和VISCII覆盖了ASCII的部分码点，应该先查VPS/VISCII表
+            auto iter = dict->find(c);
+            if (iter != dict->end()) {
+                ret += iter->second;
+                continue;
+            }
+
             if (isascii(c)) {
                 ret += c;
                 continue;
             }
 
-            auto iter = dict->find(c);
-            if (iter == dict->end()) {
-                throw ConvertError(std::string(1, c), i, srcEncoding, Encoding::UTF8);
-            }
-
-            ret += iter->second;
+            throw ConvertError(std::string(1, c), i, srcEncoding, Encoding::UTF8);
         }
         return ret;
     }
 
     const std::unordered_map<std::string_view, std::string_view> *dict = nullptr;
-    switch (srcEncoding) {
-    case Encoding::VNI:
-        dict = &vniToUtf8;
-        break;
-    case Encoding::TCVN3:
-        dict = &tcvn3ToUtf8;
-        break;
-    default:
-        assert(0 && "unsupported encoding");
-        break;
-    }
 
-    for (std::size_t i = 0; i < srcSize;) {
-        // 由于VNI和TCVN3均存在第1个char落在ASCII码表范围内的问题，所以先判断2字节
-        if (i + 1 < srcSize) {
-            std::string_view word(src + i, 2);
+    if (srcEncoding == Encoding::VNI) {
+        dict = &vniToUtf8;
+
+        for (std::size_t i = 0; i < srcSize;) {
+            // 由于VNI存在第1个char落在ASCII码表范围内的问题，所以先判断2字节
+            if (i + 1 < srcSize) {
+                std::string_view word(src + i, 2);
+                auto iter = dict->find(word);
+                if (iter != dict->end()) {
+                    ret += iter->second;
+                    i += 2;
+                    continue;
+                }
+
+                // fallthrough
+            }
+
+            // 由于VNI存在单个char和ASCII码表重叠的问题，所以先判断
+            std::string_view word(src + i, 1);
+
             auto iter = dict->find(word);
             if (iter != dict->end()) {
                 ret += iter->second;
-                i += 2;
+                i++;
                 continue;
             }
 
-            // fallthrough
+            char c = src[i];
+            if (isascii(c)) {
+                ret += c;
+                i++;
+                continue;
+            }
+
+            throw ConvertError(std::string(word), i, srcEncoding, Encoding::UTF8);
         }
-
-        // 由于VNI存在单个char和ASCII码表重叠的问题，所以先判断
-        std::string_view word(src + i, 1);
-
-        auto iter = dict->find(word);
-        if (iter != dict->end()) {
-            ret += iter->second;
-            i++;
-            continue;
-        }
-
-        char c = src[i];
-        if (isascii(c)) {
-            ret += c;
-            i++;
-            continue;
-        }
-
-        throw ConvertError(std::string(word), i, srcEncoding, Encoding::UTF8);
+        return ret;
     }
 
+    if (srcEncoding == Encoding::TCVN3) {
+        dict = &tcvn3ToUtf8;
+
+        // 虽然TCVN3存在部分2Byte映射的第1个char落在ASCII码表范围内的情况，但是根据
+        // https://vietunicode.sourceforge.net/charset/ 的描述，忽略2B的情况并且报错
+        for (std::size_t i = 0; i < srcSize; ++i) {
+            char c = src[i];
+            if (isascii(c)) {
+                ret += c;
+                continue;
+            }
+
+            std::string word(1, c);
+
+            auto iter = dict->find(word);
+            if (iter != dict->end()) {
+                ret += iter->second;
+                continue;
+            }
+
+            // 不匹配，报错
+            throw ConvertError(word, i, srcEncoding, Encoding::UTF8);
+        }
+        return ret;
+    }
+
+    assert(0 && "unsupported encoding");
     return ret;
 }
 
@@ -479,6 +518,7 @@ std::string ConvertFromUtf8(const std::string_view &utf8Str, Encoding destEncodi
         if (i == srcSize)
             break;
 
+        // 2B utf8
         std::string word{utf8Str.substr(i - 1, 2)};
         auto iter = utf8ToOthers.find(word);
         if (iter != utf8ToOthers.end()) {
@@ -491,6 +531,7 @@ std::string ConvertFromUtf8(const std::string_view &utf8Str, Encoding destEncodi
         if (i == srcSize)
             break;
 
+        // 3B utf8
         word += utf8Str[i];
         iter = utf8ToOthers.find(word);
         if (iter != utf8ToOthers.end()) {

@@ -91,6 +91,7 @@ TEST(Vietnamese, BuiltinConvertOtherToOther) {
 
 TEST(Vietnamese, ConvertFuzz) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+    viet::Init();
 
     const int count = 1024;
     std::string randUtf8Str;
@@ -116,11 +117,39 @@ TEST(Vietnamese, ConvertFuzz) {
         std::string gotUtf8 = viet::ConvertToUtf8(dialect.c_str(), dialect.size(), viet::Encoding::VISCII);
         EXPECT_EQ(gotUtf8, randUtf8Str);
     }
+
+    // TCVN3比较特殊，不能用上面的方法来测试。原因是TCVN3的映射表虽然有2字节的，但TCVN3并不是一个多字节字符集(MBCS)。
+    // 所以，这里构造TCVN3的测试方法为：构造由随机的单字节TCVN3字符组成的字符串，再和UTF8互转。
     {
-        std::string dialect = viet::ConvertFromUtf8(randUtf8Str, viet::Encoding::TCVN3);
-        std::string gotUtf8 = viet::ConvertToUtf8(dialect.c_str(), dialect.size(), viet::Encoding::TCVN3);
-        EXPECT_EQ(gotUtf8, randUtf8Str);
+        std::string randTCVN3;
+        std::uniform_int_distribution<int> unifASCII(32, 126);
+        for (int i = 0; i < count; ++i) {
+            int rn = unif(eng);
+            if (rn % 2) {
+                randTCVN3 += static_cast<char>(unifASCII(eng));
+            } else {
+                while (1) {
+                    auto &tcvn3Word = viet::internal::tcvn3Table[rn];
+                    if (tcvn3Word.size() == 1) {
+                        randTCVN3 += tcvn3Word;
+                        break;
+                    }
+
+                    rn = unif(eng);
+                }
+            }
+        }
+
+        std::string middleUtf8 = viet::ConvertToUtf8(randTCVN3.c_str(), randTCVN3.size(), viet::Encoding::TCVN3);
+        std::string gotTCVN3 = viet::ConvertFromUtf8(middleUtf8, viet::Encoding::TCVN3);
+        EXPECT_EQ(gotTCVN3, randTCVN3);
     }
+
+    //{
+    //    std::string dialect = viet::ConvertFromUtf8(randUtf8Str, viet::Encoding::TCVN3);
+    //    std::string gotUtf8 = viet::ConvertToUtf8(dialect.c_str(), dialect.size(), viet::Encoding::TCVN3);
+    //    EXPECT_EQ(gotUtf8, randUtf8Str);
+    //}
 }
 
 TEST(Vietnamese, OuterConvert) {

@@ -17,6 +17,7 @@ namespace internal {
 constexpr std::size_t TABLE_LENGTH = 134;
 
 extern const std::array<std::string, TABLE_LENGTH> utf8Table;
+extern const std::array<std::string, TABLE_LENGTH> tcvn3Table;
 } // namespace internal
 
 enum class Encoding { UTF8, VNI, VPS, VISCII, TCVN3 };
