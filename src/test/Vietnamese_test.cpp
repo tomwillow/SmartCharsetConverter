@@ -44,6 +44,25 @@ TEST(Vietnamese, BuiltinConvertToUtf8) {
     ASSERT_EQ(utf8Str, utf8ExpectStr);
 }
 
+TEST(Vietnamese, BuiltinConvertToUtf16LE) {
+    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+    viet::Init();
+
+    std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
+    auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
+    std::wstring utf16LEStr = viet::ConvertToUtf16LE(std::string_view(buf.get(), bufSize), viet::Encoding::TCVN3);
+    // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-got.txt", utf8Str.c_str(),
+    //                    utf8Str.size());
+
+    std::wstring expectFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-utf16le.txt";
+    auto [utf16LEBuf, utf16LEBufSize] = ReadFileToBuffer(expectFilename);
+    std::size_t utf16LEBufPsudoCharNums = utf16LEBufSize / sizeof(wchar_t);
+    std::wstring utf16LEExpectStr(reinterpret_cast<wchar_t const *>(utf16LEBuf.get()), utf16LEBufPsudoCharNums);
+
+    ASSERT_EQ(utf16LEStr.size(), utf16LEBufPsudoCharNums);
+    ASSERT_EQ(utf16LEStr, utf16LEExpectStr);
+}
+
 TEST(Vietnamese, BuiltinConvertFromUtf8) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
     viet::Init();

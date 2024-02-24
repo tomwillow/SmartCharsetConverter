@@ -17,7 +17,7 @@ namespace internal {
 constexpr std::size_t TABLE_LENGTH = 134;
 
 extern const std::array<std::string, TABLE_LENGTH> utf8Table;
-extern const std::array<uint16_t, TABLE_LENGTH> utf16LETable;
+extern const std::array<std::wstring, TABLE_LENGTH> utf16LETable;
 extern const std::array<std::string, TABLE_LENGTH> tcvn3Table;
 } // namespace internal
 
