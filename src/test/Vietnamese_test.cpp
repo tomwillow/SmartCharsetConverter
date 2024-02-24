@@ -32,7 +32,7 @@ TEST(Vietnamese, BuiltinConvertToUtf8) {
 
     std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
     auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
-    std::string utf8Str = viet::ConvertToUtf8(buf.get(), bufSize, viet::Encoding::TCVN3);
+    std::string utf8Str = viet::ConvertToUtf8(std::string_view(buf.get(), bufSize), viet::Encoding::TCVN3);
     // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-got.txt", utf8Str.c_str(),
     //                    utf8Str.size());
 
@@ -73,7 +73,8 @@ void TestBuiltinConvertOtherToOther(viet::Encoding middleEncoding) {
     auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
 
     std::string vniStr;
-    EXPECT_NO_THROW(vniStr = viet::Convert(buf.get(), bufSize, viet::Encoding::TCVN3, middleEncoding));
+    EXPECT_NO_THROW(vniStr =
+                        viet::Convert(std::string_view(buf.get(), bufSize), viet::Encoding::TCVN3, middleEncoding));
     std::string tcvnStrGot;
     EXPECT_NO_THROW(tcvnStrGot = viet::Convert(vniStr, middleEncoding, viet::Encoding::TCVN3));
 
@@ -104,17 +105,17 @@ TEST(Vietnamese, ConvertFuzz) {
 
     {
         std::string dialect = viet::ConvertFromUtf8(randUtf8Str, viet::Encoding::VNI);
-        std::string gotUtf8 = viet::ConvertToUtf8(dialect.c_str(), dialect.size(), viet::Encoding::VNI);
+        std::string gotUtf8 = viet::ConvertToUtf8(dialect, viet::Encoding::VNI);
         EXPECT_EQ(gotUtf8, randUtf8Str);
     }
     {
         std::string dialect = viet::ConvertFromUtf8(randUtf8Str, viet::Encoding::VPS);
-        std::string gotUtf8 = viet::ConvertToUtf8(dialect.c_str(), dialect.size(), viet::Encoding::VPS);
+        std::string gotUtf8 = viet::ConvertToUtf8(dialect, viet::Encoding::VPS);
         EXPECT_EQ(gotUtf8, randUtf8Str);
     }
     {
         std::string dialect = viet::ConvertFromUtf8(randUtf8Str, viet::Encoding::VISCII);
-        std::string gotUtf8 = viet::ConvertToUtf8(dialect.c_str(), dialect.size(), viet::Encoding::VISCII);
+        std::string gotUtf8 = viet::ConvertToUtf8(dialect, viet::Encoding::VISCII);
         EXPECT_EQ(gotUtf8, randUtf8Str);
     }
 
@@ -140,7 +141,7 @@ TEST(Vietnamese, ConvertFuzz) {
             }
         }
 
-        std::string middleUtf8 = viet::ConvertToUtf8(randTCVN3.c_str(), randTCVN3.size(), viet::Encoding::TCVN3);
+        std::string middleUtf8 = viet::ConvertToUtf8(randTCVN3, viet::Encoding::TCVN3);
         std::string gotTCVN3 = viet::ConvertFromUtf8(middleUtf8, viet::Encoding::TCVN3);
         EXPECT_EQ(gotTCVN3, randTCVN3);
     }

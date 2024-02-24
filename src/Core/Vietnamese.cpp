@@ -426,7 +426,7 @@ bool CheckEncoding(const std::string &str, Encoding encoding) noexcept {
 }
 
 template <typename T>
-std::string ConvertTCVN3ToUtfX(const char *src, int srcSize) {
+std::string ConvertTCVN3ToUtfX(std::string_view src) {
     CheckInit();
 
     std::string ret;
@@ -442,7 +442,7 @@ std::string ConvertTCVN3ToUtfX(const char *src, int srcSize) {
 
     // 虽然TCVN3存在部分2Byte映射的第1个char落在ASCII码表范围内的情况，但是根据
     // https://vietunicode.sourceforge.net/charset/ 的描述，忽略2B的情况并且报错
-    for (std::size_t i = 0; i < srcSize; ++i) {
+    for (std::size_t i = 0; i < src.size(); ++i) {
         char c = src[i];
         if (isascii(c)) {
             ret += c;
@@ -464,7 +464,7 @@ std::string ConvertTCVN3ToUtfX(const char *src, int srcSize) {
 }
 
 template <typename T>
-std::string ConvertVNIToUtfX(const char *src, int srcSize) {
+std::string ConvertVNIToUtfX(std::string_view src) {
     CheckInit();
 
     std::string ret;
@@ -478,10 +478,10 @@ std::string ConvertVNIToUtfX(const char *src, int srcSize) {
         static_assert(0);
     }
 
-    for (std::size_t i = 0; i < srcSize;) {
+    for (std::size_t i = 0; i < src.size();) {
         // 由于VNI存在第1个char落在ASCII码表范围内的问题，所以先判断2字节
-        if (i + 1 < srcSize) {
-            std::string_view word(src + i, 2);
+        if (i + 1 < src.size()) {
+            std::string_view word = src.substr(i, 2);
             auto iter = dict->find(word);
             if (iter != dict->end()) {
                 ret += iter->second;
@@ -493,7 +493,7 @@ std::string ConvertVNIToUtfX(const char *src, int srcSize) {
         }
 
         // 由于VNI存在单个char和ASCII码表重叠的问题，所以先判断
-        std::string_view word(src + i, 1);
+        std::string_view word = src.substr(i, 1);
 
         auto iter = dict->find(word);
         if (iter != dict->end()) {
@@ -514,14 +514,17 @@ std::string ConvertVNIToUtfX(const char *src, int srcSize) {
     return ret;
 }
 
-template <typename T>
-std::string ConvertToUtfX(const char *src, int srcSize, Encoding srcEncoding) {
+template <typename T, typename ReturnType>
+auto ConvertToUtfX(T src, Encoding srcEncoding) -> ReturnType {
     CheckInit();
     if (srcEncoding == Encoding::UTF8) {
-        return std::string(src, srcSize);
+        return ReturnType(src);
+    }
+    if (srcEncoding == Encoding::UTF16LE) {
+        return ReturnType(src);
     }
 
-    std::string ret;
+    ReturnType ret;
 
     if (srcEncoding == Encoding::VPS || srcEncoding == Encoding::VISCII) {
         const std::unordered_map<char, T> *dict = nullptr;
@@ -546,7 +549,7 @@ std::string ConvertToUtfX(const char *src, int srcSize, Encoding srcEncoding) {
             break;
         }
 
-        for (int i = 0; i < srcSize; ++i) {
+        for (int i = 0; i < src.size(); ++i) {
             auto c = src[i];
             // VPS和VISCII覆盖了ASCII的部分码点，应该先查VPS/VISCII表
             auto iter = dict->find(c);
@@ -568,22 +571,22 @@ std::string ConvertToUtfX(const char *src, int srcSize, Encoding srcEncoding) {
     const std::unordered_map<T, std::string_view> *dict = nullptr;
 
     if (srcEncoding == Encoding::VNI) {
-        return ConvertVNIToUtfX<T>(src, srcSize);
+        return ConvertVNIToUtfX<T>(src);
     }
 
     if (srcEncoding == Encoding::TCVN3) {
-        return ConvertTCVN3ToUtfX<T>(src, srcSize);
+        return ConvertTCVN3ToUtfX<T>(src);
     }
 
     assert(0 && "unsupported encoding");
     return ret;
 }
 
-std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
-    return ConvertToUtfX<std::string_view>(src, srcSize, srcEncoding);
+std::string ConvertToUtf8(std::string_view src, Encoding srcEncoding) {
+    return ConvertToUtfX<std::string_view, std::string>(src, srcEncoding);
 }
 
-std::string ConvertFromUtf8(const std::string_view &utf8Str, Encoding destEncoding) {
+std::string ConvertFromUtf8(std::string_view utf8Str, Encoding destEncoding) {
     CheckInit();
     std::string ret;
 
@@ -627,28 +630,24 @@ std::string ConvertFromUtf8(const std::string_view &utf8Str, Encoding destEncodi
     return ret;
 }
 
-std::string Convert(const char *src, int srcSize, Encoding srcEncoding, Encoding destEncoding) {
+std::string Convert(std::string_view src, Encoding srcEncoding, Encoding destEncoding) {
     if (srcEncoding == destEncoding) {
-        return std::string(src, srcSize);
+        return std::string(src);
     }
 
     // utf8 -> other
     if (srcEncoding == Encoding::UTF8) {
-        return ConvertFromUtf8(std::string_view(src, srcSize), destEncoding);
+        return ConvertFromUtf8(src, destEncoding);
     }
 
     // other -> utf8
     if (destEncoding == Encoding::UTF8) {
-        return ConvertToUtf8(src, srcSize, srcEncoding);
+        return ConvertToUtf8(src, srcEncoding);
     }
 
     // other -> other
-    auto temp = ConvertToUtf8(src, srcSize, srcEncoding);
+    auto temp = ConvertToUtf8(src, srcEncoding);
     return ConvertFromUtf8(temp, destEncoding);
-}
-
-std::string Convert(std::string_view src, Encoding srcEncoding, Encoding destEncoding) {
-    return Convert(src.data(), src.size(), srcEncoding, destEncoding);
 }
 
 } // namespace viet

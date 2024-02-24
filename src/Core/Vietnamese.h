@@ -71,31 +71,25 @@ bool CheckEncoding(const std::string &str, Encoding encoding) noexcept;
  * Convert TCVN3 etc. encodings to utf8 string.
  * @exception ConvertError thrown when parse fail.
  */
-std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding);
+std::string ConvertToUtf8(std::string_view src, Encoding srcEncoding);
 
 /**
  * Convert to TCVN3 etc. encodings from utf8 string.
  * @exception ConvertError thrown when parse fail.
  */
-std::string ConvertFromUtf8(const std::string_view &utf8Str, Encoding destEncoding);
+std::string ConvertFromUtf8(std::string_view utf8Str, Encoding destEncoding);
 
 /**
  * Convert TCVN3 etc. encodings to UTF16LE string.
  * @exception ConvertError thrown when parse fail.
  */
-std::wstring ConvertToUtf16LE(const char *src, int srcSize, Encoding srcEncoding);
+std::wstring ConvertToUtf16LE(std::string_view src, Encoding srcEncoding);
 
 /**
  * Convert to TCVN3 etc. encodings from UTF16LE string.
  * @exception ConvertError thrown when parse fail.
  */
 std::wstring ConvertFromUtf16LE(const std::string_view &utf8Str, Encoding destEncoding);
-
-/**
- * Convert any Vietnamese encoding(include utf8) to any Vietnamese encoding.
- * @exception ConvertError thrown when parse fail.
- */
-std::string Convert(const char *src, int srcSize, Encoding srcEncoding, Encoding destEncoding);
 
 /**
  * Convert any Vietnamese encoding(include utf8) to any Vietnamese encoding.
