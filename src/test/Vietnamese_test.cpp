@@ -183,10 +183,4 @@ TEST(Vietnamese, ConvertFuzz) {
         std::string gotTCVN3 = viet::ConvertFromUtf8(middleUtf8, viet::Encoding::TCVN3);
         EXPECT_EQ(gotTCVN3, randTCVN3);
     }
-
-    //{
-    //    std::string dialect = viet::ConvertFromUtf8(randUtf8Str, viet::Encoding::TCVN3);
-    //    std::string gotUtf8 = viet::ConvertToUtf8(dialect.c_str(), dialect.size(), viet::Encoding::TCVN3);
-    //    EXPECT_EQ(gotUtf8, randUtf8Str);
-    //}
 }
