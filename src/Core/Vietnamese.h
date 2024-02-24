@@ -80,6 +80,18 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding);
 std::string ConvertFromUtf8(const std::string_view &utf8Str, Encoding destEncoding);
 
 /**
+ * Convert TCVN3 etc. encodings to UTF16LE string.
+ * @exception ConvertError thrown when parse fail.
+ */
+std::wstring ConvertToUtf16LE(const char *src, int srcSize, Encoding srcEncoding);
+
+/**
+ * Convert to TCVN3 etc. encodings from UTF16LE string.
+ * @exception ConvertError thrown when parse fail.
+ */
+std::wstring ConvertFromUtf16LE(const std::string_view &utf8Str, Encoding destEncoding);
+
+/**
  * Convert any Vietnamese encoding(include utf8) to any Vietnamese encoding.
  * @exception ConvertError thrown when parse fail.
  */

@@ -425,7 +425,97 @@ bool CheckEncoding(const std::string &str, Encoding encoding) noexcept {
     return CheckEncoding(str.c_str(), str.size(), encoding);
 }
 
-std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
+template <typename T>
+std::string ConvertTCVN3ToUtfX(const char *src, int srcSize) {
+    CheckInit();
+
+    std::string ret;
+    const std::unordered_map<T, std::string_view> *dict = nullptr;
+
+    if constexpr (std::is_same_v<T, std::string_view>) {
+        dict = &tcvn3ToUtf8;
+    } else if constexpr (std::is_same_v<T, uint16_t>) {
+        dict = &tcvn3ToUtf16LE;
+    } else {
+        static_assert(0);
+    }
+
+    // 虽然TCVN3存在部分2Byte映射的第1个char落在ASCII码表范围内的情况，但是根据
+    // https://vietunicode.sourceforge.net/charset/ 的描述，忽略2B的情况并且报错
+    for (std::size_t i = 0; i < srcSize; ++i) {
+        char c = src[i];
+        if (isascii(c)) {
+            ret += c;
+            continue;
+        }
+
+        std::string word(1, c);
+
+        auto iter = dict->find(word);
+        if (iter != dict->end()) {
+            ret += iter->second;
+            continue;
+        }
+
+        // 不匹配，报错
+        throw ConvertError(word, i, Encoding::TCVN3, Encoding::UTF8);
+    }
+    return ret;
+}
+
+template <typename T>
+std::string ConvertVNIToUtfX(const char *src, int srcSize) {
+    CheckInit();
+
+    std::string ret;
+    const std::unordered_map<T, std::string_view> *dict = nullptr;
+
+    if constexpr (std::is_same_v<T, std::string_view>) {
+        dict = &vniToUtf8;
+    } else if constexpr (std::is_same_v<T, uint16_t>) {
+        dict = &vniToUtf16LE;
+    } else {
+        static_assert(0);
+    }
+
+    for (std::size_t i = 0; i < srcSize;) {
+        // 由于VNI存在第1个char落在ASCII码表范围内的问题，所以先判断2字节
+        if (i + 1 < srcSize) {
+            std::string_view word(src + i, 2);
+            auto iter = dict->find(word);
+            if (iter != dict->end()) {
+                ret += iter->second;
+                i += 2;
+                continue;
+            }
+
+            // fallthrough
+        }
+
+        // 由于VNI存在单个char和ASCII码表重叠的问题，所以先判断
+        std::string_view word(src + i, 1);
+
+        auto iter = dict->find(word);
+        if (iter != dict->end()) {
+            ret += iter->second;
+            i++;
+            continue;
+        }
+
+        char c = src[i];
+        if (isascii(c)) {
+            ret += c;
+            i++;
+            continue;
+        }
+
+        throw ConvertError(std::string(word), i, Encoding::VNI, Encoding::UTF8);
+    }
+    return ret;
+}
+
+template <typename T>
+std::string ConvertToUtfX(const char *src, int srcSize, Encoding srcEncoding) {
     CheckInit();
     if (srcEncoding == Encoding::UTF8) {
         return std::string(src, srcSize);
@@ -434,13 +524,25 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
     std::string ret;
 
     if (srcEncoding == Encoding::VPS || srcEncoding == Encoding::VISCII) {
-        const std::unordered_map<char, std::string_view> *dict = nullptr;
+        const std::unordered_map<char, T> *dict = nullptr;
         switch (srcEncoding) {
         case Encoding::VPS:
-            dict = &vpsToUtf8;
+            if constexpr (std::is_same_v<T, std::string_view>) {
+                dict = &vpsToUtf8;
+            } else if constexpr (std::is_same_v<T, uint16_t>) {
+                dict = &vpsToUtf16LE;
+            } else {
+                static_assert(0);
+            }
             break;
         case Encoding::VISCII:
-            dict = &viscii3ToUtf8;
+            if constexpr (std::is_same_v<T, std::string_view>) {
+                dict = &viscii3ToUtf8;
+            } else if constexpr (std::is_same_v<T, uint16_t>) {
+                dict = &visciiToUtf16LE;
+            } else {
+                static_assert(0);
+            }
             break;
         }
 
@@ -463,75 +565,22 @@ std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
         return ret;
     }
 
-    const std::unordered_map<std::string_view, std::string_view> *dict = nullptr;
+    const std::unordered_map<T, std::string_view> *dict = nullptr;
 
     if (srcEncoding == Encoding::VNI) {
-        dict = &vniToUtf8;
-
-        for (std::size_t i = 0; i < srcSize;) {
-            // 由于VNI存在第1个char落在ASCII码表范围内的问题，所以先判断2字节
-            if (i + 1 < srcSize) {
-                std::string_view word(src + i, 2);
-                auto iter = dict->find(word);
-                if (iter != dict->end()) {
-                    ret += iter->second;
-                    i += 2;
-                    continue;
-                }
-
-                // fallthrough
-            }
-
-            // 由于VNI存在单个char和ASCII码表重叠的问题，所以先判断
-            std::string_view word(src + i, 1);
-
-            auto iter = dict->find(word);
-            if (iter != dict->end()) {
-                ret += iter->second;
-                i++;
-                continue;
-            }
-
-            char c = src[i];
-            if (isascii(c)) {
-                ret += c;
-                i++;
-                continue;
-            }
-
-            throw ConvertError(std::string(word), i, srcEncoding, Encoding::UTF8);
-        }
-        return ret;
+        return ConvertVNIToUtfX<T>(src, srcSize);
     }
 
     if (srcEncoding == Encoding::TCVN3) {
-        dict = &tcvn3ToUtf8;
-
-        // 虽然TCVN3存在部分2Byte映射的第1个char落在ASCII码表范围内的情况，但是根据
-        // https://vietunicode.sourceforge.net/charset/ 的描述，忽略2B的情况并且报错
-        for (std::size_t i = 0; i < srcSize; ++i) {
-            char c = src[i];
-            if (isascii(c)) {
-                ret += c;
-                continue;
-            }
-
-            std::string word(1, c);
-
-            auto iter = dict->find(word);
-            if (iter != dict->end()) {
-                ret += iter->second;
-                continue;
-            }
-
-            // 不匹配，报错
-            throw ConvertError(word, i, srcEncoding, Encoding::UTF8);
-        }
-        return ret;
+        return ConvertTCVN3ToUtfX<T>(src, srcSize);
     }
 
     assert(0 && "unsupported encoding");
     return ret;
+}
+
+std::string ConvertToUtf8(const char *src, int srcSize, Encoding srcEncoding) {
+    return ConvertToUtfX<std::string_view>(src, srcSize, srcEncoding);
 }
 
 std::string ConvertFromUtf8(const std::string_view &utf8Str, Encoding destEncoding) {
