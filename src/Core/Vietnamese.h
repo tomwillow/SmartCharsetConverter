@@ -17,7 +17,7 @@ namespace internal {
 constexpr std::size_t TABLE_LENGTH = 134;
 
 extern const std::array<std::string, TABLE_LENGTH> utf8Table;
-extern const std::array<std::wstring, TABLE_LENGTH> utf16LETable;
+extern const std::array<std::u16string, TABLE_LENGTH> utf16LETable;
 extern const std::array<std::string, TABLE_LENGTH> tcvn3Table;
 } // namespace internal
 
@@ -83,13 +83,13 @@ std::string ConvertFromUtf8(std::string_view utf8Str, Encoding destEncoding);
  * Convert TCVN3 etc. encodings to UTF16LE string.
  * @exception ConvertError thrown when parse fail.
  */
-std::wstring ConvertToUtf16LE(std::string_view src, Encoding srcEncoding);
+std::u16string ConvertToUtf16LE(std::string_view src, Encoding srcEncoding);
 
 /**
  * Convert to TCVN3 etc. encodings from UTF16LE string.
  * @exception ConvertError thrown when parse fail.
  */
-std::wstring ConvertFromUtf16LE(const std::string_view &utf8Str, Encoding destEncoding);
+std::string ConvertFromUtf16LE(std::u16string_view utf16Str, Encoding destEncoding);
 
 /**
  * Convert any Vietnamese encoding(include utf8) to any Vietnamese encoding.

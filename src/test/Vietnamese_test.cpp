@@ -2,7 +2,6 @@
 
 #include "Core/Vietnamese.h"
 
-#include <Core/Core.h>
 #include <Common/FileFunction.h>
 #include <Common/ConsoleSettings.h>
 
@@ -50,14 +49,14 @@ TEST(Vietnamese, BuiltinConvertToUtf16LE) {
 
     std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
     auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
-    std::wstring utf16LEStr = viet::ConvertToUtf16LE(std::string_view(buf.get(), bufSize), viet::Encoding::TCVN3);
+    std::u16string utf16LEStr = viet::ConvertToUtf16LE(std::string_view(buf.get(), bufSize), viet::Encoding::TCVN3);
     // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-got.txt", utf8Str.c_str(),
     //                    utf8Str.size());
 
     std::wstring expectFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-utf16le.txt";
     auto [utf16LEBuf, utf16LEBufSize] = ReadFileToBuffer(expectFilename);
-    std::size_t utf16LEBufPsudoCharNums = utf16LEBufSize / sizeof(wchar_t);
-    std::wstring utf16LEExpectStr(reinterpret_cast<wchar_t const *>(utf16LEBuf.get()), utf16LEBufPsudoCharNums);
+    std::size_t utf16LEBufPsudoCharNums = utf16LEBufSize / sizeof(char16_t);
+    std::u16string utf16LEExpectStr(reinterpret_cast<char16_t const *>(utf16LEBuf.get()), utf16LEBufPsudoCharNums);
 
     ASSERT_EQ(utf16LEStr.size(), utf16LEBufPsudoCharNums);
     ASSERT_EQ(utf16LEStr, utf16LEExpectStr);
@@ -69,7 +68,27 @@ TEST(Vietnamese, BuiltinConvertFromUtf8) {
 
     std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-utf8.txt";
     auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
-    std::string tcvn3StrGot = viet::ConvertFromUtf8(std::string(buf.get(), bufSize), viet::Encoding::TCVN3);
+    std::string tcvn3StrGot = viet::ConvertFromUtf8(std::string_view(buf.get(), bufSize), viet::Encoding::TCVN3);
+    // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-got.txt", utf8Str.c_str(),
+    //                    utf8Str.size());
+
+    std::wstring expectFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
+    auto [tcvn3BufExpected, tcvn3BufExpectedSize] = ReadFileToBuffer(expectFilename);
+    std::string tcvn3StrExpected(tcvn3BufExpected.get(), tcvn3BufExpectedSize);
+
+    ASSERT_EQ(tcvn3StrGot.size(), tcvn3BufExpectedSize);
+    ASSERT_EQ(tcvn3StrGot, tcvn3StrExpected);
+}
+
+TEST(Vietnamese, BuiltinConvertFromUtf16LE) {
+    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+    viet::Init();
+
+    std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-utf16le.txt";
+    auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
+    std::string tcvn3StrGot = viet::ConvertFromUtf16LE(
+        std::u16string_view(reinterpret_cast<const char16_t *>(buf.get()), bufSize / sizeof(char16_t)),
+        viet::Encoding::TCVN3);
     // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-got.txt", utf8Str.c_str(),
     //                    utf8Str.size());
 
@@ -170,36 +189,4 @@ TEST(Vietnamese, ConvertFuzz) {
     //    std::string gotUtf8 = viet::ConvertToUtf8(dialect.c_str(), dialect.size(), viet::Encoding::TCVN3);
     //    EXPECT_EQ(gotUtf8, randUtf8Str);
     //}
-}
-
-TEST(Vietnamese, OuterConvert) {
-    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
-    viet::Init();
-
-    CoreInitOption opt;
-    Core core(L"temp.json", opt);
-
-    std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
-
-    auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
-    auto gotEncoding = core.DetectEncoding(buf.get(), bufSize);
-    auto got = to_utf8(ToViewCharsetName(gotEncoding));
-    std::string expectedEncoding = u8"TCVN3";
-    // EXPECT_EQ(got, expectedEncoding);
-
-    // convert
-    // core.Convert(inputFilename, )
-
-    // if (got == expectedEncoding) {
-    //    SetConsoleColor(ConsoleColor::GREEN);
-    //} else {
-    //    SetConsoleColor(ConsoleColor::RED);
-    //}
-    // std::cout << std::string(20, '=') << std::endl;
-    // std::cout << "file: " << filename << std::endl;
-    // std::cout << "detect: " << to_utf8(ToViewCharsetName(charsetCode)) << std::endl;
-    // std::cout << "expected: " << expectedEncoding << std::endl;
-    // std::cout << std::endl;
-
-    // SetConsoleColor();
 }

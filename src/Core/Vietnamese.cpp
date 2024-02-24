@@ -32,21 +32,21 @@ const std::array<std::string, TABLE_LENGTH> utf8Table = {
     "\xe1\xbb\xb9",
 };
 
-const std::array<std::wstring, TABLE_LENGTH> utf16LETable = {
-    L"\u00C0", L"\u00C1", L"\u00C2", L"\u00C3", L"\u00C8", L"\u00C9", L"\u00CA", L"\u00CC", L"\u00CD", L"\u00D2",
-    L"\u00D3", L"\u00D4", L"\u00D5", L"\u00D9", L"\u00DA", L"\u00DD", L"\u00E0", L"\u00E1", L"\u00E2", L"\u00E3",
-    L"\u00E8", L"\u00E9", L"\u00EA", L"\u00EC", L"\u00ED", L"\u00F2", L"\u00F3", L"\u00F4", L"\u00F5", L"\u00F9",
-    L"\u00FA", L"\u00FD", L"\u0102", L"\u0103", L"\u0110", L"\u0111", L"\u0128", L"\u0129", L"\u0168", L"\u0169",
-    L"\u01A0", L"\u01A1", L"\u01AF", L"\u01B0", L"\u1EA0", L"\u1EA1", L"\u1EA2", L"\u1EA3", L"\u1EA4", L"\u1EA5",
-    L"\u1EA6", L"\u1EA7", L"\u1EA8", L"\u1EA9", L"\u1EAA", L"\u1EAB", L"\u1EAC", L"\u1EAD", L"\u1EAE", L"\u1EAF",
-    L"\u1EB0", L"\u1EB1", L"\u1EB2", L"\u1EB3", L"\u1EB4", L"\u1EB5", L"\u1EB6", L"\u1EB7", L"\u1EB8", L"\u1EB9",
-    L"\u1EBA", L"\u1EBB", L"\u1EBC", L"\u1EBD", L"\u1EBE", L"\u1EBF", L"\u1EC0", L"\u1EC1", L"\u1EC2", L"\u1EC3",
-    L"\u1EC4", L"\u1EC5", L"\u1EC6", L"\u1EC7", L"\u1EC8", L"\u1EC9", L"\u1ECA", L"\u1ECB", L"\u1ECC", L"\u1ECD",
-    L"\u1ECE", L"\u1ECF", L"\u1ED0", L"\u1ED1", L"\u1ED2", L"\u1ED3", L"\u1ED4", L"\u1ED5", L"\u1ED6", L"\u1ED7",
-    L"\u1ED8", L"\u1ED9", L"\u1EDA", L"\u1EDB", L"\u1EDC", L"\u1EDD", L"\u1EDE", L"\u1EDF", L"\u1EE0", L"\u1EE1",
-    L"\u1EE2", L"\u1EE3", L"\u1EE4", L"\u1EE5", L"\u1EE6", L"\u1EE7", L"\u1EE8", L"\u1EE9", L"\u1EEA", L"\u1EEB",
-    L"\u1EEC", L"\u1EED", L"\u1EEE", L"\u1EEF", L"\u1EF0", L"\u1EF1", L"\u1EF2", L"\u1EF3", L"\u1EF4", L"\u1EF5",
-    L"\u1EF6", L"\u1EF7", L"\u1EF8", L"\u1EF9",
+const std::array<std::u16string, TABLE_LENGTH> utf16LETable = {
+    u"\u00C0", u"\u00C1", u"\u00C2", u"\u00C3", u"\u00C8", u"\u00C9", u"\u00CA", u"\u00CC", u"\u00CD", u"\u00D2",
+    u"\u00D3", u"\u00D4", u"\u00D5", u"\u00D9", u"\u00DA", u"\u00DD", u"\u00E0", u"\u00E1", u"\u00E2", u"\u00E3",
+    u"\u00E8", u"\u00E9", u"\u00EA", u"\u00EC", u"\u00ED", u"\u00F2", u"\u00F3", u"\u00F4", u"\u00F5", u"\u00F9",
+    u"\u00FA", u"\u00FD", u"\u0102", u"\u0103", u"\u0110", u"\u0111", u"\u0128", u"\u0129", u"\u0168", u"\u0169",
+    u"\u01A0", u"\u01A1", u"\u01AF", u"\u01B0", u"\u1EA0", u"\u1EA1", u"\u1EA2", u"\u1EA3", u"\u1EA4", u"\u1EA5",
+    u"\u1EA6", u"\u1EA7", u"\u1EA8", u"\u1EA9", u"\u1EAA", u"\u1EAB", u"\u1EAC", u"\u1EAD", u"\u1EAE", u"\u1EAF",
+    u"\u1EB0", u"\u1EB1", u"\u1EB2", u"\u1EB3", u"\u1EB4", u"\u1EB5", u"\u1EB6", u"\u1EB7", u"\u1EB8", u"\u1EB9",
+    u"\u1EBA", u"\u1EBB", u"\u1EBC", u"\u1EBD", u"\u1EBE", u"\u1EBF", u"\u1EC0", u"\u1EC1", u"\u1EC2", u"\u1EC3",
+    u"\u1EC4", u"\u1EC5", u"\u1EC6", u"\u1EC7", u"\u1EC8", u"\u1EC9", u"\u1ECA", u"\u1ECB", u"\u1ECC", u"\u1ECD",
+    u"\u1ECE", u"\u1ECF", u"\u1ED0", u"\u1ED1", u"\u1ED2", u"\u1ED3", u"\u1ED4", u"\u1ED5", u"\u1ED6", u"\u1ED7",
+    u"\u1ED8", u"\u1ED9", u"\u1EDA", u"\u1EDB", u"\u1EDC", u"\u1EDD", u"\u1EDE", u"\u1EDF", u"\u1EE0", u"\u1EE1",
+    u"\u1EE2", u"\u1EE3", u"\u1EE4", u"\u1EE5", u"\u1EE6", u"\u1EE7", u"\u1EE8", u"\u1EE9", u"\u1EEA", u"\u1EEB",
+    u"\u1EEC", u"\u1EED", u"\u1EEE", u"\u1EEF", u"\u1EF0", u"\u1EF1", u"\u1EF2", u"\u1EF3", u"\u1EF4", u"\u1EF5",
+    u"\u1EF6", u"\u1EF7", u"\u1EF8", u"\u1EF9",
 };
 
 // overlapped with ASCII
@@ -263,14 +263,14 @@ std::unordered_map<char, std::string_view> vpsToUtf8;
 std::unordered_map<char, std::string_view> viscii3ToUtf8;
 std::unordered_map<std::string_view, std::string_view> tcvn3ToUtf8;
 
-std::unordered_map<std::string_view, std::wstring_view> vniToUtf16LE;
-std::unordered_map<char, std::wstring_view> vpsToUtf16LE;
-std::unordered_map<char, std::wstring_view> visciiToUtf16LE;
-std::unordered_map<std::string_view, std::wstring_view> tcvn3ToUtf16LE;
+std::unordered_map<std::string_view, std::u16string_view> vniToUtf16LE;
+std::unordered_map<char, std::u16string_view> vpsToUtf16LE;
+std::unordered_map<char, std::u16string_view> visciiToUtf16LE;
+std::unordered_map<std::string_view, std::u16string_view> tcvn3ToUtf16LE;
 
 struct Rune {
     const std::string_view utf8;
-    const std::wstring_view utf16LE;
+    const std::u16string_view utf16LE;
     const std::string_view vni;
     char vps;
     char viscii;
@@ -298,6 +298,7 @@ struct Rune {
 };
 
 std::unordered_map<std::string_view, Rune> utf8ToOthers;
+std::unordered_map<std::u16string_view, Rune> utf16LEToOthers;
 
 ConvertError::ConvertError(std::string content, int position, Encoding srcEncoding, Encoding destEncoding) noexcept
     : std::runtime_error("parse error"), content(content), position(position), srcEncoding(srcEncoding),
@@ -338,6 +339,11 @@ void Init() noexcept {
                              Rune{internal::utf8Table[i], internal::utf16LETable[i], internal::vniTable[i],
                                   internal::vpsTable[i], internal::visciiTable[i], internal::tcvn3Table[i],
                                   internal::descriptionTable[i]});
+
+        utf16LEToOthers.emplace(internal::utf16LETable[i],
+                                Rune{internal::utf8Table[i], internal::utf16LETable[i], internal::vniTable[i],
+                                     internal::vpsTable[i], internal::visciiTable[i], internal::tcvn3Table[i],
+                                     internal::descriptionTable[i]});
     }
     assert(vniToUtf8.size() == internal::TABLE_LENGTH);
     assert(vpsToUtf8.size() == internal::TABLE_LENGTH);
@@ -348,6 +354,7 @@ void Init() noexcept {
     assert(visciiToUtf16LE.size() == internal::TABLE_LENGTH);
     assert(tcvn3ToUtf16LE.size() == internal::TABLE_LENGTH);
     assert(utf8ToOthers.size() == internal::TABLE_LENGTH);
+    assert(utf16LEToOthers.size() == internal::TABLE_LENGTH);
 
     Initialized() = true;
 }
@@ -434,7 +441,7 @@ auto ConvertTCVN3ToUtfX(std::string_view src) -> ReturnType {
 
     if constexpr (std::is_same_v<ReturnType, std::string>) {
         dict = &tcvn3ToUtf8;
-    } else if constexpr (std::is_same_v<ReturnType, std::wstring>) {
+    } else if constexpr (std::is_same_v<ReturnType, std::u16string>) {
         dict = &tcvn3ToUtf16LE;
     } else {
         static_assert(0);
@@ -472,7 +479,7 @@ auto ConvertVNIToUtfX(std::string_view src) -> ReturnType {
 
     if constexpr (std::is_same_v<ReturnType, std::string>) {
         dict = &vniToUtf8;
-    } else if constexpr (std::is_same_v<ReturnType, std::wstring>) {
+    } else if constexpr (std::is_same_v<ReturnType, std::u16string>) {
         dict = &vniToUtf16LE;
     } else {
         static_assert(0);
@@ -527,7 +534,7 @@ auto ConvertToUtfX(std::string_view src, Encoding srcEncoding) -> ReturnType {
         case Encoding::VPS:
             if constexpr (std::is_same_v<ReturnType, std::string>) {
                 dict = &vpsToUtf8;
-            } else if constexpr (std::is_same_v<ReturnType, std::wstring>) {
+            } else if constexpr (std::is_same_v<ReturnType, std::u16string>) {
                 dict = &vpsToUtf16LE;
             } else {
                 static_assert(0);
@@ -536,7 +543,7 @@ auto ConvertToUtfX(std::string_view src, Encoding srcEncoding) -> ReturnType {
         case Encoding::VISCII:
             if constexpr (std::is_same_v<ReturnType, std::string>) {
                 dict = &viscii3ToUtf8;
-            } else if constexpr (std::is_same_v<ReturnType, std::wstring>) {
+            } else if constexpr (std::is_same_v<ReturnType, std::u16string>) {
                 dict = &visciiToUtf16LE;
             } else {
                 static_assert(0);
@@ -579,8 +586,8 @@ std::string ConvertToUtf8(std::string_view src, Encoding srcEncoding) {
     return ConvertToUtfX<std::string, std::string_view>(src, srcEncoding);
 }
 
-std::wstring ConvertToUtf16LE(std::string_view src, Encoding srcEncoding) {
-    return ConvertToUtfX<std::wstring, std::wstring_view>(src, srcEncoding);
+std::u16string ConvertToUtf16LE(std::string_view src, Encoding srcEncoding) {
+    return ConvertToUtfX<std::u16string, std::u16string_view>(src, srcEncoding);
 }
 
 std::string ConvertFromUtf8(std::string_view utf8Str, Encoding destEncoding) {
@@ -623,6 +630,30 @@ std::string ConvertFromUtf8(std::string_view utf8Str, Encoding destEncoding) {
         }
 
         throw ConvertError(word, i, Encoding::UTF8, destEncoding);
+    }
+    return ret;
+}
+
+std::string ConvertFromUtf16LE(std::u16string_view utf16Str, Encoding destEncoding) {
+    CheckInit();
+    std::string ret;
+
+    for (std::size_t i = 0; i < utf16Str.size(); ++i) {
+        char16_t c = utf16Str[i];
+        if (isascii(c)) {
+            ret += c;
+            continue;
+        }
+
+        std::u16string_view word = utf16Str.substr(i, 1);
+        auto iter = utf16LEToOthers.find(word);
+        if (iter != utf16LEToOthers.end()) {
+            iter->second.AddToString(ret, destEncoding);
+            continue;
+        }
+
+        throw ConvertError(std::string(reinterpret_cast<const char *>(word.data()), word.size() * sizeof(char16_t)), i,
+                           Encoding::UTF8, destEncoding);
     }
     return ret;
 }
