@@ -184,3 +184,60 @@ TEST(Vietnamese, ConvertFuzz) {
         EXPECT_EQ(gotTCVN3, randTCVN3);
     }
 }
+
+TEST(Vietnamese, ConvertWithUTF16LEFuzz) {
+    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+    viet::Init();
+
+    const int count = 1024;
+    std::u16string randUtf16LEStr;
+    std::default_random_engine eng(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    std::uniform_int_distribution<int> unif(0, viet::internal::TABLE_LENGTH - 1);
+    for (int i = 0; i < count; ++i) {
+        int index = unif(eng);
+        randUtf16LEStr += viet::internal::utf16LETable[index];
+    }
+
+    {
+        std::string dialect = viet::ConvertFromUtf16LE(randUtf16LEStr, viet::Encoding::VNI);
+        std::u16string gotUtf16LE = viet::ConvertToUtf16LE(dialect, viet::Encoding::VNI);
+        EXPECT_EQ(gotUtf16LE, randUtf16LEStr);
+    }
+    {
+        std::string dialect = viet::ConvertFromUtf16LE(randUtf16LEStr, viet::Encoding::VPS);
+        std::u16string gotUtf16LE = viet::ConvertToUtf16LE(dialect, viet::Encoding::VPS);
+        EXPECT_EQ(gotUtf16LE, randUtf16LEStr);
+    }
+    {
+        std::string dialect = viet::ConvertFromUtf16LE(randUtf16LEStr, viet::Encoding::VISCII);
+        std::u16string gotUtf16LE = viet::ConvertToUtf16LE(dialect, viet::Encoding::VISCII);
+        EXPECT_EQ(gotUtf16LE, randUtf16LEStr);
+    }
+
+    // TCVN3比较特殊，不能用上面的方法来测试。原因是TCVN3的映射表虽然有2字节的，但TCVN3并不是一个多字节字符集(MBCS)。
+    // 所以，这里构造TCVN3的测试方法为：构造由随机的单字节TCVN3字符组成的字符串，再和UTF8互转。
+    {
+        std::string randTCVN3;
+        std::uniform_int_distribution<int> unifASCII(32, 126);
+        for (int i = 0; i < count; ++i) {
+            int rn = unif(eng);
+            if (rn % 2) {
+                randTCVN3 += static_cast<char>(unifASCII(eng));
+            } else {
+                while (1) {
+                    auto &tcvn3Word = viet::internal::tcvn3Table[rn];
+                    if (tcvn3Word.size() == 1) {
+                        randTCVN3 += tcvn3Word;
+                        break;
+                    }
+
+                    rn = unif(eng);
+                }
+            }
+        }
+
+        std::u16string middleUtf16LE = viet::ConvertToUtf16LE(randTCVN3, viet::Encoding::TCVN3);
+        std::string gotTCVN3 = viet::ConvertFromUtf16LE(middleUtf16LE, viet::Encoding::TCVN3);
+        EXPECT_EQ(gotTCVN3, randTCVN3);
+    }
+}
