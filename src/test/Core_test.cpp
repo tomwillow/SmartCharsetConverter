@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <Core/Core.h>
+#include <Core/Detect.h>
 #include <Common/FileFunction.h>
 #include <Common/ConsoleSettings.h>
 
@@ -20,7 +21,7 @@ TEST(Core, DetectEncoding) {
     core.SetOutputTarget(Configuration::OutputTarget::TO_DIR);
     core.SetOutputDir(".");
 
-    CharsetCode code = core.DetectEncoding(buf.get(), len);
+    CharsetCode code = DetectEncoding(core.GetUCharDet().get(), buf.get(), len);
     ASSERT_EQ(code, CharsetCode::UTF8);
 
     std::u16string utf16leStr = Decode(std::string_view(buf.get(), len), code);
@@ -68,7 +69,7 @@ TEST(Core, DetectEncodingMulti) {
 
     for (auto [filename, expectedEncoding] : table) {
         auto [buf, len] = ReadFileToBuffer(utf8_to_wstring(filename));
-        auto charsetCode = core.DetectEncoding(buf.get(), len);
+        auto charsetCode = DetectEncoding(core.GetUCharDet().get(), buf.get(), len);
 
         auto got = to_utf8(ToViewCharsetName(charsetCode));
 
