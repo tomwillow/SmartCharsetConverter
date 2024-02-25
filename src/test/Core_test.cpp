@@ -1,5 +1,8 @@
 #include "config.h"
 
+#include "memory_leak_detection.h"
+
+#include <Core/Language.h>
 #include <Core/Core.h>
 #include <Core/Detect.h>
 #include <Common/FileFunction.h>
@@ -10,7 +13,7 @@
 #include <filesystem>
 #include <unordered_map>
 
-TEST(Core, DetectEncoding) {
+void fun() {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
 
     std::string filename = std::string(SmartCharsetConverter_TEST_DIR) + "/expected.txt";
@@ -43,6 +46,36 @@ TEST(Core, DetectEncoding) {
         ASSERT_EQ(len, bufOutLen);
         ASSERT_TRUE(memcmp(buf.get(), bufOut.get(), len) == 0);
     }
+}
+
+TEST(Core, EncodeWithUnassignedChars) {
+    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+    //MemoryLeakDetection mld;
+
+    //
+    LanguageServiceOption option;
+    option.fnGetLanguageFromConfig = []() -> std::string {
+        return "English";
+    };
+    option.resourceIds = {};
+    option.resourceType = L"LanguageJson";
+    InitLanguageService(option);
+
+    try {
+        Encode(u"abcdefg小舟从此逝，江海寄余生。asdfghjkl", CharsetCode::WINDOWS_1252);
+        FAIL();
+    } catch (const std::runtime_error &err) {
+        ASSERT_EQ(
+            std::string(err.what()),
+            std::string(
+                u8"Some characters will be lost when converting to the target encoding:小舟从此逝，江海寄余生。"));
+    }
+}
+
+TEST(Core, DetectEncoding) {
+    // MemoryLeakDetection mld;
+
+    fun();
 }
 
 TEST(Core, DetectEncodingMulti) {

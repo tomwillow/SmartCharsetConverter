@@ -57,7 +57,7 @@ struct FromUFLAGContext {
     UConverterFromUCallback subCallback;
     const void *subContext;
     std::vector<UChar32> unassigned; // 是否出现了不能转换的字符
-    FromUFLAGContext() : subCallback(nullptr), subContext(nullptr), unassigned(false) {}
+    FromUFLAGContext() : subCallback(nullptr), subContext(nullptr) {}
 };
 
 /**
@@ -199,14 +199,17 @@ Core::Core(std::tstring configFileName, CoreInitOption opt) : configFileName(con
     });
 
 #ifndef NDEBUG
-    UErrorCode err;
-    auto allNames = ucnv_openAllNames(&err);
-    while (1) {
-        auto name = uenum_next(allNames, nullptr, &err);
-        if (name == nullptr) {
-            break;
-        }
-    }
+    // =================================
+    // ==== will detect memory leak ====
+    // UErrorCode err;
+    // UEnumeration *allNames = ucnv_openAllNames(&err);
+    // while (1) {
+    //    auto name = uenum_next(allNames, nullptr, &err);
+    //    if (name == nullptr) {
+    //        break;
+    //    }
+    //}
+    // ================================
 #endif
 }
 
