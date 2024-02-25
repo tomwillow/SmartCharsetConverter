@@ -55,8 +55,9 @@ LineBreaks GetLineBreaks(const UChar *buf, int len) {
     return ans;
 }
 
-void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, LineBreaks targetLineBreak) {
+void ChangeLineBreaks(std::u16string &str, LineBreaks targetLineBreak) {
     std::vector<UChar> out;
+    std::size_t len = str.size();
     out.reserve(len);
 
     std::vector<UChar> lineBreak;
@@ -73,10 +74,10 @@ void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, LineBreaks target
     }
 
     for (int i = 0; i < len;) {
-        UChar &c = buf.get()[i];
+        UChar c = str[i];
         if (c == UChar(u'\r')) {
             // \r\n
-            if (i < len && buf.get()[i + 1] == UChar(u'\n')) {
+            if (i < len && str[i + 1] == UChar(u'\n')) {
                 out.insert(out.end(), lineBreak.begin(), lineBreak.end());
                 i += 2;
                 continue;
@@ -102,10 +103,7 @@ void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, LineBreaks target
         throw std::runtime_error(GetLanguageService().GetUtf8String(StringId::FILE_SIZE_OUT_OF_LIMIT));
     }
 
-    int outLen = static_cast<int>(out.size());
-    buf.reset(new UChar[outLen]);
-    memcpy(buf.get(), out.data(), out.size() * sizeof(UChar));
-    len = outLen;
-
+    str.resize(out.size());
+    memcpy(str.data(), out.data(), out.size() * sizeof(UChar));
     return;
 }

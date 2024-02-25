@@ -31,13 +31,14 @@ DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilena
 
     CoreInitOption coreOpt;
     coreOpt.fnUIUpdateItem = [this](int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
-                                    std::wstring lineBreakStr, std::wstring textPiece) {
+                                    std::wstring lineBreakStr, std::u16string textPiece) {
         PostUIFunc([=]() {
             listview.SetItemText(index, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
             listview.SetItemText(index, static_cast<int>(ListViewColumn::FILESIZE), fileSizeStr.c_str());
             listview.SetItemText(index, static_cast<int>(ListViewColumn::ENCODING), charsetStr.c_str());
             listview.SetItemText(index, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreakStr.c_str());
-            listview.SetItemText(index, static_cast<int>(ListViewColumn::TEXT_PIECE), textPiece.c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::TEXT_PIECE),
+                                 reinterpret_cast<const wchar_t *>(textPiece.c_str()));
         });
     };
 
@@ -954,14 +955,15 @@ void DialogMain::RestoreReadyState(const std::vector<std::pair<int, bool>> &rest
 }
 
 void DialogMain::AppendListViewItem(std::wstring filename, uint64_t fileSize, CharsetCode charset, LineBreaks lineBreak,
-                                    std::wstring textPiece) noexcept {
+                                    std::u16string textPiece) noexcept {
     auto count = listview.GetItemCount();
     listview.AddItem(count, static_cast<int>(ListViewColumn::INDEX), to_tstring(count + 1).c_str());
     listview.AddItem(count, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
     listview.AddItem(count, static_cast<int>(ListViewColumn::FILESIZE), FileSizeToTString(fileSize).c_str());
     listview.AddItem(count, static_cast<int>(ListViewColumn::ENCODING), ToViewCharsetName(charset).c_str());
     listview.AddItem(count, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreaksMap.at(lineBreak).c_str());
-    listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE), textPiece.c_str());
+    listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE),
+                     reinterpret_cast<const wchar_t *>(textPiece.c_str()));
 
     // listview滚动到最下面
     listview.SelectItem(count);

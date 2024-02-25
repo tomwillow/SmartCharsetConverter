@@ -235,5 +235,5 @@ private:
     void RestoreReadyState(const std::vector<std::pair<int, bool>> &restore) noexcept;
 
     void AppendListViewItem(std::wstring filename, uint64_t fileSize, CharsetCode charset, LineBreaks lineBreak,
-                            std::wstring textPiece) noexcept;
+                            std::u16string textPiece) noexcept;
 };

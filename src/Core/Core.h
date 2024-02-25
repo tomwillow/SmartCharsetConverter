@@ -25,18 +25,19 @@
 
 /**
  * @brief 根据code的字符集解码字符串为unicode
- * @return 字符串指针，文本长度
+ * @return u16string(UTF-16LE)
  * @exception runtime_error ucnv出错。code
  */
-std::tuple<std::unique_ptr<UChar[]>, int> Decode(const char *str, int len, CharsetCode code);
+std::u16string Decode(std::string_view src, CharsetCode code);
 
 /**
  * @brief 把unicode串编码为指定字符集
- * @return 字符串指针，文本长度
+ * @param src u16string(UTF-16LE)
+ * @return std::string CAUTION: this string is only as a container of char[] with the charset of targetCode.
+ *          NOT mean its charset is ASCII or ANSI or others.
  * @exception runtime_error ucnv出错/出现了不能转换的字符
  */
-std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, int bufSize,
-                                                CharsetCode targetCode);
+std::string Encode(std::u16string_view src, CharsetCode targetCode);
 
 class io_error_ignore : public std::runtime_error {
 public:
@@ -46,9 +47,9 @@ public:
 struct CoreInitOption {
 
     std::function<void(int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
-                       std::wstring lineBreakStr, std::wstring textPiece)>
+                       std::wstring lineBreakStr, std::u16string textPiece)>
         fnUIUpdateItem = [](int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
-                            std::wstring lineBreakStr, std::wstring textPiece) {};
+                            std::wstring lineBreakStr, std::u16string textPiece) {};
 };
 
 class Core {
@@ -88,7 +89,7 @@ public:
         uint64_t filesize;
         CharsetCode srcCharset;
         LineBreaks srcLineBreak;
-        std::wstring strPiece;
+        std::u16string strPiece;
     };
 
     /**

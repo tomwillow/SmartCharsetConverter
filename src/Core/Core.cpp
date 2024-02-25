@@ -35,9 +35,9 @@ void DealWithUCNVError(UErrorCode err) {
     }
 }
 
-tuple<unique_ptr<UChar[]>, int> Decode(const char *str, int len, CharsetCode code) {
+std::u16string Decode(std::string_view src, CharsetCode code) {
     if (code == CharsetCode::EMPTY) {
-        return {unique_ptr<UChar[]>(new UChar[0]), 0};
+        return {};
     }
 
     // 从code转换到icu的字符集名称
@@ -52,17 +52,18 @@ tuple<unique_ptr<UChar[]>, int> Decode(const char *str, int len, CharsetCode cod
                                                               });
     DealWithUCNVError(err);
 
-    int32_t cap = len + 1;
-    unique_ptr<UChar[]> target(new UChar[cap]);
+    std::size_t cap = src.size() + 1;
+    std::u16string target(cap, u'\u0000');
 
     ucnv_setToUCallBack(conv.get(), UCNV_TO_U_CALLBACK_STOP, NULL, NULL, NULL, &err);
     DealWithUCNVError(err);
 
     // 解码
-    int retLen = ucnv_toUChars(conv.get(), target.get(), cap, str, len, &err);
+    int retLen = ucnv_toUChars(conv.get(), target.data(), cap, src.data(), src.size(), &err);
+    target.resize(retLen);
     DealWithUCNVError(err);
 
-    return make_tuple<unique_ptr<UChar[]>, int32_t>(std::move(target), std::move(retLen));
+    return target;
 }
 
 // below copied from https://github.com/unicode-org/icu/blob/main/icu4c/source/samples/ucnv/flagcb.c
@@ -148,8 +149,7 @@ U_CAPI void U_EXPORT2 flagCB_fromU(const void *context, UConverterFromUnicodeArg
     }
 }
 
-std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &buf, int bufSize,
-                                                CharsetCode targetCode) {
+std::string Encode(std::u16string_view src, CharsetCode targetCode) {
     // 从code转换到icu的字符集名称
     auto icuCharsetName = ToICUCharsetName(targetCode);
 
@@ -162,8 +162,8 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
                                                               });
     DealWithUCNVError(err);
 
-    int32_t destCap = bufSize * sizeof(UChar) + 2;
-    unique_ptr<char[]> target(new char[destCap]);
+    int32_t destCap = src.size() * sizeof(UChar) + 2;
+    std::string target(destCap, '\0');
 
     FromUFLAGContext *context = new FromUFLAGContext; // 由回调函数管理生命期
 
@@ -175,14 +175,15 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
     int retLen;
     while (1) {
         err = U_ZERO_ERROR;
-        retLen = ucnv_fromUChars(conv.get(), target.get(), destCap, buf.get(), bufSize, &err);
+        retLen = ucnv_fromUChars(conv.get(), target.data(), destCap, src.data(), src.size(), &err);
         if (err == U_BUFFER_OVERFLOW_ERROR || err == U_STRING_NOT_TERMINATED_WARNING) {
             destCap = retLen + 6; // 增加一个尾后0的大小：utf-8 单个字符最大占用字节数
-            target.reset(new char[destCap]);
+            target.resize(destCap);
             continue;
         }
         DealWithUCNVError(err);
         if (err == U_ZERO_ERROR) {
+            target.resize(retLen);
             break;
         }
     }
@@ -190,16 +191,19 @@ std::tuple<std::unique_ptr<char[]>, int> Encode(const std::unique_ptr<UChar[]> &
     // 如果存在不能转换的字符，那么抛出异常
     if (!context->unassigned.empty()) {
         context->unassigned.push_back(0);
-        auto s = context->unassigned.data();
+        UChar32 *s = context->unassigned.data();
 
-        auto [buf, bufSize] = Decode(reinterpret_cast<char *>(s), context->unassigned.size() * 4, CharsetCode::UTF32LE);
+        // UTF32LE -> UTF16LE
+        std::u16string temp =
+            Decode(std::string_view(reinterpret_cast<char *>(s), context->unassigned.size() * 4), CharsetCode::UTF32LE);
 
-        auto [ret, retSize] = Encode(buf, bufSize, CharsetCode::UTF8);
+        // UTF16LE -> UTF8
+        std::string ret = Encode(temp, CharsetCode::UTF8);
 
-        throw runtime_error(GetLanguageService().GetUtf8String(StringId::WILL_LOST_CHARACTERS) + ret.get());
+        throw runtime_error(GetLanguageService().GetUtf8String(StringId::WILL_LOST_CHARACTERS) + ret);
     }
 
-    return make_tuple(std::move(target), retLen);
+    return target;
 }
 
 Core::Core(std::tstring configFileName, CoreInitOption opt) : configFileName(configFileName), opt(opt) {
@@ -309,15 +313,15 @@ std::tuple<std::string, int> DetectByUCSDet(const char *buf, int bufSize) {
     return {name, confidence};
 }
 
-std::unordered_set<CharsetCode> DetectByMine(const char *buf, int bufSize) {
+std::unordered_set<CharsetCode> DetectByMine(std::string_view src) {
     std::unordered_set<CharsetCode> ret;
     for (int i = static_cast<int>(CharsetCode::UTF8); i <= static_cast<int>(CharsetCode::ISO_8859_1); ++i) {
         CharsetCode tryCode = static_cast<CharsetCode>(i);
 
         try {
-            auto [decStr, decLen] = Decode(buf, bufSize, tryCode);
+            auto temp = Decode(src, tryCode);
 
-            Encode(decStr, decLen, tryCode);
+            Encode(temp, tryCode);
 
             ret.insert(tryCode);
         } catch (...) {}
@@ -476,12 +480,10 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
     // 识别字符集
     auto charsetCode = DetectEncoding(buf.get(), bufSize);
 
-    std::unique_ptr<UChar[]> content;
-    int64_t contentSize;
+    std::u16string content;
 
     switch (charsetCode) {
     case CharsetCode::EMPTY:
-        std::tie(content, contentSize) = std::make_tuple(std::unique_ptr<UChar[]>(new UChar[1]{L'\0'}), 0);
         break;
 
     // 如果没有识别出编码集
@@ -500,7 +502,7 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
             // 成功添加
             listFileNames.insert(filename);
 
-            return AddItemResult{false, fileSize, charsetCode, LineBreaks::UNKNOWN, L""};
+            return AddItemResult{false, fileSize, charsetCode, LineBreaks::UNKNOWN, {}};
         }
         default:
             assert(0);
@@ -509,7 +511,7 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
     }
     default:
         // 根据uchardet得出的字符集解码
-        std::tie(content, contentSize) = Decode(buf.get(), std::min(64, static_cast<int>(bufSize)), charsetCode);
+        content = Decode(std::string_view(buf.get(), std::min(64, static_cast<int>(bufSize))), charsetCode);
     }
 
     auto fileSize = GetFileSize(filename);
@@ -520,17 +522,17 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
     if (bufSize < fileSize) {
         std::tie(buf, bufSize) = ReadFileToBuffer(filename);
     }
-    auto [wholeUtfStr, wholeUtfStrSize] = Decode(buf.get(), bufSize, charsetCode);
+    auto wholeUtfStr = Decode(std::string_view(buf.get(), bufSize), charsetCode);
 
     // 检查换行符
-    auto lineBreak = GetLineBreaks(wholeUtfStr.get(), wholeUtfStrSize);
+    auto lineBreak = GetLineBreaks(wholeUtfStr.data(), wholeUtfStr.size());
 
     // 到达这里不会再抛异常了
 
     // 成功添加
     listFileNames.insert(filename);
 
-    return AddItemResult{false, fileSize, charsetCode, lineBreak, reinterpret_cast<wchar_t *>(content.get())};
+    return AddItemResult{false, fileSize, charsetCode, lineBreak, content};
 }
 
 void Core::SpecifyItemCharset(int index, const std::tstring &filename, CharsetCode charsetCode) {
@@ -548,17 +550,16 @@ void Core::SpecifyItemCharset(int index, const std::tstring &filename, CharsetCo
     if (bufSize < fileSize) {
         std::tie(buf, bufSize) = ReadFileToBuffer(filename);
     }
-    auto [wholeUtfStr, wholeUtfStrSize] = Decode(buf.get(), bufSize, charsetCode);
-    auto lineBreak = GetLineBreaks(wholeUtfStr.get(), wholeUtfStrSize);
+    auto wholeUtfStr = Decode(std::string_view(buf.get(), bufSize), charsetCode);
+    auto lineBreak = GetLineBreaks(wholeUtfStr.data(), wholeUtfStr.size());
 
     auto lineBreakStr = lineBreaksMap.at(lineBreak);
 
     // 到达这里不会再抛异常了
 
     // 通知UI新增条目
-    auto partContentAndSize = Decode(buf.get(), std::min(64, static_cast<int>(bufSize)), charsetCode);
-    opt.fnUIUpdateItem(index, filename, fileSizeStr, charsetName, lineBreakStr,
-                       reinterpret_cast<wchar_t *>(std::get<0>(partContentAndSize).get()));
+    auto stringPiece = Decode(std::string_view(buf.get(), std::min(64, static_cast<int>(bufSize))), charsetCode);
+    opt.fnUIUpdateItem(index, filename, fileSizeStr, charsetName, lineBreakStr, stringPiece);
 }
 
 void Core::RemoveItem(const std::tstring &filename) {
@@ -656,16 +657,16 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
                 }
 
                 // 根据原编码得到Unicode字符串
-                auto [buf, bufLen] = Decode(rawStart, static_cast<int>(rawSize), originCode);
+                auto buf = Decode(std::string_view(rawStart, rawSize), originCode);
 
                 // 如果需要转换换行符
                 if (GetConfig().enableConvertLineBreaks && GetConfig().lineBreak != originLineBreak) {
-                    ChangeLineBreaks(buf, bufLen, GetConfig().lineBreak);
+                    ChangeLineBreaks(buf, GetConfig().lineBreak);
                     ret.targetLineBreaks = GetConfig().lineBreak;
                 }
 
                 // 转到目标编码
-                auto [outputBuf, outputBufSize] = Encode(buf, bufLen, targetCode);
+                auto outputBuf = Encode(buf, targetCode);
                 ret.outputFileSize = 0;
 
                 // 写入文件
@@ -693,9 +694,9 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
                 }
 
                 // 写入正文
-                size_t wrote = fwrite(outputBuf.get(), outputBufSize, 1, fp);
-                ret.outputFileSize += outputBufSize;
-                if (outputBufSize != 0 && wrote != 1) {
+                size_t wrote = fwrite(outputBuf.data(), outputBuf.size(), 1, fp);
+                ret.outputFileSize += outputBuf.size();
+                if (outputBuf.size() != 0 && wrote != 1) {
                     throw runtime_error(GetLanguageService().GetUtf8String(StringId::FAILED_TO_WRITE_FILE) +
                                         to_utf8(ret.outputFileName));
                 }

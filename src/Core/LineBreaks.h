@@ -17,7 +17,7 @@ enum class LineBreaks { CRLF, LF, CR, EMPTY, MIX, UNKNOWN };
 LineBreaks GetLineBreaks(const UChar *buf, int len);
 
 // 变更换行符
-void ChangeLineBreaks(std::unique_ptr<UChar[]> &buf, int &len, LineBreaks targetLineBreak);
+void ChangeLineBreaks(std::u16string &str, LineBreaks targetLineBreak);
 
 // LineBreaks类型到字符串的映射表
 const doublemap<LineBreaks, std::tstring> lineBreaksMap = {

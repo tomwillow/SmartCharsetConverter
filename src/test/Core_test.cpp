@@ -12,6 +12,41 @@
 TEST(Core, DetectEncoding) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
 
+    std::string filename = std::string(SmartCharsetConverter_TEST_DIR) + "/expected.txt";
+    auto [buf, len] = ReadFileToBuffer(utf8_to_wstring(filename));
+
+    CoreInitOption opt;
+    Core core(L"temp.json", opt);
+    core.SetOutputTarget(Configuration::OutputTarget::TO_DIR);
+    core.SetOutputDir(".");
+
+    CharsetCode code = core.DetectEncoding(buf.get(), len);
+    ASSERT_EQ(code, CharsetCode::UTF8);
+
+    std::u16string utf16leStr = Decode(std::string_view(buf.get(), len), code);
+    auto lineBreak = GetLineBreaks(utf16leStr.data(), utf16leStr.size());
+
+    core.SetOutputCharset(CharsetCode::GB18030);
+    Core::ConvertResult ret = core.Convert(utf8_to_wstring(filename), code, lineBreak);
+    ASSERT_FALSE(ret.errInfo.has_value());
+
+    std::filesystem::rename("./expected.txt", "expected-out.txt");
+
+    {
+        core.SetOutputCharset(CharsetCode::UTF8);
+        Core::ConvertResult ret =
+            core.Convert(utf8_to_wstring(u8"./expected-out.txt"), CharsetCode::GB18030, lineBreak);
+        ASSERT_FALSE(ret.errInfo.has_value());
+
+        auto [bufOut, bufOutLen] = ReadFileToBuffer(utf8_to_wstring(u8"./expected-out.txt"));
+        ASSERT_EQ(len, bufOutLen);
+        ASSERT_TRUE(memcmp(buf.get(), bufOut.get(), len) == 0);
+    }
+}
+
+TEST(Core, DetectEncodingMulti) {
+    SetConsoleOutputCP(65001); // 设置代码页为UTF-8
+
     std::string expectedFileName = std::string(SmartCharsetConverter_TEST_DIR) + "/expected.txt";
     std::ifstream ifs(expectedFileName);
     if (!ifs.is_open()) {
