@@ -23,6 +23,33 @@
 #undef min
 #undef max
 
+std::tuple<std::string, int> DetectByUCharDet(uchardet *det, const char *buf, int bufSize);
+
+std::tuple<std::string, int> DetectByUCSDet(const char *buf, int bufSize);
+
+/**
+ * @exception runtime_error 如果CED中定义的名称在CharsetCode中没有定义，将抛出异常
+ */
+std::tuple<CharsetCode, bool> DetectByCED(const char *buf, int len);
+
+CharsetCode ToCharsetCodeFinal(std::string charsetStr, const char *buf, int bufSize);
+
+/**
+ * 探测编码集。
+ * return 探测出的编码集，根据探测出的编码集解码出的Unicode文本片段(最大64bytes)，文本片段长度
+ * @exception file_io_error 读文件失败
+ * @exception runtime_error ucnv出错。code
+ */
+CharsetCode DetectEncodingPlain(uchardet *det, const char *buf, int bufSize, int times);
+
+/**
+ * 探测编码集。
+ * return 探测出的编码集，根据探测出的编码集解码出的Unicode文本片段(最大64bytes)，文本片段长度
+ * @exception file_io_error 读文件失败
+ * @exception runtime_error ucnv出错。code
+ */
+CharsetCode DetectEncoding(uchardet *det, const char *buf, int bufSize);
+
 /**
  * @brief 根据code的字符集解码字符串为unicode
  * @return u16string(UTF-16LE)
@@ -67,22 +94,6 @@ public:
     void SetEnableConvertLineBreak(bool enableLineBreaks);
     void SetLineBreaks(LineBreaks lineBreak);
     void SetLanguage(const std::string &language) noexcept;
-
-    /**
-     * 探测编码集。
-     * return 探测出的编码集，根据探测出的编码集解码出的Unicode文本片段(最大64bytes)，文本片段长度
-     * @exception file_io_error 读文件失败
-     * @exception runtime_error ucnv出错。code
-     */
-    CharsetCode DetectEncodingPlain(const char *buf, int bufSize, int times) const;
-
-    /**
-     * 探测编码集。
-     * return 探测出的编码集，根据探测出的编码集解码出的Unicode文本片段(最大64bytes)，文本片段长度
-     * @exception file_io_error 读文件失败
-     * @exception runtime_error ucnv出错。code
-     */
-    CharsetCode DetectEncoding(const char *buf, int bufSize) const;
 
     struct AddItemResult {
         bool isIgnore = true; // 是否应该忽略掉
