@@ -4,6 +4,7 @@
 #include "CharsetCode.h"
 #include "LineBreaks.h"
 #include "Config.h"
+#include "Vietnamese.h"
 
 #include <tstring.h>
 
@@ -38,6 +39,21 @@ std::u16string Decode(std::string_view src, CharsetCode code);
  * @exception runtime_error ucnv出错/出现了不能转换的字符
  */
 std::string Encode(std::u16string_view src, CharsetCode targetCode);
+
+struct ConvertParam {
+    CharsetCode originCode;
+    CharsetCode targetCode;
+    bool doConvertLineBreaks;
+    LineBreaks targetLineBreak; // target line break. if doConvertLineBreaks is false, this variable will be ignored.
+};
+
+/**
+ * Convert encoding.
+ * @exception std::runtime_error runtime_error ucnv error/出现了不能转换的字符
+ */
+std::string Convert(std::string_view src, ConvertParam inputParam);
+
+viet::Encoding CharsetCodeToVietEncoding(CharsetCode code) noexcept;
 
 class io_error_ignore : public std::runtime_error {
 public:
@@ -99,7 +115,7 @@ public:
 
     void Clear();
 
-    struct ConvertResult {
+    struct ConvertFileResult {
         std::tstring outputFileName;
         std::optional<std::string> errInfo;
         LineBreaks targetLineBreaks;
@@ -110,8 +126,8 @@ public:
      * @brief 转换一个文件。
      * @return <输出文件的文件名, 出错信息>
      */
-    ConvertResult Convert(const std::tstring &inputFilename, CharsetCode originCode,
-                          LineBreaks originLineBreak) noexcept;
+    ConvertFileResult Convert(const std::tstring &inputFilename, CharsetCode originCode,
+                              LineBreaks originLineBreak) noexcept;
 
 private:
     std::tstring configFileName;

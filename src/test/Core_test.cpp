@@ -31,14 +31,14 @@ void fun() {
     auto lineBreak = GetLineBreaks(utf16leStr.data(), utf16leStr.size());
 
     core.SetOutputCharset(CharsetCode::GB18030);
-    Core::ConvertResult ret = core.Convert(utf8_to_wstring(filename), code, lineBreak);
+    Core::ConvertFileResult ret = core.Convert(utf8_to_wstring(filename), code, lineBreak);
     ASSERT_FALSE(ret.errInfo.has_value());
 
     std::filesystem::rename("./expected.txt", "expected-out.txt");
 
     {
         core.SetOutputCharset(CharsetCode::UTF8);
-        Core::ConvertResult ret =
+        Core::ConvertFileResult ret =
             core.Convert(utf8_to_wstring(u8"./expected-out.txt"), CharsetCode::GB18030, lineBreak);
         ASSERT_FALSE(ret.errInfo.has_value());
 
@@ -50,7 +50,7 @@ void fun() {
 
 TEST(Core, EncodeWithUnassignedChars) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
-    //MemoryLeakDetection mld;
+    // MemoryLeakDetection mld;
 
     //
     LanguageServiceOption option;

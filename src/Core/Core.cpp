@@ -23,6 +23,11 @@ std::u16string Decode(std::string_view src, CharsetCode code) {
         return {};
     }
 
+    if (charsetCodeMap.at(code).isVietnameseLocalCharset) {
+        viet::Init();
+        return viet::ConvertToUtf16LE(src, CharsetCodeToVietEncoding(code));
+    }
+
     // 从code转换到icu的字符集名称
     auto icuCharsetName = ToICUCharsetName(code);
 
@@ -133,6 +138,11 @@ U_CAPI void U_EXPORT2 flagCB_fromU(const void *context, UConverterFromUnicodeArg
 }
 
 std::string Encode(std::u16string_view src, CharsetCode targetCode) {
+    if (charsetCodeMap.at(targetCode).isVietnameseLocalCharset) {
+        viet::Init();
+        return viet::ConvertFromUtf16LE(src, CharsetCodeToVietEncoding(targetCode));
+    }
+
     // 从code转换到icu的字符集名称
     auto icuCharsetName = ToICUCharsetName(targetCode);
 
@@ -187,6 +197,23 @@ std::string Encode(std::u16string_view src, CharsetCode targetCode) {
     }
 
     return target;
+}
+
+std::string Convert(std::string_view src, ConvertParam inputParam) {
+    // 根据原编码得到Unicode字符串
+    std::u16string buf = Decode(src, inputParam.originCode);
+
+    // 如果需要转换换行符
+    if (inputParam.doConvertLineBreaks) {
+        ChangeLineBreaks(buf, inputParam.targetLineBreak);
+    }
+
+    // 转到目标编码
+    return Encode(buf, inputParam.targetCode);
+}
+
+viet::Encoding CharsetCodeToVietEncoding(CharsetCode code) noexcept {
+    return viet::to_encoding(to_utf8(ToViewCharsetName(code)));
 }
 
 Core::Core(std::tstring configFileName, CoreInitOption opt) : configFileName(configFileName), opt(opt) {
@@ -381,11 +408,11 @@ void Core::Clear() {
     listFileNames.clear();
 }
 
-Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode originCode,
-                                  LineBreaks originLineBreak) noexcept {
+Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, CharsetCode originCode,
+                                      LineBreaks originLineBreak) noexcept {
     CharsetCode targetCode = config.outputCharset;
 
-    ConvertResult ret;
+    ConvertFileResult ret;
     try {
         ret.outputFileName = inputFilename;
         ret.targetLineBreaks = originLineBreak;
@@ -467,17 +494,20 @@ Core::ConvertResult Core::Convert(const std::tstring &inputFilename, CharsetCode
                     rawSize -= bomSize;
                 }
 
-                // 根据原编码得到Unicode字符串
-                auto buf = Decode(std::string_view(rawStart, rawSize), originCode);
-
-                // 如果需要转换换行符
-                if (GetConfig().enableConvertLineBreaks && GetConfig().lineBreak != originLineBreak) {
-                    ChangeLineBreaks(buf, GetConfig().lineBreak);
-                    ret.targetLineBreaks = GetConfig().lineBreak;
-                }
+                ConvertParam param;
+                param.originCode = originCode;
+                param.targetCode = targetCode;
+                param.doConvertLineBreaks =
+                    GetConfig().enableConvertLineBreaks && GetConfig().lineBreak != originLineBreak;
+                param.targetLineBreak = GetConfig().lineBreak;
 
                 // 转到目标编码
-                auto outputBuf = Encode(buf, targetCode);
+                auto outputBuf = ::Convert(std::string_view(rawStart, rawSize), param);
+
+                if (param.doConvertLineBreaks) {
+                    ret.targetLineBreaks = param.targetLineBreak;
+                }
+
                 ret.outputFileSize = 0;
 
                 // 写入文件

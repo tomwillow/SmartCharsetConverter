@@ -18,7 +18,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("SmartCharsetConverter v0.82 by Tom Willow");
+const std::tstring appTitle = TEXT("SmartCharsetConverter v0.83beta by Tom Willow");
 
 const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
 
@@ -53,7 +53,9 @@ DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilena
         option.resourceIds = innerLanguageIds;
         option.resourceType = L"LanguageJson";
         InitLanguageService(option);
-    } catch (const nlohmann::json::exception &err) { throw; } catch (const std::exception &err) {
+    } catch (const nlohmann::json::exception &err) {
+        throw;
+    } catch (const std::exception &err) {
         throw;
     }
 }
@@ -316,7 +318,9 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
             PostUIFunc([filename, ret, this]() {
                 AppendListViewItem(filename, ret.filesize, ret.srcCharset, ret.srcLineBreak, ret.strPiece);
             });
-        } catch (io_error_ignore) { ignored.push_back(filename); } catch (const runtime_error &err) {
+        } catch (io_error_ignore) {
+            ignored.push_back(filename);
+        } catch (const runtime_error &err) {
             failed.push_back({filename, err.what()});
         }
     };
@@ -793,7 +797,9 @@ LRESULT DialogMain::OnSpecifyOriginCharset(WORD /*wNotifyCode*/, WORD wID, HWND 
         auto filename = listview.GetItemText(index, static_cast<int>(ListViewColumn::FILENAME));
         try {
             core->SpecifyItemCharset(index, filename, code);
-        } catch (const std::runtime_error &err) { failed.push_back({filename, utf8_to_wstring(err.what())}); }
+        } catch (const std::runtime_error &err) {
+            failed.push_back({filename, utf8_to_wstring(err.what())});
+        }
     }
 
     if (!failed.empty()) {
@@ -899,10 +905,10 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
     UINT nFileNum = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0); // 拖拽文件个数
     TCHAR strFileName[MAX_PATH];
     for (UINT i = 0; i < nFileNum; i++) {
-        DragQueryFile(hDrop, i, strFileName, MAX_PATH); //获得拖曳的文件名
+        DragQueryFile(hDrop, i, strFileName, MAX_PATH); // 获得拖曳的文件名
         filenames.push_back(strFileName);
     }
-    DragFinish(hDrop); //释放hDrop
+    DragFinish(hDrop); // 释放hDrop
 
     AddItemsAsync(filenames);
 
