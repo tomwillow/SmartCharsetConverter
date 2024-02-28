@@ -6,16 +6,17 @@ This program is used to automatically detect the encoding of files and convert i
 
 Function:
 
-* Batch conversion to UTF-8/UTF-8 BOM/GB18030, etc.
-* Convert line breaks to CRLF/LF/CR
-* Check whether characters are lost to ensure that the conversion process is reversible
-* Support command line (use $ ./SmartCharsetConverter --help for details)
-* Multi-language support (click the "hammer" button in the bottom right corner to switch languages)
+- Batch conversion to UTF-8/UTF-8 BOM/GB18030, etc.
+- Convert line breaks to CRLF/LF/CR
+- Check whether characters are lost to ensure that the conversion process is reversible
+- Support command line (use $ ./SmartCharsetConverter --help for details)
+- Multi-language support (click the "hammer" button in the bottom right corner to switch languages)
+- Batch conversion to Vietnamese charset: VNI/VPS/VISCII/TCVN3（Currently unable to detect these charset. please use the "No File Filter" mode）
 
 Supported Platform:
 
-* Win10 x64
-* Win7 x64 (haven’t tried it yet)
+- Win10 x64
+- Win7 x64 (haven’t tried it yet)
 
 ![img](snapshot/v0.8-english.png)
 
@@ -58,16 +59,18 @@ v0.7 Support command line. Use $ ./SmartCharsetConverter --help to view the comm
 v0.71 Fix the bug that the command line not work.
 
 v0.72 solves the problem of getting stuck when adding large files (only the first 100KB of the file is detected).
-       The extension filter mode now supports more patterns (supports separation by `*.` `.` `space` `|`). Fixed other issues with extension filtering mode.
+The extension filter mode now supports more patterns (supports separation by `*.` `.` `space` `|`). Fixed other issues with extension filtering mode.
 
 v0.8 Rearrange the interface (thanks to [Carlos Sánchez](https://github.com/c-sanchez)).
-       Add configuration file, and changing settings will trigger the saving of configuration file.
-       Support multiple languages (built-in Simplified Chinese and English).
-       Add multi-language selection(to click "hammer" button - Language).
+Add configuration file, and changing settings will trigger the saving of configuration file.
+Support multiple languages (built-in Simplified Chinese and English).
+Add multi-language selection(to click "hammer" button - Language).
 
 v0.81 Add Spanish language pack support (thanks to [Carlos Sánchez](https://github.com/c-sanchez)).
 
 v0.82 Check if characters will be lost when specifying encoding manually.
+
+v0.9 Support multiple Vietnamese charset converting: VNI/VPS/VISICII/TCVN3
 
 # Build
 
@@ -100,12 +103,12 @@ Now you can launch the program and see the results!
 
 # TODO
 
-* Check the character set again before conversion to avoid conversion errors after the user changes the character set after loading.
-* Add "Convert to xxx encoding" to the right-click menu to enable manual converting of single/multiple files.
-* Add a refresh button.
-* Add maximize/minimize buttons, and flexibly control the size of ListView while resizing.
-* Add the main menu bar to display menu items such as "Settings", "About".
-* Replace the error MessageBox to a custom Dialog for displaying the complete error information and allow copy operation.
+- Check the character set again before conversion to avoid conversion errors after the user changes the character set after loading.
+- Add "Convert to xxx encoding" to the right-click menu to enable manual converting of single/multiple files.
+- Add a refresh button.
+- Add maximize/minimize buttons, and flexibly control the size of ListView while resizing.
+- Add the main menu bar to display menu items such as "Settings", "About".
+- Replace the error MessageBox to a custom Dialog for displaying the complete error information and allow copy operation.
 
 # Reference
 
