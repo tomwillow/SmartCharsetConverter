@@ -193,7 +193,7 @@ std::string Encode(std::u16string_view src, CharsetCode targetCode) {
         // UTF16LE -> UTF8
         std::string ret = Encode(temp, CharsetCode::UTF8);
 
-        throw runtime_error(GetLanguageService().GetUtf8String(StringId::WILL_LOST_CHARACTERS) + ret);
+        throw UnassignedCharError(ret);
     }
 
     return target;
@@ -502,7 +502,13 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
                 param.targetLineBreak = GetConfig().lineBreak;
 
                 // 转到目标编码
-                auto outputBuf = ::Convert(std::string_view(rawStart, rawSize), param);
+                std::string outputBuf;
+                try {
+                    outputBuf = ::Convert(std::string_view(rawStart, rawSize), param);
+                } catch (const UnassignedCharError &err) {
+                    throw std::runtime_error(GetLanguageService().GetUtf8String(StringId::WILL_LOST_CHARACTERS) +
+                                             err.what());
+                };
 
                 if (param.doConvertLineBreaks) {
                     ret.targetLineBreaks = param.targetLineBreak;

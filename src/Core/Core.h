@@ -32,11 +32,23 @@
 std::u16string Decode(std::string_view src, CharsetCode code);
 
 /**
+ * 不可分配字符错误
+ * 用于转换时出现不能转换到指定编码的情形。
+ * err.what()方法会返回不能转换的字符组成的字符串(utf-8编码)。
+ */
+class UnassignedCharError : public std::runtime_error {
+public:
+    UnassignedCharError(const std::string &unassignedChars) : std::runtime_error(unassignedChars) {}
+};
+
+/**
  * @brief 把unicode串编码为指定字符集
  * @param src u16string(UTF-16LE)
  * @return std::string CAUTION: this string is only as a container of char[] with the charset of targetCode.
  *          NOT mean its charset is ASCII or ANSI or others.
- * @exception runtime_error ucnv出错/出现了不能转换的字符
+ * @exception viet::ConvertError
+ * @exception UnassignedCharError 出现了不能转换的字符
+ * @exception std::runtime_error ucnv出错
  */
 std::string Encode(std::u16string_view src, CharsetCode targetCode);
 
@@ -49,7 +61,9 @@ struct ConvertParam {
 
 /**
  * Convert encoding.
- * @exception std::runtime_error runtime_error ucnv error/出现了不能转换的字符
+ * @exception viet::ConvertError
+ * @exception UnassignedCharError 出现了不能转换的字符
+ * @exception std::runtime_error ucnv出错
  */
 std::string Convert(std::string_view src, ConvertParam inputParam);
 

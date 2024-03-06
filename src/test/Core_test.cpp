@@ -52,23 +52,11 @@ TEST(Core, EncodeWithUnassignedChars) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
     // MemoryLeakDetection mld;
 
-    //
-    LanguageServiceOption option;
-    option.fnGetLanguageFromConfig = []() -> std::string {
-        return "English";
-    };
-    option.resourceIds = {};
-    option.resourceType = L"LanguageJson";
-    InitLanguageService(option);
-
     try {
         Encode(u"abcdefg小舟从此逝，江海寄余生。asdfghjkl", CharsetCode::WINDOWS_1252);
         FAIL();
-    } catch (const std::runtime_error &err) {
-        ASSERT_EQ(
-            std::string(err.what()),
-            std::string(
-                u8"Some characters will be lost when converting to the target encoding:小舟从此逝，江海寄余生。"));
+    } catch (const UnassignedCharError &err) {
+        ASSERT_EQ(std::string(err.what()), std::string(u8"小舟从此逝，江海寄余生。"));
     }
 }
 
