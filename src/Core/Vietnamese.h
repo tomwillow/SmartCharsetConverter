@@ -28,7 +28,7 @@ inline std::string_view to_string(Encoding encoding) noexcept {
     case Encoding::UTF8:
         return "UTF8";
     case Encoding::UTF16LE:
-        return "UTF16LE";
+        return "UTF-16LE";
     case Encoding::VNI:
         return "VNI";
     case Encoding::VPS:
@@ -41,6 +41,29 @@ inline std::string_view to_string(Encoding encoding) noexcept {
         assert(0 && "unsupported encoding");
     }
     return "";
+}
+
+inline Encoding to_encoding(std::string_view sv) noexcept {
+    if (sv == "UTF8") {
+        return Encoding::UTF8;
+    }
+    if (sv == "UTF-16LE") {
+        return Encoding::UTF8;
+    }
+    if (sv == "VNI") {
+        return Encoding::VNI;
+    }
+    if (sv == "VPS") {
+        return Encoding::VPS;
+    }
+    if (sv == "VISCII") {
+        return Encoding::VISCII;
+    }
+    if (sv == "TCVN3") {
+        return Encoding::TCVN3;
+    }
+    assert(0);
+    return Encoding::UTF8;
 }
 
 class ConvertError : public std::runtime_error {

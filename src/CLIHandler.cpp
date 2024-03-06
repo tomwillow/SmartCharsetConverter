@@ -302,7 +302,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
             return;
         }
 
-        Core::ConvertResult ret = core.Convert(inputFilename, addedItem.srcCharset, addedItem.srcLineBreak);
+        Core::ConvertFileResult ret = core.Convert(inputFilename, addedItem.srcCharset, addedItem.srcLineBreak);
         if (ret.errInfo.has_value()) {
             wcout << L"  大小: " << FileSizeToTString(addedItem.filesize) << L"\n";
             wcout << L"  字符集: " << ToViewCharsetName(addedItem.srcCharset) << L"\n";

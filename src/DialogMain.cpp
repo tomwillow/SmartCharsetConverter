@@ -18,7 +18,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("SmartCharsetConverter v0.82 by Tom Willow");
+const std::tstring appTitle = TEXT("SmartCharsetConverter v0.9 by Tom Willow");
 
 const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
 
@@ -899,10 +899,10 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
     UINT nFileNum = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0); // 拖拽文件个数
     TCHAR strFileName[MAX_PATH];
     for (UINT i = 0; i < nFileNum; i++) {
-        DragQueryFile(hDrop, i, strFileName, MAX_PATH); //获得拖曳的文件名
+        DragQueryFile(hDrop, i, strFileName, MAX_PATH); // 获得拖曳的文件名
         filenames.push_back(strFileName);
     }
-    DragFinish(hDrop); //释放hDrop
+    DragFinish(hDrop); // 释放hDrop
 
     AddItemsAsync(filenames);
 

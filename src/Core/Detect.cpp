@@ -37,13 +37,16 @@ std::tuple<std::string, int> DetectByUCharDet(uchardet *det, const char *buf, in
 
 std::tuple<std::string, int> DetectByUCSDet(const char *buf, int bufSize) {
     UErrorCode status = U_ZERO_ERROR;
-    UCharsetDetector *csd = ucsdet_open(&status);
+    auto csd =
+        std::unique_ptr<UCharsetDetector, void (*)(UCharsetDetector *)>(ucsdet_open(&status), [](UCharsetDetector *p) {
+            ucsdet_close(p);
+        });
     DealWithUCNVError(status);
 
-    ucsdet_setText(csd, buf, bufSize, &status);
+    ucsdet_setText(csd.get(), buf, bufSize, &status);
     DealWithUCNVError(status);
 
-    const UCharsetMatch *ucm = ucsdet_detect(csd, &status);
+    const UCharsetMatch *ucm = ucsdet_detect(csd.get(), &status);
     DealWithUCNVError(status);
 
     int32_t confidence = ucsdet_getConfidence(ucm, &status);

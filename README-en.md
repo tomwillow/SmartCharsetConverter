@@ -11,10 +11,10 @@ Function:
 - Check whether characters are lost to ensure that the conversion process is reversible
 - Support command line (use $ ./SmartCharsetConverter --help for details)
 - Multi-language support (click the "hammer" button in the bottom right corner to switch languages)
+- Support Vietnamese charset(VNI/VPS/VISCII/TCVN3)（Currently unable to detect these charset. please use the "No File Filter" mode）
 
 Supported Platform:
 
-- Win11 x64
 - Win10 x64
 - Win7 x64 (haven’t tried it yet)
 
@@ -73,6 +73,8 @@ Add multi-language selection(to click "hammer" button - Language).
 v0.81 Add Spanish language pack support (thanks to [Carlos Sánchez](https://github.com/c-sanchez)).
 
 v0.82 Check if characters will be lost when specifying encoding manually.
+
+v0.9 Support multiple Vietnamese charset converting: VNI/VPS/VISICII/TCVN3
 
 # Build
 
