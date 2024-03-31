@@ -76,6 +76,8 @@ v0.82 Check if characters will be lost when specifying encoding manually.
 
 v0.9 Support multiple Vietnamese charset converting: VNI/VPS/VISICII/TCVN3
 
+v0.9.1 bugfix: fixed the error of "ucnv error. code=11" due to invalid trucated string piece.
+
 # Build
 
 1. Confirm the compilation environment: win10+ x64, Visual Studio 2019+, cmake.

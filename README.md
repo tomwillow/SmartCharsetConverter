@@ -75,6 +75,8 @@ v0.82 现在手动指定字符集会检查是否丢失字符。
 
 v0.9 支持多个越南语字符集的转换：VNI/VPS/VISICII/TCVN3
 
+v0.9.1 bugfix: 修复由于截取字符片段导致的"ucnv error. code=11"出错。
+
 # 构建方法
 
 1. 确认编译环境：win10+ x64, Visual Studio 2019+, cmake。
