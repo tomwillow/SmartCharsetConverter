@@ -27,9 +27,18 @@
 /**
  * @brief 根据code的字符集解码字符串为unicode
  * @return u16string(UTF-16LE)
- * @exception runtime_error ucnv出错。code
+ * @exception ucnv_error ucnv出错。code
  */
 std::u16string Decode(std::string_view src, CharsetCode code);
+
+/**
+ * 根据code的字符集解码字符串为unicode。
+ * 为了只输出部分解码结果，输入一个最大输入bytes数量的限制。
+ * @param maxInputBytes 最大输入bytes数量。src的长度如果大于maxInputBytes，只有maxInputBytes数量的数据会送去解码。
+ * @return u16string(UTF-16LE)
+ * @exception ucnv_error ucnv出错。code
+ */
+std::u16string DecodeToLimitBytes(std::string_view src, uint64_t maxInputBytes, CharsetCode code);
 
 /**
  * 不可分配字符错误

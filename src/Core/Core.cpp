@@ -18,6 +18,8 @@ using namespace std;
 
 constexpr uint64_t tryReadSize = 100Ui64 * KB;
 
+constexpr uint64_t MAX_STRING_PIECE_LENGTH = 64;
+
 std::u16string Decode(std::string_view src, CharsetCode code) {
     if (code == CharsetCode::EMPTY) {
         return {};
@@ -52,6 +54,25 @@ std::u16string Decode(std::string_view src, CharsetCode code) {
     DealWithUCNVError(err);
 
     return target;
+}
+
+std::u16string DecodeToLimitBytes(std::string_view src, uint64_t maxInputBytes, CharsetCode code) {
+    std::u16string output;
+
+    std::size_t use_bytes = std::min(maxInputBytes, src.size());
+    while (use_bytes > 0) {
+        try {
+            output = Decode(std::string_view(src.data(), use_bytes), code);
+            break;
+        } catch (const ucnv_error &err) {
+            if (use_bytes != src.size() && err.GetErrorCode() == U_TRUNCATED_CHAR_FOUND) {
+                use_bytes--;
+                continue;
+            }
+            throw;
+        }
+    }
+    return output;
 }
 
 // below copied from https://github.com/unicode-org/icu/blob/main/icu4c/source/samples/ucnv/flagcb.c
@@ -349,7 +370,7 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
     }
     default:
         // 根据uchardet得出的字符集解码
-        content = Decode(std::string_view(buf.get(), std::min(64, static_cast<int>(bufSize))), charsetCode);
+        content = DecodeToLimitBytes(std::string_view(buf.get(), bufSize), MAX_STRING_PIECE_LENGTH, charsetCode);
     }
 
     auto fileSize = GetFileSize(filename);
@@ -396,7 +417,7 @@ void Core::SpecifyItemCharset(int index, const std::tstring &filename, CharsetCo
     // 到达这里不会再抛异常了
 
     // 通知UI新增条目
-    auto stringPiece = Decode(std::string_view(buf.get(), std::min(64, static_cast<int>(bufSize))), charsetCode);
+    auto stringPiece = DecodeToLimitBytes(std::string_view(buf.get(), bufSize), MAX_STRING_PIECE_LENGTH, charsetCode);
     opt.fnUIUpdateItem(index, filename, fileSizeStr, charsetName, lineBreakStr, stringPiece);
 }
 

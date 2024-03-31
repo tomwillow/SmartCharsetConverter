@@ -18,7 +18,7 @@
 #undef min
 #undef max
 
-const std::tstring appTitle = TEXT("SmartCharsetConverter v0.9 by Tom Willow");
+const std::tstring appTitle = TEXT("SmartCharsetConverter v0.9.1 by Tom Willow");
 
 const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
 
