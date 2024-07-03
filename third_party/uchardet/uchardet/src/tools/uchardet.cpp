@@ -98,18 +98,18 @@ void show_usage()
     printf("\n");
 }
 
-int main(int argc, char ** argv)
+int wmain(int argc, wchar_t* argv[])
 {
     static struct option longopts[] =
     {
-        { "version", no_argument, NULL, 'v' },
-        { "help", no_argument, NULL, 'h' },
+        { L"version", no_argument, NULL, 'v' },
+        { L"help", no_argument, NULL, 'h' },
         { 0, 0, 0, 0 },
     };
     bool end_options = false;
 
     static int oc;
-    while((oc = getopt_long(argc, argv, "vh", longopts, NULL)) != -1)
+    while((oc = getopt_long(argc, argv, L"vh", longopts, NULL)) != -1)
     {
         switch (oc)
         {
@@ -128,31 +128,31 @@ int main(int argc, char ** argv)
     FILE * f = stdin;
     int error_seen = 0;
     if (argc < 2 ||
-        (argc == 2 && strcmp(argv[1], "--") == 0))
+        (argc == 2 && wcscmp(argv[1], L"--") == 0))
     {
         // No file arg, use stdin by default
         detect(f);
     }
     for (int i = 1; i < argc; i++)
     {
-        const char *filename = argv[i];
+        const wchar_t *filename = argv[i];
 
-        if (! end_options && strcmp(filename, "--") == 0)
+        if (! end_options && wcscmp(filename, L"--") == 0)
         {
             end_options = true;
             continue;
         }
 
-        f = fopen(filename, "r");
+        f = _wfopen(filename, L"r");
         if (f == NULL)
         {
-            perror(filename);
+            _wperror(filename);
             error_seen = 1;
             continue;
         }
         if (argc > 2)
         {
-            printf("%s: ", filename);
+            wprintf(L"%s: ", filename);
         }
         detect(f);
     }

@@ -2,6 +2,7 @@
   "dependencies": [
     "icu",
     "nlohmann-json",
-    "gtest"
+    "gtest",
+    "getopt"
   ]
 }

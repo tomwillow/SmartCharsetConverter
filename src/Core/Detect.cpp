@@ -61,7 +61,7 @@ std::tuple<std::string, int> DetectByUCSDet(const char *buf, int bufSize) {
 std::unordered_set<CharsetCode> DetectByMine(std::string_view src) {
     std::unordered_set<CharsetCode> ret;
     for (int i = static_cast<int>(CharsetCode::UTF8); i <= static_cast<int>(CharsetCode::ISO_8859_1); ++i) {
-        CharsetCode tryCode = static_cast<CharsetCode>(i);
+        auto tryCode = static_cast<CharsetCode>(i);
 
         try {
             auto temp = Decode(src, tryCode);
@@ -77,15 +77,15 @@ std::unordered_set<CharsetCode> DetectByMine(std::string_view src) {
 std::tuple<CharsetCode, bool> DetectByCED(const char *buf, int len) {
     int bytes_consumed;
     bool is_reliable;
-    Encoding encoding = CompactEncDet::DetectEncoding(buf, len, nullptr, // URL hint
-                                                      nullptr,           // HTTP hint
-                                                      nullptr,           // Meta hint
-                                                      UNKNOWN_ENCODING, UNKNOWN_LANGUAGE, CompactEncDet::WEB_CORPUS,
-                                                      false, // Include 7-bit encodings?
-                                                      &bytes_consumed, &is_reliable);
+    Encoding encoding = DetectEncoding(buf, len, nullptr, // URL hint
+                                       nullptr, // HTTP hint
+                                       nullptr, // Meta hint
+                                       UNKNOWN_ENCODING, UNKNOWN_LANGUAGE, CompactEncDet::WEB_CORPUS,
+                                       false, // Include 7-bit encodings?
+                                       &bytes_consumed, &is_reliable);
 
     // 如果认为是二进制文件，那么取信它
-    if (encoding == Encoding::BINARYENC) {
+    if (encoding == BINARYENC) {
         return {CharsetCode::UNKNOWN, true};
     }
 
@@ -103,7 +103,7 @@ std::tuple<CharsetCode, bool> DetectByCED(const char *buf, int len) {
     return {code, is_reliable};
 }
 
-CharsetCode ToCharsetCodeFinal(std::string charsetStr, const char *buf, int bufSize) {
+CharsetCode ToCharsetCodeFinal(const std::string& charsetStr, const char *buf, int bufSize) {
 
     // filter
     CharsetCode code;
@@ -150,15 +150,32 @@ CharsetCode DetectEncodingPlain(uchardet *det, const char *buf, int bufSize, int
 
     auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf, bufSize);
 
-    if (ucsdetConfidence >= 95 && ucsdetResult.find("UTF") != string::npos) {
-        // ucsdet如果判定为UTF-8/UTF-16BE|LE等，那么相信它
-        return ToCharsetCodeFinal(ucsdetResult, buf, bufSize);
+    int ucsdetWeight = 100;
+    if (ucsdetResult.find("UTF") != string::npos) {
+        ucsdetWeight = 120;
     }
 
     auto [uchardetResult, uchardetConfidence] = DetectByUCharDet(det, buf, bufSize);
-    if (uchardetConfidence >= 95) {
-        // uchardet如果有95及以上的信心，那么直接相信它
-        return ToCharsetCodeFinal(uchardetResult, buf, bufSize);
+    int uchardetWeight = 100;
+
+    //int cedConfidence = 0;
+    //auto [cedResult, reliable] = DetectByCED(buf, bufSize);
+    //int ceddetWeight = 40;
+    //if (reliable) {
+    //    cedConfidence = 100;
+    //}
+
+    ucsdetConfidence *= ucsdetWeight;
+    uchardetConfidence *= uchardetWeight;
+    //cedConfidence *= ceddetWeight;
+
+    std::array<int, 2> confidences = {ucsdetConfidence, uchardetConfidence};
+    std::array<std::string, 2> results = { ucsdetResult, uchardetResult };
+
+    size_t maxIndex = std::max_element(confidences.begin(), confidences.end()) - confidences.begin();
+
+    if(confidences[maxIndex] >= 900) {
+        return ToCharsetCodeFinal(results[maxIndex], buf, bufSize);
     }
 
     // ucsdet和uchardet都没把握
