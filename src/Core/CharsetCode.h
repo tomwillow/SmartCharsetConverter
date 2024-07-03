@@ -29,9 +29,12 @@ enum class CharsetCode {
     BIG5,
     SHIFT_JIS,
     EUC_JP,
+    WINDOWS_1250,
     WINDOWS_1252,
     WINDOWS_1258, // Vietnamese
     ISO_8859_1,
+    ISO_8859_5,
+    ISO_8859_7,
 
     VNI,    // Vietnamese
     VPS,    // Vietnamese
@@ -72,9 +75,12 @@ const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
     {CharsetCode::BIG5, MyCharset{TEXT("BIG5"), "Big5", {"Big5"}, false}},
     {CharsetCode::SHIFT_JIS, MyCharset{TEXT("SHIFT-JIS"), "SHIFT-JIS", {"SHIFT_JIS"}, false}},
     {CharsetCode::EUC_JP, MyCharset{TEXT("EUC-JP"), "EUC-JP", {"EUC-JP"}, false}},
+    {CharsetCode::WINDOWS_1250, MyCharset{TEXT("WINDOWS-1250"), "WINDOWS-1250", {}, false}},
     {CharsetCode::WINDOWS_1252, MyCharset{TEXT("WINDOWS-1252"), "WINDOWS-1252", {}, false}},
     {CharsetCode::WINDOWS_1258, MyCharset{TEXT("WINDOWS-1258"), "WINDOWS-1258", {}, false}},
     {CharsetCode::ISO_8859_1, MyCharset{TEXT("ISO-8859-1"), "ISO-8859-1", {}, false}},
+    {CharsetCode::ISO_8859_5, MyCharset{TEXT("ISO-8859-5"), "ISO-8859-5", {}, false}},
+    {CharsetCode::ISO_8859_7, MyCharset{TEXT("ISO-8859-7"), "ISO-8859-7", {}, false}},
 
     {CharsetCode::VNI, MyCharset{TEXT("VNI"), "", {}, true}},
     {CharsetCode::VPS, MyCharset{TEXT("VPS"), "", {}, true}},

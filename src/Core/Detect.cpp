@@ -148,14 +148,38 @@ CharsetCode DetectEncodingPlain(uchardet *det, const char *buf, int bufSize, int
         return CharsetCode::EMPTY;
     }
 
-    auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf, bufSize);
+    std::string error = "";
+
+    std::string ucsdetResult{};
+    int ucsdetConfidence = 0;
+
+    try {
+        auto result = DetectByUCSDet(buf, bufSize);
+        ucsdetResult = std::get<0>(result);
+        ucsdetConfidence = std::get<1>(result);
+    } catch (const ucnv_error& u_error) {
+        error = u_error.what();
+    }
 
     int ucsdetWeight = 100;
     if (ucsdetResult.find("UTF") != string::npos) {
         ucsdetWeight = 120;
     }
 
-    auto [uchardetResult, uchardetConfidence] = DetectByUCharDet(det, buf, bufSize);
+    std::string uchardetResult{};
+    int uchardetConfidence = 0;
+
+    try {
+        const auto result = DetectByUCharDet(det, buf, bufSize);
+        uchardetResult = std::get<0>(result);
+        uchardetConfidence = std::get<1>(result);
+    }catch (const std::runtime_error& u_error) {
+        if(!error.empty()) {
+            error += " & ";
+        }
+        error += u_error.what();
+    }
+    
     int uchardetWeight = 100;
 
     //int cedConfidence = 0;
@@ -173,8 +197,13 @@ CharsetCode DetectEncodingPlain(uchardet *det, const char *buf, int bufSize, int
     std::array<std::string, 2> results = { ucsdetResult, uchardetResult };
 
     size_t maxIndex = std::max_element(confidences.begin(), confidences.end()) - confidences.begin();
+    auto maxValue = confidences[maxIndex];
 
-    if(confidences[maxIndex] >= 900) {
+    if(!maxValue) {
+        throw std::runtime_error(error);
+    }
+
+    if(maxValue >= 900) {
         return ToCharsetCodeFinal(results[maxIndex], buf, bufSize);
     }
 
