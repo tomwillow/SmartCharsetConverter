@@ -203,7 +203,7 @@ CharsetCode DetectEncodingPlain(uchardet *det, const char *buf, int bufSize, int
         throw std::runtime_error(error);
     }
 
-    if(maxValue >= 900) {
+    if(maxValue >= 9000) {
         return ToCharsetCodeFinal(results[maxIndex], buf, bufSize);
     }
 
