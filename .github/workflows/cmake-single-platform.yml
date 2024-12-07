@@ -22,13 +22,10 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      id: runvcpkg
-      with:
-        vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
-        # Run vcpkg with the command specified by the `runVcpkgFormatString` input.
-        runVcpkgInstall: true
+    - name: Setup anew (or from cache) vcpkg (and does not build any package)
+      uses: lukka/run-vcpkg@v11 # Always specify the specific _version_ of the
+                                # action you need, `v11` in this case to stay up
+                                # to date with fixes on the v11 branch.
           
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
