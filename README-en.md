@@ -81,10 +81,9 @@ v0.9.1 bugfix: fixed the error of "ucnv error. code=11" due to invalid trucated 
 # Build
 
 1. Confirm the compilation environment: win10+ x64, Visual Studio 2019+, cmake.
-2. Install vcpkg.
-3. Modify build_on_win32.bat to fit your vcpkg installation directory.
-4. Execute build_on_win32.bat to generate .sln.
-5. Open ../build_SmartCharsetConverter/SmartCharsetConverter.sln.
+2. Install vcpkg and set correct environment variable VCPKG_ROOT.
+3. Execute config_on_win.bat to generate .sln.
+4. Open ../build_SmartCharsetConverter/SmartCharsetConverter.sln.
 
 # Add language pack
 

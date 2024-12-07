@@ -1,0 +1,2 @@
+cmake --preset=default
+pause

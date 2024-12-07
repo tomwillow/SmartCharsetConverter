@@ -80,10 +80,9 @@ v0.9.1 bugfix: 修复由于截取字符片段导致的"ucnv error. code=11"出�
 # 构建方法
 
 1. 确认编译环境：win10+ x64, Visual Studio 2019+, cmake。
-2. 安装 vcpkg。
-3. 修改 build_on_win32.bat 以适配你的 vcpkg 安装目录。
-4. 执行 build_on_win32.bat 生成.sln。
-5. 打开 ../build_SmartCharsetConverter/SmartCharsetConverter.sln。
+2. 安装 vcpkg，正确设置VCPKG_ROOT环境变量。
+3. 执行 config_on_win.bat 生成.sln。
+4. 打开 ../build_SmartCharsetConverter/SmartCharsetConverter.sln。
 
 # 添加语言包
 

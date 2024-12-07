@@ -1,0 +1,10 @@
+{
+	"version": 4,
+	"configurePresets": [{
+			"name": "default",
+			"binaryDir": "${sourceDir}/../build_SmartCharsetCOnverter",
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+			}
+	}]
+}
