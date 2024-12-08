@@ -10,5 +10,9 @@
 	"buildPresets": [{
 		"name": "default",
 		"configurePreset": "default"
+	}],
+	"testPresets": [{
+		"name": "default",
+		"configurePreset": "default"
 	}]
 }
