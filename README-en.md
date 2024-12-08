@@ -1,5 +1,6 @@
 # SmartCharsetConverter
 
+![workflow](https://github.com/tomwillow/SmartCharsetConverter/actions/workflows/cmake-single-platform.yml/badge.svg)
 [English](README-en.md) / [Chinese](README.md)
 
 This program is used to automatically detect the encoding of files and convert its encoding to UTF-8/UTF-8 BOM/GB18030 etc.

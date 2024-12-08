@@ -1,5 +1,6 @@
 # 智能编码集转换器
 
+![workflow](https://github.com/tomwillow/SmartCharsetConverter/actions/workflows/cmake-single-platform.yml/badge.svg)
 [English](README-en.md) / [Chinese](README.md)
 
 本程序用于自动识别文件夹下所有文本文件，自动识别原编码（不必担心反复转码出错了），批量转换到 UTF-8 等字符集。
