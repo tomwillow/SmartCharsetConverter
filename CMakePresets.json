@@ -4,6 +4,7 @@
 			"name": "default",
 			"binaryDir": "${sourceDir}/../build_SmartCharsetCOnverter",
 			"cacheVariables": {
+				"VCPKG_TARGET_TRIPLET": "x64-windows-static",
 				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
 			}
 	}],

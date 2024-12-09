@@ -10,18 +10,31 @@ project(SmartCharsetConverter)
 # 添加unicode宏
 add_definitions(-DUNICODE -D_UNICODE)
 
+if (MSVC)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
+    
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /MT")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /MTd")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+endif()
+
 # 添加include目录
 include_directories(
 	${PROJECT_SOURCE_DIR}/third_party
 	${PROJECT_SOURCE_DIR}/third_party/WTL/include
 )
 
+find_package(nlohmann_json CONFIG REQUIRED)
+
 # 添加uchardet库
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/uchardet/uchardet)
 
 # 添加icu库
 find_package(ICU REQUIRED
-	COMPONENTS uc dt in io
+	COMPONENTS uc dt in io data
 )
 
 
@@ -57,9 +70,11 @@ target_include_directories(Core PRIVATE
 )
 
 target_link_libraries(Core PUBLIC
+	nlohmann_json::nlohmann_json
 	libuchardet_static
 	ICU::uc
 	ICU::in
+	ICU::data
 	ced
 )
 
@@ -134,8 +149,6 @@ target_include_directories(Core PRIVATE
 
 # 添加.rc
 target_sources(${PROJECT_NAME} PRIVATE src/SmartCharsetConverter.rc)
-
-# 完成后拷贝icu dll
 
 # VS 设置 Subsystem 选项
 set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
