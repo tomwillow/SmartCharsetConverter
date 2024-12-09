@@ -4,42 +4,74 @@ name: Build On Windows
 
 on:
   push:
-    branches: [ "master", "dev" ]
+    branches: ["master", "dev"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
+  # 当创建标签时也触发此工作流
+  create:
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
 
 jobs:
-  build:
+  build-and-test:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup anew (or from cache) vcpkg (and does not build any package)
-      uses: lukka/run-vcpkg@v11 # Always specify the specific _version_ of the
-                                # action you need, `v11` in this case to stay up
-                                # to date with fixes on the v11 branch.
-      with:
-        doNotCache: false
-          
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake --preset=default -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      - uses: actions/checkout@v4
 
-    - name: Build
-      # Build your program with the given configuration
-      run: cmake --build --preset=default --config ${{env.BUILD_TYPE}} --target SmartCharsetConverter CoreUnitTest
+      - name: Setup anew (or from cache) vcpkg (and does not build any package)
+        uses:
+          lukka/run-vcpkg@v11 # Always specify the specific _version_ of the
+          # action you need, `v11` in this case to stay up
+          # to date with fixes on the v11 branch.
+        with:
+          doNotCache: false
 
-    - name: Test
-      # Execute tests defined by the CMake configuration.
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest --preset=default -C ${{env.BUILD_TYPE}}
+      - name: Configure CMake
+        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+        run: cmake --preset=default -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
+      - name: Build
+        # Build your program with the given configuration
+        run: |
+          cmake --build --preset=default --config ${{env.BUILD_TYPE}} --target SmartCharsetConverter
+          cmake --build --preset=default --config ${{env.BUILD_TYPE}} --target CoreUnitTest
+
+      - name: Test
+        # Execute tests defined by the CMake configuration.
+        # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+        run: ctest --preset=default -C ${{env.BUILD_TYPE}}
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artifacts
+          path: build/Release/SmartCharsetConverter.exe
+
+  # 只有在创建标签时才执行发布操作
+  release:
+    needs: build-and-test
+    if: github.event_name == 'create' && startsWith(github.ref, 'refs/tags/')
+    runs-on: windows-latest
+
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build-artifacts
+          path: ./
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: SmartCharsetConverter ${{github.ref_name}}
+          fail_on_unmatched_files: true
+          draft: true
+          files: |
+            ./SmartCharsetConverter.exe

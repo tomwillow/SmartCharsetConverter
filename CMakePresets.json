@@ -2,7 +2,7 @@
 	"version": 4,
 	"configurePresets": [{
 			"name": "default",
-			"binaryDir": "${sourceDir}/../build_SmartCharsetConverter",
+			"binaryDir": "${sourceDir}/build",
 			"cacheVariables": {
 				"VCPKG_TARGET_TRIPLET": "x64-windows-static",
 				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
