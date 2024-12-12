@@ -31,6 +31,9 @@ find_package(nlohmann_json CONFIG REQUIRED)
 
 # 添加uchardet库
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/uchardet/uchardet)
+target_compile_options(uchardet PRIVATE /WX)
+#target_compile_options(libuchardet PRIVATE /W0)
+#target_compile_options(libuchardet_static PRIVATE /W0)
 
 # 添加icu库
 find_package(ICU REQUIRED
