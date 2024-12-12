@@ -48,27 +48,10 @@ jobs:
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
         run: ctest --preset=default -C ${{env.BUILD_TYPE}}
 
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: build-artifacts
-          path: build/Release/SmartCharsetConverter.exe
-
-  # 只有在创建标签时才执行发布操作
-  release:
-    needs: build-and-test
-    if: github.event_name == 'create' && startsWith(github.ref, 'refs/tags/')
-    runs-on: windows-latest
-
-    steps:
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: build-artifacts
-          path: ./
-
       - name: Release
         uses: softprops/action-gh-release@v2
+        # 只有在创建标签时才执行发布操作
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           name: SmartCharsetConverter ${{github.ref_name}}
           fail_on_unmatched_files: true
