@@ -48,13 +48,24 @@ jobs:
         # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
         run: ctest --preset=default -C ${{env.BUILD_TYPE}}
 
-      - name: Release
-        uses: softprops/action-gh-release@v2
+      - name: Prepare to Release
         # 只有在创建标签时才执行发布操作
-        if: startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'create' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          cd ${{github.workspace}}/scripts
+          python extract_change_log.py --tag=${{github.ref_name}}
+          cd ${{github.workspace}}/build/Release
+          mv SmartCharsetConverter.exe 'SmartCharsetConverter ${{github.ref_name}}.exe'
+          Compress-Archive -Path 'SmartCharsetConverter ${{github.ref_name}}.exe' -DestinationPath 'SmartCharsetConverter ${{github.ref_name}}.zip'
+
+      - name: Release
+        # 只有在创建标签时才执行发布操作
+        if: github.event_name == 'create' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
         with:
           name: SmartCharsetConverter ${{github.ref_name}}
           fail_on_unmatched_files: true
           draft: true
+          body_path: ./build/CHANGELOG.txt
           files: |
-            ./SmartCharsetConverter.exe
+            ./build/Release/SmartCharsetConverter ${{github.ref_name}}.zip

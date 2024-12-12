@@ -61,6 +61,7 @@ v0.81 增加西班牙语支持(感谢[Carlos Sánchez](https://github.com/c-sanc
 v0.82 现在手动指定字符集会检查是否丢失字符。
 v0.9 支持多个越南语字符集的转换：VNI/VPS/VISICII/TCVN3
 v0.9.1 bugfix: 修复由于截取字符片段导致的"ucnv error. code=11"出错。
+v0.9.2 现在可以支持Win7 x64系统了。现在程序编译出来只有一个单exe文件了。
 
 # 构建方法
 

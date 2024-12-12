@@ -62,6 +62,7 @@ v0.81 Add Spanish language pack support (thanks to [Carlos Sánchez](https://git
 v0.82 Check if characters will be lost when specifying encoding manually.
 v0.9 Support multiple Vietnamese charset converting: VNI/VPS/VISICII/TCVN3
 v0.9.1 bugfix: fixed the error of "ucnv error. code=11" due to invalid trucated string piece.
+v0.9.2 Support Win7 x64 OS. Compiles into a single exe file.
 
 # Build
 

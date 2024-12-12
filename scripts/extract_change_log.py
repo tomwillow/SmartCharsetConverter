@@ -1,6 +1,16 @@
 import argparse
 import os
 import re
+import sys
+
+# 设置 Python 的默认编码为 utf-8
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')  # this works
+else:
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
 SELF_DIR = os.path.split(os.path.realpath(__file__))[0].replace("\\", "/")
 SELF_BASENAME = os.path.split(os.path.realpath(__file__))[1]
