@@ -41,43 +41,26 @@ Precisely because the biggest problem of character set detection is solved, all 
 # Version
 
 v0.1 Implements basic functions: can detect charset and convert
-
 v0.2 Add windows-1252 support. Add the option of "No Filter Files" and "Smart File Detection".
-
 v0.3 "Add Folder" can now remember the last selected path. The list box now supports dragging in files and folders.
-
 v0.4 Fix the bug "Reason: ucnv error. code=15". Added ISO-8859-1 support.
-
 v0.41 Fix the bug where only BOM text recognition is wrong. Now empty text will not report an error.
-
 v0.5 Now you can cancel midway when dragging a large number of files to the list box. Now you can click the Cancel button during the conversion.
-
 v0.51 Add multiple supported charset: Big5, SHIFT-JIS, etc.
-
 v0.6 Check if characters will be lost when converting.
-
 v0.61 Select "No File Filter" mode to forcely join files. Right-click items in the list box can select Original Encoding.
-
 v0.62 Support dragging files/folders to the program icon.
-
 v0.7 Support command line. Use $ ./SmartCharsetConverter --help to view the command line parameters.
-
 v0.71 Fix the bug that the command line not work.
-
 v0.72 solves the problem of getting stuck when adding large files (only the first 100KB of the file is detected).
 The extension filter mode now supports more patterns (supports separation by `*.` `.` `space` `|`). Fixed other issues with extension filtering mode.
-
 v0.8 Rearrange the interface (thanks to [Carlos Sánchez](https://github.com/c-sanchez)).
 Add configuration file, and changing settings will trigger the saving of configuration file.
 Support multiple languages (built-in Simplified Chinese and English).
 Add multi-language selection(to click "hammer" button - Language).
-
 v0.81 Add Spanish language pack support (thanks to [Carlos Sánchez](https://github.com/c-sanchez)).
-
 v0.82 Check if characters will be lost when specifying encoding manually.
-
 v0.9 Support multiple Vietnamese charset converting: VNI/VPS/VISICII/TCVN3
-
 v0.9.1 bugfix: fixed the error of "ucnv error. code=11" due to invalid trucated string piece.
 
 # Build
