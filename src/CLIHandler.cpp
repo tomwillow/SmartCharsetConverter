@@ -249,7 +249,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
         }
 
         if (setTargetLineBreak) {
-            ssOutput << L"目标换行符：" << lineBreaksMap.at(core.GetConfig().lineBreak) << L"\n";
+            ssOutput << L"目标换行符：" << LineBreaksToViewName(core.GetConfig().lineBreak) << L"\n";
         }
     }
 
@@ -306,7 +306,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
         if (ret.errInfo.has_value()) {
             wcout << L"  大小: " << FileSizeToTString(addedItem.filesize) << L"\n";
             wcout << L"  字符集: " << ToViewCharsetName(addedItem.srcCharset) << L"\n";
-            wcout << L"  换行符: " << lineBreaksMap.at(addedItem.srcLineBreak) << L"\n";
+            wcout << L"  换行符: " << LineBreaksToViewName(addedItem.srcLineBreak) << L"\n";
             SetConsoleColor(ConsoleColor::RED);
             wcerr << L"转换失败。原因: " << utf8_to_wstring(ret.errInfo.value()) << L"\n";
             wcerr << L"\n";
@@ -322,12 +322,12 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
         wcout << ToViewCharsetName(core.GetConfig().outputCharset) << L"\n";
         SetConsoleColor();
 
-        wcout << L"  换行符: " << lineBreaksMap.at(addedItem.srcLineBreak);
+        wcout << L"  换行符: " << LineBreaksToViewName(addedItem.srcLineBreak);
 
         if (setTargetLineBreak) {
             wcout << L" -> ";
             SetConsoleColor(ConsoleColor::GREEN);
-            wcout << lineBreaksMap.at(core.GetConfig().lineBreak) << L"\n";
+            wcout << LineBreaksToViewName(core.GetConfig().lineBreak) << L"\n";
             SetConsoleColor();
         } else {
             wcout << L"\n";

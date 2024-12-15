@@ -25,7 +25,7 @@ std::u16string Decode(std::string_view src, CharsetCode code) {
         return {};
     }
 
-    if (charsetCodeMap.at(code).isVietnameseLocalCharset) {
+    if (IsVietnameseLocalCharset(code)) {
         viet::Init();
         return viet::ConvertToUtf16LE(src, CharsetCodeToVietEncoding(code));
     }
@@ -159,7 +159,7 @@ U_CAPI void U_EXPORT2 flagCB_fromU(const void *context, UConverterFromUnicodeArg
 }
 
 std::string Encode(std::u16string_view src, CharsetCode targetCode) {
-    if (charsetCodeMap.at(targetCode).isVietnameseLocalCharset) {
+    if (IsVietnameseLocalCharset(targetCode)) {
         viet::Init();
         return viet::ConvertFromUtf16LE(src, CharsetCodeToVietEncoding(targetCode));
     }
@@ -412,7 +412,7 @@ void Core::SpecifyItemCharset(int index, const std::tstring &filename, CharsetCo
     auto wholeUtfStr = Decode(std::string_view(buf.get(), bufSize), charsetCode);
     auto lineBreak = GetLineBreaks(wholeUtfStr.data(), wholeUtfStr.size());
 
-    auto lineBreakStr = lineBreaksMap.at(lineBreak);
+    auto lineBreakStr = LineBreaksToViewName(lineBreak);
 
     // 到达这里不会再抛异常了
 
