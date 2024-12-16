@@ -28,15 +28,61 @@ enum class CharsetCode {
     GB18030,
     BIG5,
     SHIFT_JIS,
+
     EUC_JP,
+    EUC_TW,
+
+    WINDOWS_1250,
+    WINDOWS_1251,
     WINDOWS_1252,
+    WINDOWS_1253,
+    WINDOWS_1254,
+    WINDOWS_1255,
+    WINDOWS_1256,
+    WINDOWS_1257,
     WINDOWS_1258, // Vietnamese
     ISO_8859_1,
+    ISO_8859_2,
+    ISO_8859_3,
+    ISO_8859_4,
+    ISO_8859_5,
+    ISO_8859_6,
+    ISO_8859_7,
+    ISO_8859_8,
+    ISO_8859_9,
+    ISO_8859_10,
+    ISO_8859_11,
+    ISO_8859_12,
+    ISO_8859_13,
+    ISO_8859_14,
+    ISO_8859_15,
+    ISO_8859_16,
+    ISO_2022_JP,
+    ISO_2022_KR,
+
+    IBM852,
+    IBM855,
+    IBM865,
+    IBM862_LOGICAL,
+    IBM862_VISUAL,
+    IBM866,
+
+    CP737,
+
+    MAC_CENTRALEUROPE,
+    MAC_CYRILLIC,
 
     VNI,    // Vietnamese
     VPS,    // Vietnamese
     VISCII, // Vietnamese
     TCVN3,  // Vietnamese
+
+    GEORGIAN_ACADEMY,
+    GEORGIAN_PS,
+    JOHAB,
+    UHC,
+    KOI8_R,
+    TIS_620,
 
     CHARSET_CODE_END
 
