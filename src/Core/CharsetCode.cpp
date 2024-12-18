@@ -80,12 +80,12 @@ const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
     {CharsetCode::VISCII, MyCharset{TEXT("VISCII"), "", {}, true}},
     {CharsetCode::TCVN3, MyCharset{TEXT("TCVN3"), "", {}, true}},
 
-    {CharsetCode::GEORGIAN_ACADEMY, MyCharset{TEXT("georgian-academy"), "georgian-academy", {}, true}},
-    {CharsetCode::GEORGIAN_PS, MyCharset{TEXT("georgian-ps"), "georgian-ps", {}, true}},
-    {CharsetCode::JOHAB, MyCharset{TEXT("JOHAB"), "JOHAB", {}, true}},
-    {CharsetCode::UHC, MyCharset{TEXT("UHC"), "UHC", {}, true}},
-    {CharsetCode::KOI8_R, MyCharset{TEXT("koi8-r"), "koi8-r", {}, true}},
-    {CharsetCode::TIS_620, MyCharset{TEXT("tis-620"), "tis-620", {}, true}},
+    {CharsetCode::GEORGIAN_ACADEMY, MyCharset{TEXT("georgian-academy"), "georgian-academy", {}, false}},
+    {CharsetCode::GEORGIAN_PS, MyCharset{TEXT("georgian-ps"), "georgian-ps", {}, false}},
+    {CharsetCode::JOHAB, MyCharset{TEXT("JOHAB"), "JOHAB", {}, false}},
+    {CharsetCode::UHC, MyCharset{TEXT("UHC"), "UHC", {}, false}},
+    {CharsetCode::KOI8_R, MyCharset{TEXT("koi8-r"), "koi8-r", {}, false}},
+    {CharsetCode::TIS_620, MyCharset{TEXT("tis-620"), "tis-620", {}, false}},
 };
 
 std::tstring ToViewCharsetName(CharsetCode code) noexcept {
