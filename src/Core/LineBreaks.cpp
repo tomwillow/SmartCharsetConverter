@@ -6,8 +6,8 @@
 
 // LineBreaks类型到字符串的映射表
 const doublemap<LineBreaks, std::tstring> lineBreaksMap = {
-    {LineBreaks::CRLF, TEXT("CRLF")}, {LineBreaks::LF, TEXT("LF")},    {LineBreaks::CR, TEXT("CR")},
-    {LineBreaks::EMPTY, TEXT("")},    {LineBreaks::MIX, TEXT("混合")}, {LineBreaks::UNKNOWN, TEXT("未知")}};
+    {LineBreaks::CRLF, TEXT("CRLF")}, {LineBreaks::LF, TEXT("LF")},          {LineBreaks::CR, TEXT("CR")},
+    {LineBreaks::EMPTY, TEXT("")},    {LineBreaks::MIX, TEXT("N/A(Mixed)")}, {LineBreaks::UNKNOWN, TEXT("Unknown")}};
 
 std::tstring LineBreaksToViewName(LineBreaks linebreaks) noexcept {
     return lineBreaksMap.at(linebreaks);

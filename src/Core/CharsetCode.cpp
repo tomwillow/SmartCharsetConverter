@@ -14,9 +14,9 @@ struct MyCharset {
 // 字符集code到名称的映射表
 const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
     // CharsetCode枚举值, viewName显示名称, icuName, 可能的别名
-    {CharsetCode::UNKNOWN, MyCharset{TEXT("未知"), "-", {}, false}},
-    {CharsetCode::EMPTY, MyCharset{TEXT("空"), "-", {}, false}},
-    {CharsetCode::NOT_SUPPORTED, MyCharset{TEXT("不支持"), "-", {}, false}},
+    {CharsetCode::UNKNOWN, MyCharset{TEXT("Unknown"), "-", {}, false}},
+    {CharsetCode::EMPTY, MyCharset{TEXT("-"), "-", {}, false}},
+    {CharsetCode::NOT_SUPPORTED, MyCharset{TEXT("Not Supported"), "-", {}, false}},
     {CharsetCode::UTF8, MyCharset{TEXT("UTF-8"), "UTF-8", {"ASCII", "ANSI", "UTF8"}, false}},
     {CharsetCode::UTF8BOM, MyCharset{TEXT("UTF-8 BOM"), "UTF-8", {}, false}},
     {CharsetCode::GB18030, MyCharset{TEXT("GB18030"), "GB18030", {"GB"}, false}},
