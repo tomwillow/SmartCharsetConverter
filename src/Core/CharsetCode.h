@@ -89,6 +89,13 @@ enum class CharsetCode {
     // 添加字符集需要同步修改：charsetCodeMap
 };
 
+enum class ConvertEngine {
+    ICU,
+    SELF_VIETNAMESE_CONVERTER,
+
+    END,
+};
+
 std::tstring ToViewCharsetName(CharsetCode code) noexcept;
 
 /**
@@ -116,4 +123,4 @@ int BomSize(CharsetCode code);
  */
 CharsetCode CheckBom(char *buf, int bufSize);
 
-bool IsVietnameseLocalCharset(CharsetCode code) noexcept;
+ConvertEngine GetConvertEngine(CharsetCode code) noexcept;

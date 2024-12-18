@@ -25,35 +25,40 @@ std::u16string Decode(std::string_view src, CharsetCode code) {
         return {};
     }
 
-    if (IsVietnameseLocalCharset(code)) {
+    switch (GetConvertEngine(code)) {
+    case ConvertEngine::SELF_VIETNAMESE_CONVERTER: {
         viet::Init();
         return viet::ConvertToUtf16LE(src, CharsetCodeToVietEncoding(code));
     }
+    case ConvertEngine::ICU: {
+        // 从code转换到icu的字符集名称
+        auto icuCharsetName = ToICUCharsetName(code);
 
-    // 从code转换到icu的字符集名称
-    auto icuCharsetName = ToICUCharsetName(code);
+        UErrorCode err = U_ZERO_ERROR;
 
-    UErrorCode err = U_ZERO_ERROR;
+        // 打开转换器
+        unique_ptr<UConverter, function<void(UConverter *)>> conv(ucnv_open(to_string(icuCharsetName).c_str(), &err),
+                                                                  [](UConverter *p) {
+                                                                      ucnv_close(p);
+                                                                  });
+        DealWithUCNVError(err);
 
-    // 打开转换器
-    unique_ptr<UConverter, function<void(UConverter *)>> conv(ucnv_open(to_string(icuCharsetName).c_str(), &err),
-                                                              [](UConverter *p) {
-                                                                  ucnv_close(p);
-                                                              });
-    DealWithUCNVError(err);
+        std::size_t cap = src.size() + 1;
+        std::u16string target(cap, u'\u0000');
 
-    std::size_t cap = src.size() + 1;
-    std::u16string target(cap, u'\u0000');
+        ucnv_setToUCallBack(conv.get(), UCNV_TO_U_CALLBACK_STOP, NULL, NULL, NULL, &err);
+        DealWithUCNVError(err);
 
-    ucnv_setToUCallBack(conv.get(), UCNV_TO_U_CALLBACK_STOP, NULL, NULL, NULL, &err);
-    DealWithUCNVError(err);
+        // 解码
+        int retLen = ucnv_toUChars(conv.get(), target.data(), cap, src.data(), src.size(), &err);
+        target.resize(retLen);
+        DealWithUCNVError(err);
 
-    // 解码
-    int retLen = ucnv_toUChars(conv.get(), target.data(), cap, src.data(), src.size(), &err);
-    target.resize(retLen);
-    DealWithUCNVError(err);
-
-    return target;
+        return target;
+    }
+    default:
+        assert(0);
+    }
 }
 
 std::u16string DecodeToLimitBytes(std::string_view src, uint64_t maxInputBytes, CharsetCode code) {
@@ -159,65 +164,70 @@ U_CAPI void U_EXPORT2 flagCB_fromU(const void *context, UConverterFromUnicodeArg
 }
 
 std::string Encode(std::u16string_view src, CharsetCode targetCode) {
-    if (IsVietnameseLocalCharset(targetCode)) {
+    switch (GetConvertEngine(targetCode)) {
+    case ConvertEngine::SELF_VIETNAMESE_CONVERTER: {
         viet::Init();
         return viet::ConvertFromUtf16LE(src, CharsetCodeToVietEncoding(targetCode));
     }
+    case ConvertEngine::ICU: {
+        // 从code转换到icu的字符集名称
+        auto icuCharsetName = ToICUCharsetName(targetCode);
 
-    // 从code转换到icu的字符集名称
-    auto icuCharsetName = ToICUCharsetName(targetCode);
+        UErrorCode err = U_ZERO_ERROR;
 
-    UErrorCode err = U_ZERO_ERROR;
-
-    // 打开转换器
-    unique_ptr<UConverter, function<void(UConverter *)>> conv(ucnv_open(to_string(icuCharsetName).c_str(), &err),
-                                                              [](UConverter *p) {
-                                                                  ucnv_close(p);
-                                                              });
-    DealWithUCNVError(err);
-
-    int32_t destCap = src.size() * sizeof(UChar) + 2;
-    std::string target(destCap, '\0');
-
-    FromUFLAGContext *context = new FromUFLAGContext; // 由回调函数管理生命期
-
-    /* Set our special callback */
-    ucnv_setFromUCallBack(conv.get(), flagCB_fromU, context, &(context->subCallback), &(context->subContext), &err);
-    DealWithUCNVError(err);
-
-    // 编码
-    int retLen;
-    while (1) {
-        err = U_ZERO_ERROR;
-        retLen = ucnv_fromUChars(conv.get(), target.data(), destCap, src.data(), src.size(), &err);
-        if (err == U_BUFFER_OVERFLOW_ERROR || err == U_STRING_NOT_TERMINATED_WARNING) {
-            destCap = retLen + 6; // 增加一个尾后0的大小：utf-8 单个字符最大占用字节数
-            target.resize(destCap);
-            continue;
-        }
+        // 打开转换器
+        unique_ptr<UConverter, function<void(UConverter *)>> conv(ucnv_open(to_string(icuCharsetName).c_str(), &err),
+                                                                  [](UConverter *p) {
+                                                                      ucnv_close(p);
+                                                                  });
         DealWithUCNVError(err);
-        if (err == U_ZERO_ERROR) {
-            target.resize(retLen);
-            break;
+
+        int32_t destCap = src.size() * sizeof(UChar) + 2;
+        std::string target(destCap, '\0');
+
+        FromUFLAGContext *context = new FromUFLAGContext; // 由回调函数管理生命期
+
+        /* Set our special callback */
+        ucnv_setFromUCallBack(conv.get(), flagCB_fromU, context, &(context->subCallback), &(context->subContext), &err);
+        DealWithUCNVError(err);
+
+        // 编码
+        int retLen;
+        while (1) {
+            err = U_ZERO_ERROR;
+            retLen = ucnv_fromUChars(conv.get(), target.data(), destCap, src.data(), src.size(), &err);
+            if (err == U_BUFFER_OVERFLOW_ERROR || err == U_STRING_NOT_TERMINATED_WARNING) {
+                destCap = retLen + 6; // 增加一个尾后0的大小：utf-8 单个字符最大占用字节数
+                target.resize(destCap);
+                continue;
+            }
+            DealWithUCNVError(err);
+            if (err == U_ZERO_ERROR) {
+                target.resize(retLen);
+                break;
+            }
         }
+
+        // 如果存在不能转换的字符，那么抛出异常
+        if (!context->unassigned.empty()) {
+            context->unassigned.push_back(0);
+            UChar32 *s = context->unassigned.data();
+
+            // UTF32LE -> UTF16LE
+            std::u16string temp = Decode(std::string_view(reinterpret_cast<char *>(s), context->unassigned.size() * 4),
+                                         CharsetCode::UTF32LE);
+
+            // UTF16LE -> UTF8
+            std::string ret = Encode(temp, CharsetCode::UTF8);
+
+            throw UnassignedCharError(ret);
+        }
+
+        return target;
     }
-
-    // 如果存在不能转换的字符，那么抛出异常
-    if (!context->unassigned.empty()) {
-        context->unassigned.push_back(0);
-        UChar32 *s = context->unassigned.data();
-
-        // UTF32LE -> UTF16LE
-        std::u16string temp =
-            Decode(std::string_view(reinterpret_cast<char *>(s), context->unassigned.size() * 4), CharsetCode::UTF32LE);
-
-        // UTF16LE -> UTF8
-        std::string ret = Encode(temp, CharsetCode::UTF8);
-
-        throw UnassignedCharError(ret);
+    default:
+        assert(0);
     }
-
-    return target;
 }
 
 std::string Convert(std::string_view src, ConvertParam inputParam) {
