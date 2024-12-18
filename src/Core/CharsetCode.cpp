@@ -55,11 +55,12 @@ const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
     {CharsetCode::ISO_8859_9, MyCharset{TEXT("ISO-8859-9"), "ISO-8859-9", {}, ConvertEngine::ICU}},
     {CharsetCode::ISO_8859_10, MyCharset{TEXT("ISO-8859-10"), "ISO-8859-10", {}, ConvertEngine::ICU}},
     {CharsetCode::ISO_8859_11, MyCharset{TEXT("ISO-8859-11"), "ISO-8859-11", {}, ConvertEngine::ICU}},
-    {CharsetCode::ISO_8859_12, MyCharset{TEXT("ISO-8859-12"), "ISO-8859-12", {}, ConvertEngine::ICU}},
+    //{CharsetCode::ISO_8859_12, MyCharset{TEXT("ISO-8859-12"), "ISO-8859-12", {}, ConvertEngine::ICU}},   // no this
+    // charset due to history reason
     {CharsetCode::ISO_8859_13, MyCharset{TEXT("ISO-8859-13"), "ISO-8859-13", {}, ConvertEngine::ICU}},
     {CharsetCode::ISO_8859_14, MyCharset{TEXT("ISO-8859-14"), "ISO-8859-14", {}, ConvertEngine::ICU}},
     {CharsetCode::ISO_8859_15, MyCharset{TEXT("ISO-8859-15"), "ISO-8859-15", {}, ConvertEngine::ICU}},
-    {CharsetCode::ISO_8859_16, MyCharset{TEXT("ISO-8859-16"), "ISO-8859-16", {}, ConvertEngine::ICU}},
+    //{CharsetCode::ISO_8859_16, MyCharset{TEXT("ISO-8859-16"), "latin-10", {"latin-10"}, ConvertEngine::ICU}},
     {CharsetCode::ISO_2022_JP, MyCharset{TEXT("ISO-2022-jp"), "ISO-2022-jp", {}, ConvertEngine::ICU}},
     {CharsetCode::ISO_2022_KR, MyCharset{TEXT("ISO-2022-kr"), "ISO-2022-kr", {}, ConvertEngine::ICU}},
 

@@ -52,11 +52,11 @@ enum class CharsetCode {
     ISO_8859_9,
     ISO_8859_10,
     ISO_8859_11,
-    ISO_8859_12,
+    // ISO_8859_12,  // no this charset due to history reason
     ISO_8859_13,
     ISO_8859_14,
     ISO_8859_15,
-    ISO_8859_16,
+    // ISO_8859_16,
     ISO_2022_JP,
     ISO_2022_KR,
 
