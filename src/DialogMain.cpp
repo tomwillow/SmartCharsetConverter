@@ -490,7 +490,7 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
                                  FileSizeToTString(convertResult.outputFileSize).c_str());
             listview.SetItemText(i, static_cast<int>(ListViewColumn::ENCODING), ToViewCharsetName(targetCode).c_str());
             listview.SetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK),
-                                 lineBreaksMap.at(convertResult.targetLineBreaks).c_str());
+                                 LineBreaksToViewName(convertResult.targetLineBreaks).c_str());
         });
     }
 
@@ -698,7 +698,8 @@ LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, H
     for (int i = 0; i < listview.GetItemCount(); ++i) {
         auto filename = listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME));
         auto originCode = ToCharsetCode(listview.GetItemText(i, static_cast<int>(ListViewColumn::ENCODING)));
-        auto originLineBreak = lineBreaksMap.at(listview.GetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK)));
+        auto originLineBreak =
+            ViewNameToLineBreaks(listview.GetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK)));
         items.push_back({filename, originCode, originLineBreak});
     }
 
@@ -967,7 +968,7 @@ void DialogMain::AppendListViewItem(std::wstring filename, uint64_t fileSize, Ch
     listview.AddItem(count, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
     listview.AddItem(count, static_cast<int>(ListViewColumn::FILESIZE), FileSizeToTString(fileSize).c_str());
     listview.AddItem(count, static_cast<int>(ListViewColumn::ENCODING), ToViewCharsetName(charset).c_str());
-    listview.AddItem(count, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreaksMap.at(lineBreak).c_str());
+    listview.AddItem(count, static_cast<int>(ListViewColumn::LINE_BREAK), LineBreaksToViewName(lineBreak).c_str());
     listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE),
                      reinterpret_cast<const wchar_t *>(textPiece.c_str()));
 

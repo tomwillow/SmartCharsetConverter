@@ -28,58 +28,72 @@ enum class CharsetCode {
     GB18030,
     BIG5,
     SHIFT_JIS,
+
     EUC_JP,
+    EUC_TW,
+
+    WINDOWS_1250,
+    WINDOWS_1251,
     WINDOWS_1252,
+    WINDOWS_1253,
+    WINDOWS_1254,
+    WINDOWS_1255,
+    WINDOWS_1256,
+    WINDOWS_1257,
     WINDOWS_1258, // Vietnamese
     ISO_8859_1,
+    ISO_8859_2,
+    ISO_8859_3,
+    ISO_8859_4,
+    ISO_8859_5,
+    ISO_8859_6,
+    ISO_8859_7,
+    ISO_8859_8,
+    ISO_8859_9,
+    ISO_8859_10,
+    ISO_8859_11,
+    // ISO_8859_12,  // no this charset due to history reason
+    ISO_8859_13,
+    ISO_8859_14,
+    ISO_8859_15,
+    // ISO_8859_16,
+    ISO_2022_JP,
+    ISO_2022_KR,
+
+    IBM852,
+    IBM855,
+    IBM865,
+    IBM862_LOGICAL,
+    IBM862_VISUAL,
+    IBM866,
+
+    CP737,
+
+    MAC_CENTRALEUROPE,
+    MAC_CYRILLIC,
 
     VNI,    // Vietnamese
     VPS,    // Vietnamese
     VISCII, // Vietnamese
     TCVN3,  // Vietnamese
 
+    GEORGIAN_ACADEMY,
+    GEORGIAN_PS,
+    JOHAB,
+    UHC,
+    KOI8_R,
+    TIS_620,
+
     CHARSET_CODE_END
 
     // 添加字符集需要同步修改：charsetCodeMap
 };
 
-struct MyCharset {
-    std::tstring viewName; // the name shown on interface
-    std::string icuName;   // the name used by icu
-    std::unordered_set<std::string>
-        icuNames; // if icu detected these charset names, map all of them to be the main charset
-    bool isVietnameseLocalCharset;
-};
+enum class ConvertEngine {
+    ICU,
+    SELF_VIETNAMESE_CONVERTER,
 
-// 字符集code到名称的映射表
-const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
-    // CharsetCode枚举值, viewName显示名称, icuName, 可能的别名
-    {CharsetCode::UNKNOWN, MyCharset{TEXT("未知"), "-", {}, false}},
-    {CharsetCode::EMPTY, MyCharset{TEXT("空"), "-", {}, false}},
-    {CharsetCode::NOT_SUPPORTED, MyCharset{TEXT("不支持"), "-", {}, false}},
-    {CharsetCode::UTF8, MyCharset{TEXT("UTF-8"), "UTF-8", {"ASCII", "ANSI", "UTF8"}, false}},
-    {CharsetCode::UTF8BOM, MyCharset{TEXT("UTF-8 BOM"), "UTF-8", {}, false}},
-    {CharsetCode::GB18030, MyCharset{TEXT("GB18030"), "GB18030", {"GB"}, false}},
-
-    {CharsetCode::UTF16LE, MyCharset{TEXT("UTF-16LE"), "UTF-16LE", {}, false}},
-    {CharsetCode::UTF16LEBOM, MyCharset{TEXT("UTF-16LE BOM"), "UTF-16LE", {}, false}},
-    {CharsetCode::UTF16BE, MyCharset{TEXT("UTF-16BE"), "UTF-16BE", {}, false}},
-    {CharsetCode::UTF16BEBOM, MyCharset{TEXT("UTF-16BE BOM"), "UTF-16BE", {}, false}},
-    {CharsetCode::UTF32LE, MyCharset{TEXT("UTF-32LE"), "UTF-32LE", {}, false}},
-    {CharsetCode::UTF32LEBOM, MyCharset{TEXT("UTF-32LE BOM"), "UTF-32LE", {}, false}},
-    {CharsetCode::UTF32BE, MyCharset{TEXT("UTF-32BE"), "UTF-32BE", {}, false}},
-    {CharsetCode::UTF32BEBOM, MyCharset{TEXT("UTF-32BE BOM"), "UTF-32BE", {}, false}},
-    {CharsetCode::BIG5, MyCharset{TEXT("BIG5"), "Big5", {"Big5"}, false}},
-    {CharsetCode::SHIFT_JIS, MyCharset{TEXT("SHIFT-JIS"), "SHIFT-JIS", {"SHIFT_JIS"}, false}},
-    {CharsetCode::EUC_JP, MyCharset{TEXT("EUC-JP"), "EUC-JP", {"EUC-JP"}, false}},
-    {CharsetCode::WINDOWS_1252, MyCharset{TEXT("WINDOWS-1252"), "WINDOWS-1252", {}, false}},
-    {CharsetCode::WINDOWS_1258, MyCharset{TEXT("WINDOWS-1258"), "WINDOWS-1258", {}, false}},
-    {CharsetCode::ISO_8859_1, MyCharset{TEXT("ISO-8859-1"), "ISO-8859-1", {}, false}},
-
-    {CharsetCode::VNI, MyCharset{TEXT("VNI"), "", {}, true}},
-    {CharsetCode::VPS, MyCharset{TEXT("VPS"), "", {}, true}},
-    {CharsetCode::VISCII, MyCharset{TEXT("VISCII"), "", {}, true}},
-    {CharsetCode::TCVN3, MyCharset{TEXT("TCVN3"), "", {}, true}},
+    END,
 };
 
 std::tstring ToViewCharsetName(CharsetCode code) noexcept;
@@ -108,3 +122,5 @@ int BomSize(CharsetCode code);
  * @brief 返回buf的开头是否符合某种BOM，如果都不符合返回UNKNOWN
  */
 CharsetCode CheckBom(char *buf, int bufSize);
+
+ConvertEngine GetConvertEngine(CharsetCode code) noexcept;
