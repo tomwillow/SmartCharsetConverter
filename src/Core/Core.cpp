@@ -180,6 +180,9 @@ std::string Encode(std::u16string_view src, CharsetCode targetCode) {
                                                                   [](UConverter *p) {
                                                                       ucnv_close(p);
                                                                   });
+        if (err == 4) {
+            throw ucnv_error(err, u8"ICU does not support: " + icuCharsetName);
+        }
         DealWithUCNVError(err);
 
         int32_t destCap = src.size() * sizeof(UChar) + 2;
