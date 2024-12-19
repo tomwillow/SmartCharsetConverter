@@ -60,15 +60,15 @@ const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
     {CharsetCode::ISO_8859_13, MyCharset{TEXT("ISO-8859-13"), "ISO-8859-13", {}, ConvertEngine::ICU}},
     {CharsetCode::ISO_8859_14, MyCharset{TEXT("ISO-8859-14"), "ISO-8859-14", {}, ConvertEngine::ICU}},
     {CharsetCode::ISO_8859_15, MyCharset{TEXT("ISO-8859-15"), "ISO-8859-15", {}, ConvertEngine::ICU}},
-    //{CharsetCode::ISO_8859_16, MyCharset{TEXT("ISO-8859-16"), "latin-10", {"latin-10"}, ConvertEngine::ICU}},
+    {CharsetCode::ISO_8859_16, MyCharset{TEXT("ISO-8859-16"), "ISO-8859-16", {"latin-10"}, ConvertEngine::NO_ENGINE}},
     {CharsetCode::ISO_2022_JP, MyCharset{TEXT("ISO-2022-jp"), "ISO-2022-jp", {}, ConvertEngine::ICU}},
     {CharsetCode::ISO_2022_KR, MyCharset{TEXT("ISO-2022-kr"), "ISO-2022-kr", {}, ConvertEngine::ICU}},
 
     {CharsetCode::IBM852, MyCharset{TEXT("ibm852"), "ibm852", {}, ConvertEngine::ICU}},
     {CharsetCode::IBM855, MyCharset{TEXT("ibm855"), "ibm855", {}, ConvertEngine::ICU}},
     {CharsetCode::IBM865, MyCharset{TEXT("ibm865"), "ibm865", {}, ConvertEngine::ICU}},
-    {CharsetCode::IBM862_LOGICAL, MyCharset{TEXT("ibm862.logical"), "ibm862.logical", {}, ConvertEngine::ICU}},
-    {CharsetCode::IBM862_VISUAL, MyCharset{TEXT("ibm862.visual"), "ibm862.visual", {}, ConvertEngine::ICU}},
+    {CharsetCode::IBM862_LOGICAL, MyCharset{TEXT("ibm862.logical"), "ibm862.logical", {}, ConvertEngine::NO_ENGINE}},
+    {CharsetCode::IBM862_VISUAL, MyCharset{TEXT("ibm862.visual"), "ibm862.visual", {}, ConvertEngine::NO_ENGINE}},
     {CharsetCode::IBM866, MyCharset{TEXT("ibm866"), "ibm866", {}, ConvertEngine::ICU}},
 
     {CharsetCode::CP737, MyCharset{TEXT("CP737"), "CP737", {}, ConvertEngine::ICU}},
@@ -82,12 +82,13 @@ const std::unordered_map<CharsetCode, MyCharset> charsetCodeMap = {
     {CharsetCode::VISCII, MyCharset{TEXT("VISCII"), "", {}, ConvertEngine::SELF_VIETNAMESE_CONVERTER}},
     {CharsetCode::TCVN3, MyCharset{TEXT("TCVN3"), "", {}, ConvertEngine::SELF_VIETNAMESE_CONVERTER}},
 
-    {CharsetCode::GEORGIAN_ACADEMY, MyCharset{TEXT("georgian-academy"), "georgian-academy", {}, ConvertEngine::ICU}},
-    {CharsetCode::GEORGIAN_PS, MyCharset{TEXT("georgian-ps"), "georgian-ps", {}, ConvertEngine::ICU}},
-    {CharsetCode::JOHAB, MyCharset{TEXT("JOHAB"), "JOHAB", {}, ConvertEngine::ICU}},
-    {CharsetCode::UHC, MyCharset{TEXT("UHC"), "UHC", {}, ConvertEngine::ICU}},
-    {CharsetCode::KOI8_R, MyCharset{TEXT("koi8-r"), "koi8-r", {}, ConvertEngine::ICU}},
-    {CharsetCode::TIS_620, MyCharset{TEXT("tis-620"), "tis-620", {}, ConvertEngine::ICU}},
+    {CharsetCode::GEORGIAN_ACADEMY,
+     MyCharset{TEXT("georgian-academy"), "georgian-academy", {}, ConvertEngine::NO_ENGINE}},
+    {CharsetCode::GEORGIAN_PS, MyCharset{TEXT("georgian-ps"), "georgian-ps", {}, ConvertEngine::NO_ENGINE}},
+    {CharsetCode::JOHAB, MyCharset{TEXT("JOHAB"), "JOHAB", {}, ConvertEngine::NO_ENGINE}},
+    {CharsetCode::UHC, MyCharset{TEXT("UHC"), "UHC", {}, ConvertEngine::NO_ENGINE}},
+    {CharsetCode::KOI8_R, MyCharset{TEXT("koi8-r"), "koi8-r", {}, ConvertEngine::NO_ENGINE}},
+    {CharsetCode::TIS_620, MyCharset{TEXT("tis-620"), "tis-620", {}, ConvertEngine::NO_ENGINE}},
 };
 
 std::tstring ToViewCharsetName(CharsetCode code) noexcept {
