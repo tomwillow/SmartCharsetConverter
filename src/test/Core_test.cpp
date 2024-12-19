@@ -65,7 +65,7 @@ TEST(Core, DetectEncodingMulti) {
         std::cout << "detect: " << to_utf8(ToViewCharsetName(charsetCode)) << std::endl;
         std::cout << "expected: " << to_utf8(ToViewCharsetName(expectedEncoding)) << std::endl;
         std::cout << std::endl;
-        // EXPECT_EQ(got, expectedEncoding); // not pass now
+        EXPECT_EQ(charsetCode, expectedEncoding);
 
         SetConsoleColor();
     }
