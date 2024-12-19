@@ -56,7 +56,7 @@ enum class CharsetCode {
     ISO_8859_13,
     ISO_8859_14,
     ISO_8859_15,
-    // ISO_8859_16,
+    ISO_8859_16,
     ISO_2022_JP,
     ISO_2022_KR,
 
@@ -92,6 +92,7 @@ enum class CharsetCode {
 enum class ConvertEngine {
     ICU,
     SELF_VIETNAMESE_CONVERTER,
+    NO_ENGINE,
 
     END,
 };
