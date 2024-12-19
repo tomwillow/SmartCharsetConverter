@@ -35,22 +35,27 @@ TEST(Core, uchardet_sample_test) {
     CoreInitOption opt;
     Core core(L"temp.json", opt);
 
+    int passed = 0;
     for (auto [filename, expectedEncoding] : table) {
         auto [buf, len] = ReadFileToBuffer(utf8_to_wstring(filename));
         auto charsetCode = DetectEncoding(core.GetUCharDet().get(), buf.get(), len);
 
         if (charsetCode == expectedEncoding) {
-            SetConsoleColor(ConsoleColor::GREEN);
-        } else {
-            SetConsoleColor(ConsoleColor::RED);
+            passed++;
+            continue;
         }
+
+        SetConsoleColor(ConsoleColor::RED);
         std::cout << std::string(20, '=') << std::endl;
         std::cout << "file: " << filename << std::endl;
         std::cout << "detect: " << to_utf8(ToViewCharsetName(charsetCode)) << std::endl;
         std::cout << "expected: " << to_utf8(ToViewCharsetName(expectedEncoding)) << std::endl;
         std::cout << std::endl;
-        // EXPECT_EQ(charsetCode, expectedEncoding);  // not pass now
 
-        SetConsoleColor();
+        // EXPECT_EQ(charsetCode, expectedEncoding);  // not pass now
     }
+    SetConsoleColor();
+
+    double rate = static_cast<double>(passed) / static_cast<double>(table.size());
+    std::cout << "PASSED: " << rate * 100.0 << "% \n";
 }
