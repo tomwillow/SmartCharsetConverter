@@ -1,11 +1,11 @@
-#include <ControlStyle.h>
+#include <Control/ControlStyle.h>
 
 #include "CLIHandler.h"
 #include "DialogMain.h"
 #include "Common/CommandLineParser.h"
 
-#include <tstring.h>
-#include <ErrorFunction.h>
+#include <Common/tstring.h>
+#include <Common/ErrorFunction.h>
 
 #include <stdexcept>
 #include <filesystem>

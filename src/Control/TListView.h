@@ -1,6 +1,6 @@
 #pragma once
 
-#include <tstring.h>
+#include <Common/tstring.h>
 
 #include <atlbase.h> // 基本的ATL类
 #include <atlwin.h>  // ATL窗口类

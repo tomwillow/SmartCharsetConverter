@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Core/Core.h"
-#include "ThreadPool/ThreadPool.h"
+#include "Common/ThreadPool/ThreadPool.h"
 #include "Control/TMenu.h"
 #include "Core/Language.h"
 
 #include "resource.h"
 
-#include <tstring.h>
-#include <TListView.h>
+#include <Common/tstring.h>
+#include <Control/TListView.h>
 
 #include <atlbase.h> // 基本的ATL类
 #include <atlwin.h>  // ATL窗口类

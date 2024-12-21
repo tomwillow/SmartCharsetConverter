@@ -4,8 +4,8 @@
 #include "Control/TMenu.h"
 #include "Core/Language.h"
 
-#include <tstring.h>
-#include <FileFunction.h>
+#include <Common/tstring.h>
+#include <Common/FileFunction.h>
 
 #include <cassert>
 

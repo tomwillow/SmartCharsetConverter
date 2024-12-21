@@ -1,6 +1,6 @@
 #include "Vietnamese.h"
 
-#include "tstring.h"
+#include "Common/tstring.h"
 
 #include <unordered_map>
 #include <cassert>

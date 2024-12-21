@@ -1,6 +1,6 @@
 #pragma once
 
-#include <tstring.h>
+#include "tstring.h"
 
 #include <chrono>
 
@@ -9,9 +9,10 @@
 #else
 #define LOCALTIME_R(tm, ti) localtime_r(ti, tm)
 #endif
-//#define localtime static_assert("localtime is not thread-safe. considering LOCALTIME_R")
+// #define localtime static_assert("localtime is not thread-safe. considering LOCALTIME_R")
 
-template <typename T> class TimeDuration {
+template <typename T>
+class TimeDuration {
 public:
     TimeDuration() {}
 

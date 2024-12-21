@@ -1,9 +1,9 @@
 #include "CLIHandler.h"
 
 #include "Core/Core.h"
-#include "tstring.h"
-#include "FileFunction.h"
-#include "ConsoleSettings.h"
+#include "Common/tstring.h"
+#include "Common/FileFunction.h"
+#include "Common/ConsoleSettings.h"
 
 #include <guicon/guicon.h>
 
