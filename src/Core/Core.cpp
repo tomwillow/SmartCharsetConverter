@@ -3,6 +3,7 @@
 #include "Language.h"
 #include "Detect.h"
 #include "UCNVHelper.h"
+#include "Exceptions.h"
 
 #include <Common/FileFunction.h>
 
@@ -71,7 +72,7 @@ std::u16string DecodeToLimitBytes(std::string_view src, uint64_t maxInputBytes, 
         try {
             output = Decode(std::string_view(src.data(), use_bytes), code);
             break;
-        } catch (const ucnv_error &err) {
+        } catch (const UCNVError &err) {
             if (use_bytes != src.size() && err.GetErrorCode() == U_TRUNCATED_CHAR_FOUND) {
                 use_bytes--;
                 continue;
@@ -183,7 +184,7 @@ std::string Encode(std::u16string_view src, CharsetCode targetCode) {
                                                                       ucnv_close(p);
                                                                   });
         if (err == 4) {
-            throw ucnv_error(err, u8"ICU does not support: " + icuCharsetName);
+            throw UCNVError(err, u8"ICU does not support: " + icuCharsetName);
         }
         DealWithUCNVError(err);
 

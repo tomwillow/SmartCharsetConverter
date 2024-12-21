@@ -1,4 +1,5 @@
 #include "Vietnamese.h"
+#include "Exceptions.h"
 
 #include "Common/tstring.h"
 
@@ -299,19 +300,6 @@ struct Rune {
 
 std::unordered_map<std::string_view, Rune> utf8ToOthers;
 std::unordered_map<std::u16string_view, Rune> utf16LEToOthers;
-
-ConvertError::ConvertError(std::string content, int position, Encoding srcEncoding, Encoding destEncoding) noexcept
-    : std::runtime_error("parse error"), content(content), position(position), srcEncoding(srcEncoding),
-      destEncoding(destEncoding) {
-    errMsg = std::string("[") + to_string(srcEncoding).data() + "->" + to_string(destEncoding).data() +
-             "] convert error at position " + std::to_string(position);
-    errMsg += "\n";
-    errMsg += "with content:\n";
-    for (auto c : content) {
-        errMsg += "\\x";
-        errMsg += to_hex(c);
-    }
-}
 
 bool &Initialized() noexcept {
     static bool initialized = false;
