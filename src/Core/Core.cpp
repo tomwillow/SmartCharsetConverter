@@ -4,7 +4,7 @@
 #include "Detect.h"
 #include "UCNVHelper.h"
 
-#include <FileFunction.h>
+#include <Common/FileFunction.h>
 
 #include <unicode/ucnv.h>
 #include <unicode/ucsdet.h>

@@ -6,7 +6,7 @@
 #include "Config.h"
 #include "Vietnamese.h"
 
-#include <tstring.h>
+#include <Common/tstring.h>
 
 // third-party lib
 #include <uchardet.h>

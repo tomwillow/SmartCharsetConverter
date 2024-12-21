@@ -1,9 +1,9 @@
 #include "Language.h"
 
-#include "CommandLineParser.h"
-#include "ResourceLoader.h"
+#include <Common/CommandLineParser.h>
+#include <Common/ResourceLoader.h>
 
-#include <tstring.h>
+#include <Common/tstring.h>
 
 // standard
 #include <cassert>
