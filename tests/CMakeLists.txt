@@ -17,7 +17,7 @@ target_link_libraries(CoreUnitTest
 )
 
 # ===========================================
-set(SmartCharsetConverter_TEST_DIR "${PROJECT_SOURCE_DIR}/sample")
+set(SmartCharsetConverter_TEST_DIR u8\"${PROJECT_SOURCE_DIR}/sample\")
 configure_file(config.h.in config.h @ONLY)
 target_include_directories(CoreUnitTest PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 
