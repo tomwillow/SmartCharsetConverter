@@ -66,22 +66,6 @@ inline Encoding to_encoding(std::string_view sv) noexcept {
     return Encoding::UTF8;
 }
 
-class ConvertError : public std::runtime_error {
-public:
-    ConvertError(std::string content, int position, Encoding srcEncoding, Encoding destEncoding) noexcept;
-
-    virtual const char *what() const noexcept override {
-        return errMsg.c_str();
-    }
-
-private:
-    std::string content;
-    int position;
-    Encoding srcEncoding;
-    Encoding destEncoding;
-    std::string errMsg;
-};
-
 /**
  * All FUNCTIONS BELOW SHOULD CALL THIS FIRSTLY.
  */
