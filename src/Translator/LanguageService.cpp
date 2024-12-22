@@ -114,3 +114,7 @@ std::vector<std::string> LanguageService::GetLanguageArray() const noexcept {
     }
     return ret;
 }
+
+std::string LanguageService::MessageIdToString(MessageId mid) const noexcept {
+    return GetUtf8String(static_cast<v0_2::StringId>(mid));
+}

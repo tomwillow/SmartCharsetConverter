@@ -276,7 +276,7 @@ Core::Core(std::tstring configFileName, CoreInitOption opt) : configFileName(con
 #endif
 }
 
-const Configuration &Core::GetConfig() const {
+const Configuration &Core::GetConfig() const noexcept {
     return config;
 }
 
@@ -445,7 +445,7 @@ void Core::Clear() {
 }
 
 Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, CharsetCode originCode,
-                                      LineBreaks originLineBreak) noexcept {
+                                      LineBreaks originLineBreak, TranslatorBase *translator) noexcept {
     CharsetCode targetCode = config.outputCharset;
 
     ConvertFileResult ret;
@@ -577,9 +577,13 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
 
         } while (0);
 
-    } catch (const std::runtime_error &err) {
+    } catch (const MyRuntimeError &err) {
         // 这个文件失败了
-        ret.errInfo = err.what();
+        if (translator) {
+            ret.errInfo = err.ToLocalString(translator);
+        } else {
+            ret.errInfo = err.what();
+        }
     }
 
     // 这个文件成功了
