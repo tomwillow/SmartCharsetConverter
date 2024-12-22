@@ -3,7 +3,7 @@
 
 #include <stdexcept>
 
-// LineBreaksÀàÐÍµ½×Ö·û´®µÄÓ³Éä±í
+// LineBreaksç±»åž‹åˆ°å­—ç¬¦ä¸²çš„æ˜ å°„è¡¨
 const doublemap<LineBreaks, std::tstring> lineBreaksMap = {
     {LineBreaks::CRLF, TEXT("CRLF")}, {LineBreaks::LF, TEXT("LF")},          {LineBreaks::CR, TEXT("CR")},
     {LineBreaks::EMPTY, TEXT("")},    {LineBreaks::MIX, TEXT("N/A(Mixed)")}, {LineBreaks::UNKNOWN, TEXT("Unknown")}};
@@ -16,9 +16,9 @@ LineBreaks ViewNameToLineBreaks(std::tstring viewName) noexcept {
     return lineBreaksMap.at(viewName);
 }
 
-LineBreaks GetLineBreaks(const UChar *buf, int len) {
+LineBreaks GetLineBreaks(const UChar *buf, std::size_t len) {
     LineBreaks ans = LineBreaks::EMPTY;
-    for (int i = 0; i < len;) {
+    for (std::size_t i = 0; i < len;) {
         const UChar &c = buf[i];
         if (c == UChar(u'\r')) {
             // \r\n

@@ -71,7 +71,7 @@ inline Encoding to_encoding(std::string_view sv) noexcept {
  */
 void Init() noexcept;
 
-bool CheckEncoding(const char *str, int len, Encoding encoding) noexcept;
+bool CheckEncoding(const char *str, std::size_t len, Encoding encoding) noexcept;
 bool CheckEncoding(const std::string &str, Encoding encoding) noexcept;
 
 /**

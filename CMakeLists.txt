@@ -9,6 +9,7 @@ project(SmartCharsetConverter)
 add_definitions(-DUNICODE -D_UNICODE)
 
 add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+add_compile_options(-WX)
 
 if(MSVC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")

@@ -351,7 +351,7 @@ void CheckInit() noexcept {
     assert(Initialized() && "viet module is not initialized");
 }
 
-bool CheckEncoding(const char *str, int len, Encoding encoding) noexcept {
+bool CheckEncoding(const char *str, std::size_t len, Encoding encoding) noexcept {
     CheckInit();
     if (encoding == Encoding::VPS || encoding == Encoding::VISCII) {
         const std::unordered_map<char, std::string_view> *dict = nullptr;
@@ -629,7 +629,7 @@ std::string ConvertFromUtf16LE(std::u16string_view utf16Str, Encoding destEncodi
     for (std::size_t i = 0; i < utf16Str.size(); ++i) {
         char16_t c = utf16Str[i];
         if (isascii(c)) {
-            ret += c;
+            ret += static_cast<char>(c); // in ASCII range, this cast is safe whatever which endians(BE or LE)
             continue;
         }
 
