@@ -2,7 +2,6 @@
 
 #include "memory_leak_detection.h"
 
-#include <Core/Language.h>
 #include <Core/Core.h>
 #include <Core/Detect.h>
 #include <Common/FileFunction.h>
@@ -22,7 +21,7 @@ TEST(Core, EncodeWithUnassignedChars) {
         Encode(u"abcdefg小舟从此逝，江海寄余生。asdfghjkl", CharsetCode::WINDOWS_1252);
         FAIL();
     } catch (const UnassignedCharError &err) {
-        ASSERT_EQ(std::string(err.what()), std::string(u8"小舟从此逝，江海寄余生。"));
+        ASSERT_EQ(err.GetUnassignedChar(), std::string(u8"小舟从此逝，江海寄余生。"));
     }
 }
 

@@ -1,34 +1,10 @@
-#include "Language.h"
-
-#include <Common/CommandLineParser.h>
-#include <Common/ResourceLoader.h>
+#include "LanguageService.h"
 
 #include <Common/tstring.h>
-
-// standard
-#include <cassert>
-#include <fstream>
-#include <filesystem>
+#include <Common/ResourceLoader.h>
+#include <Common/CommandLineParser.h>
 
 const char DEFAULT_LANGUAGE[] = u8"English";
-
-/**
- * @exception json解析失败抛出异常
- */
-LanguagePack LoadLanguageFile(const std::wstring &filename) {
-    std::ifstream ifs(to_string(filename));
-    if (!ifs) {
-        throw std::runtime_error("open file fail: " + to_utf8(filename));
-    }
-
-    nlohmann::json j = nlohmann::json::parse(ifs);
-
-    LanguagePack langPack;
-    from_json(j, langPack);
-
-    ifs.close();
-    return langPack;
-}
 
 LanguageService::LanguageService(LanguageServiceOption option) : option(option) {
     /*
@@ -60,40 +36,26 @@ LanguageService::LanguageService(LanguageServiceOption option) : option(option) 
             "\r\n\r\nTip: Remove the configuration json file could make program load default language.");
     }
     currentLang = languages[lang].get();
-
-    // check language file
-    CheckLanguagePack(*currentLang);
 }
 
 std::string LanguageService::GetCurrentLanguage() const noexcept {
     return currentLang->language;
 }
 
-const std::string &LanguageService::GetUtf8String(StringId id) const noexcept {
-    return currentLang->data.at(id);
+const std::string &LanguageService::GetUtf8String(v0_2::StringId id) const noexcept {
+    return currentLang->GetString(id);
 }
 
-std::wstring LanguageService::GetWString(StringId id) const noexcept {
+std::wstring LanguageService::GetWString(v0_2::StringId id) const noexcept {
     return utf8_to_wstring(GetUtf8String(id));
 }
 
 void LanguageService::LoadLanguageNameFromInnerRCFile() noexcept {
     for (auto id : option.resourceIds) {
-        std::vector<char> jsonData = LoadCustomFileFromResource(id, option.resourceType);
-        jsonData.push_back('\0');
-
-        nlohmann::json j = nlohmann::json::parse(jsonData.data());
-
-        LanguagePack langPack;
-        from_json(j, langPack);
-
-#ifndef NDEBUG
-        // check file content at Debug
-        CheckLanguagePack(langPack);
-#endif
+        internal::LanguagePack langPack(id, option.resourceType);
 
         auto langName = langPack.language;
-        languages.emplace(langName, std::make_unique<LanguagePack>(std::move(langPack)));
+        languages.emplace(langName, std::make_unique<internal::LanguagePack>(std::move(langPack)));
     }
 }
 
@@ -109,22 +71,22 @@ void LanguageService::LoadLanguageNameFromDir(const std::string &dir) {
     }
 
     for (auto path : std::filesystem::directory_iterator(exeDir / dir)) {
-        LanguagePack langPack;
+        std::unique_ptr<internal::LanguagePack> langPack;
         try {
-            langPack = LoadLanguageFile(path.path().wstring());
+            langPack = std::make_unique<internal::LanguagePack>(path.path().wstring());
         } catch (const nlohmann::json::exception &err) {
             throw std::runtime_error("failed to load language file from " + path.path().u8string() +
                                      " \r\nReason: " + err.what());
         }
 
-        if (langPack.language.empty()) {
+        if (langPack->language.empty()) {
             throw std::runtime_error("failed to load language file from " + path.path().u8string() +
                                      " \r\nReason: \"language\" field is empty");
         }
 
-        auto langName = langPack.language;
+        auto langName = langPack->language;
         // make external language file override inner language file from the .rc file
-        languages[langName] = std::make_unique<LanguagePack>(std::move(langPack));
+        languages[langName] = std::move(langPack);
     }
 }
 
@@ -143,9 +105,6 @@ std::string LanguageService::GetLanguageNameByLangIdFromLoadedLanguages(int lang
 
 void LanguageService::SetCurrentLanguage(const std::string &languageName) {
     currentLang = languages.at(languageName).get();
-
-    // check language file
-    CheckLanguagePack(*currentLang);
 }
 
 std::vector<std::string> LanguageService::GetLanguageArray() const noexcept {
@@ -154,32 +113,4 @@ std::vector<std::string> LanguageService::GetLanguageArray() const noexcept {
         ret.push_back(pr.first);
     }
     return ret;
-}
-
-LanguageService *&GetLanguageServicePtr() noexcept {
-    static LanguageService *ptr = nullptr;
-    return ptr;
-}
-
-void CheckLanguagePack(const LanguagePack &langPack) {
-    for (int i = static_cast<int>(StringId::BEGIN) + 1; i < static_cast<int>(StringId::END); ++i) {
-        StringId sid = static_cast<StringId>(i);
-        if (langPack.data.find(sid) == langPack.data.end()) {
-            throw std::runtime_error("Error at language pack of " + langPack.language +
-                                     "\r\ninvalid language pack: lack of id of " + std::to_string(i));
-        }
-    }
-}
-
-void InitLanguageService(LanguageServiceOption option) {
-    GetLanguageServicePtr() = new LanguageService(option);
-}
-
-void ReleaseLanguageService() noexcept {
-    delete GetLanguageServicePtr();
-}
-
-LanguageService &GetLanguageService() noexcept {
-    assert(GetLanguageServicePtr());
-    return *GetLanguageServicePtr();
 }

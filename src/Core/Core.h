@@ -5,6 +5,7 @@
 #include "LineBreaks.h"
 #include "Config.h"
 #include "Vietnamese.h"
+#include "Exceptions.h"
 
 #include <Common/tstring.h>
 

@@ -6,6 +6,8 @@ find_package(ICU REQUIRED
 	COMPONENTS uc dt in io data
 )
 
+find_package(fmt CONFIG REQUIRED)
+
 # === Core ====================================
 file(GLOB CORE_CODE
 	*.h
@@ -26,6 +28,7 @@ target_link_libraries(Core PUBLIC
 	ICU::in
 	ICU::data
 	ced
+	fmt::fmt
 ) # 添加include目录
 target_include_directories(Core PUBLIC
 	..

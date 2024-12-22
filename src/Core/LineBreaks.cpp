@@ -1,6 +1,5 @@
 #include "LineBreaks.h"
-
-#include "Language.h"
+#include "Exceptions.h"
 
 #include <stdexcept>
 
@@ -113,7 +112,7 @@ void ChangeLineBreaks(std::u16string &str, LineBreaks targetLineBreak) {
     }
 
     if (out.size() >= std::numeric_limits<int>::max()) {
-        throw std::runtime_error(GetLanguageService().GetUtf8String(StringId::FILE_SIZE_OUT_OF_LIMIT));
+        throw MyRuntimeError(MessageId::STRING_LENGTH_OUT_OF_LIMIT);
     }
 
     str.resize(out.size());
