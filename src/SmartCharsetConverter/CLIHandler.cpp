@@ -72,8 +72,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
             }
 
         } catch (const std::runtime_error &err) {
-            MessageBoxA(NULL, err.what(), "Error", MB_OK | MB_ICONERROR);
-            return -1;
+            MessageBoxW(NULL, utf8_to_wstring(err.what()).c_str(), L"Error", MB_OK | MB_ICONERROR);
         }
     });
 
@@ -100,7 +99,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
     std::vector<std::wstring> inputPathes;
 
     int state = 0;
-    for (int i = 1; i < args.size(); ++i) {
+    for (std::size_t i = 1; i < args.size(); ++i) {
         std::wstring arg = args[i];
         switch (state) {
         case 0:
@@ -193,6 +192,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
             try {
                 core.SetOutputCharset(ToCharsetCode(arg));
             } catch (const std::runtime_error &err) {
+                (err);
                 ssErr << L"错误：未能识别的字符集名称：" << arg << L"\n";
                 ssErr << L"提示：使用--help charset可以查看支持的字符集名称。\n";
             }
@@ -354,7 +354,7 @@ int CLIMain(const std::vector<std::wstring> &args) noexcept {
     }
 
     int success = 0, failed = 0;
-    int total = inputFileNames.size();
+    int total = static_cast<int>(inputFileNames.size());
     for (int i = 0; i < total; i++) {
         AddAndConvertOneFile(i + 1, total, inputFileNames[i], success, failed);
     }

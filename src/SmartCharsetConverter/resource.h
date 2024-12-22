@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ Éú³ÉµÄ°üº¬ÎÄ¼ş¡£
-// ¹© SmartCharsetConverter.rc Ê¹ÓÃ
+// Microsoft Visual C++ ç”Ÿæˆçš„åŒ…å«æ–‡ä»¶ã€‚
+// ä¾› SmartCharsetConverter.rc ä½¿ç”¨
 //
 #define IDD_DIALOG_MAIN                 101
 #define IDI_ICON1                       102

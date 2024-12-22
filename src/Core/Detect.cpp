@@ -12,7 +12,7 @@
 
 using namespace std;
 
-std::tuple<std::string, int> DetectByUCharDet(uchardet *det, const char *buf, int bufSize) {
+std::tuple<std::string, int> DetectByUCharDet(uchardet *det, const char *buf, std::size_t bufSize) {
     // 用uchardet判定字符集
     uchardet_reset(det);
     int ret = uchardet_handle_data(det, buf, bufSize);
@@ -34,7 +34,7 @@ std::tuple<std::string, int> DetectByUCharDet(uchardet *det, const char *buf, in
     return {charset, static_cast<int>(confidence * 100)};
 }
 
-std::tuple<std::string, int> DetectByUCSDet(const char *buf, int bufSize) {
+std::tuple<std::string, int> DetectByUCSDet(const char *buf, int32_t bufSize) {
     UErrorCode status = U_ZERO_ERROR;
     auto csd =
         std::unique_ptr<UCharsetDetector, void (*)(UCharsetDetector *)>(ucsdet_open(&status), [](UCharsetDetector *p) {
@@ -94,6 +94,7 @@ std::tuple<CharsetCode, bool> DetectByCED(const char *buf, int len) {
         code = ToCharsetCode(string_to_wstring(EncodingName(encoding)));
 
     } catch (const std::runtime_error &err) {
+        (err);
         if (is_reliable) {
             throw;
         }
@@ -102,7 +103,7 @@ std::tuple<CharsetCode, bool> DetectByCED(const char *buf, int len) {
     return {code, is_reliable};
 }
 
-CharsetCode ToCharsetCodeFinal(CharsetCode inputCode, const char *buf, int bufSize) {
+CharsetCode ToCharsetCodeFinal(CharsetCode inputCode, const char *buf, std::size_t bufSize) {
     switch (inputCode) {
     case CharsetCode::UTF8:
         // 区分有无BOM
@@ -138,12 +139,16 @@ CharsetCode ToCharsetCodeFinal(CharsetCode inputCode, const char *buf, int bufSi
     return inputCode;
 }
 
-CharsetCode DetectEncodingPlain(uchardet *det, const char *buf, int bufSize, int times) {
+CharsetCode DetectEncodingPlain(uchardet *det, const char *buf, std::size_t bufSize, int times) {
     if (bufSize == 0) {
         return CharsetCode::EMPTY;
     }
 
-    auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf, bufSize);
+    if (bufSize > std::numeric_limits<int32_t>::max()) {
+        throw MyRuntimeError(MessageId::STRING_LENGTH_OUT_OF_LIMIT);
+    }
+
+    auto [ucsdetResult, ucsdetConfidence] = DetectByUCSDet(buf, static_cast<int32_t>(bufSize));
 
     if (ucsdetConfidence >= 95 && ucsdetResult.find("UTF") != string::npos) {
         // ucsdet如果判定为UTF-8/UTF-16BE|LE等，那么相信它
@@ -183,6 +188,6 @@ CharsetCode DetectEncodingPlain(uchardet *det, const char *buf, int bufSize, int
     */
 }
 
-CharsetCode DetectEncoding(uchardet *det, const char *buf, int bufSize) {
+CharsetCode DetectEncoding(uchardet *det, const char *buf, std::size_t bufSize) {
     return DetectEncodingPlain(det, buf, bufSize, 0);
 }

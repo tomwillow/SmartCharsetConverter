@@ -40,7 +40,7 @@ void TMenu::InsertItem(int posId, int newItemid, const std::wstring &s) noexcept
     menuItemInfo.cbSize = sizeof(MENUITEMINFO);
     menuItemInfo.wID = newItemid;
     menuItemInfo.fMask = MIIM_ID | MIIM_STRING | MIIM_SUBMENU;
-    menuItemInfo.cch = s.length() + 1;
+    menuItemInfo.cch = static_cast<UINT>(s.length() + 1);
     menuItemInfo.dwTypeData = const_cast<wchar_t *>(s.c_str());
     menuItemInfo.hSubMenu = hMenu;
 
@@ -72,7 +72,7 @@ void TMenu::SetItemTextByPositionOrId(bool byPosition, int posOrId, const std::w
 
     menuItemInfo.cbSize = sizeof(MENUITEMINFO);
     menuItemInfo.fMask = MIIM_STRING;
-    menuItemInfo.cch = ws.size();
+    menuItemInfo.cch = static_cast<UINT>(ws.size());
     menuItemInfo.dwTypeData = const_cast<wchar_t *>(ws.data());
     BOOL ok = SetMenuItemInfo(hMenu, posOrId, byPosition, &menuItemInfo);
     assert(ok);

@@ -1,0 +1,11 @@
+{
+    "enableConvertLineBreaks": false,
+    "excludeRule": "",
+    "filterMode": 1,
+    "includeRule": "h hpp c cpp cxx txt",
+    "language": "",
+    "lineBreak": 0,
+    "outputCharset": 3,
+    "outputDir": "",
+    "outputTarget": 0
+}

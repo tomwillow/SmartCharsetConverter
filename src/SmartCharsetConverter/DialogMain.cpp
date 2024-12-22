@@ -57,8 +57,10 @@ DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilena
 
         languageService = std::make_unique<LanguageService>(option);
     } catch (const nlohmann::json::exception &err) {
+        (err);
         throw;
     } catch (const std::exception &err) {
+        (err);
         throw;
     }
 }

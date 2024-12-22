@@ -128,7 +128,7 @@ public:
         std::tstring outputFileName;
         std::optional<std::string> errInfo;
         LineBreaks targetLineBreaks;
-        int outputFileSize;
+        std::size_t outputFileSize;
     };
 
     /**

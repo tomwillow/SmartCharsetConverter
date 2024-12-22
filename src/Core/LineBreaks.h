@@ -18,7 +18,7 @@ std::tstring LineBreaksToViewName(LineBreaks linebreaks) noexcept;
 LineBreaks ViewNameToLineBreaks(std::tstring viewName) noexcept;
 
 // 识别换行符
-LineBreaks GetLineBreaks(const UChar *buf, int len);
+LineBreaks GetLineBreaks(const UChar *buf, std::size_t len);
 
 // 变更换行符
 void ChangeLineBreaks(std::u16string &str, LineBreaks targetLineBreak);

@@ -82,7 +82,8 @@ public:
 
 class ConvertError : public MyRuntimeError {
 public:
-    ConvertError(std::string content, int position, viet::Encoding srcEncoding, viet::Encoding destEncoding) noexcept
+    ConvertError(std::string content, std::size_t position, viet::Encoding srcEncoding,
+                 viet::Encoding destEncoding) noexcept
         : MyRuntimeError(MessageId::VIETNAMESE_CONVERT_ERROR,
                          fmt::format(MessageIdToBasicString(MessageId::VIETNAMESE_CONVERT_ERROR),
                                      to_string(srcEncoding), to_string(srcEncoding), position, content)),
@@ -96,7 +97,7 @@ public:
 private:
     viet::Encoding srcEncoding;
     viet::Encoding destEncoding;
-    int position;
+    std::size_t position;
     std::string content;
 };
 

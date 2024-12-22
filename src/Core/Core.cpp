@@ -49,8 +49,17 @@ std::u16string Decode(std::string_view src, CharsetCode code) {
         ucnv_setToUCallBack(conv.get(), UCNV_TO_U_CALLBACK_STOP, NULL, NULL, NULL, &err);
         DealWithUCNVError(err);
 
+        if (cap > std::numeric_limits<uint32_t>::max()) {
+            throw MyRuntimeError(MessageId::STRING_LENGTH_OUT_OF_LIMIT);
+        }
+
+        if (src.size() > std::numeric_limits<uint32_t>::max()) {
+            throw MyRuntimeError(MessageId::STRING_LENGTH_OUT_OF_LIMIT);
+        }
+
         // 解码
-        int retLen = ucnv_toUChars(conv.get(), target.data(), cap, src.data(), src.size(), &err);
+        int retLen = ucnv_toUChars(conv.get(), target.data(), static_cast<uint32_t>(cap), src.data(),
+                                   static_cast<uint32_t>(src.size()), &err);
         target.resize(retLen);
         DealWithUCNVError(err);
 
@@ -61,6 +70,7 @@ std::u16string Decode(std::string_view src, CharsetCode code) {
     default:
         assert(0);
     }
+    return u"internal error";
 }
 
 std::u16string DecodeToLimitBytes(std::string_view src, uint64_t maxInputBytes, CharsetCode code) {
@@ -72,6 +82,7 @@ std::u16string DecodeToLimitBytes(std::string_view src, uint64_t maxInputBytes, 
             output = Decode(std::string_view(src.data(), use_bytes), code);
             break;
         } catch (const TruncatedCharFoundError &err) {
+            (err);
             if (use_bytes != src.size()) {
                 use_bytes--;
                 continue;
@@ -114,7 +125,7 @@ U_CAPI void U_EXPORT2 flagCB_fromU(const void *context, UConverterFromUnicodeArg
         const void *saveContext;
         UErrorCode subErr = U_ZERO_ERROR;
 
-        FromUFLAGContext *cloned;
+        FromUFLAGContext *cloned = nullptr;
         *cloned = *ctx;
 
         /* We need to get the sub CB to handle cloning,
@@ -184,7 +195,11 @@ std::string Encode(std::u16string_view src, CharsetCode targetCode) {
                                                                   });
         DealWithUCNVError(err);
 
-        int32_t destCap = src.size() * sizeof(UChar) + 2;
+        if (src.size() >= std::numeric_limits<int32_t>::max() / sizeof(UChar) - 1) {
+            throw MyRuntimeError(MessageId::STRING_LENGTH_OUT_OF_LIMIT);
+        }
+
+        int32_t destCap = static_cast<int32_t>((src.size() + 1lu) * sizeof(UChar));
         std::string target(destCap, '\0');
 
         FromUFLAGContext *context = new FromUFLAGContext; // 由回调函数管理生命期
@@ -197,7 +212,8 @@ std::string Encode(std::u16string_view src, CharsetCode targetCode) {
         int retLen;
         while (1) {
             err = U_ZERO_ERROR;
-            retLen = ucnv_fromUChars(conv.get(), target.data(), destCap, src.data(), src.size(), &err);
+            retLen =
+                ucnv_fromUChars(conv.get(), target.data(), destCap, src.data(), static_cast<int32_t>(src.size()), &err);
             if (err == U_BUFFER_OVERFLOW_ERROR || err == U_STRING_NOT_TERMINATED_WARNING) {
                 destCap = retLen + 6; // 增加一个尾后0的大小：utf-8 单个字符最大占用字节数
                 target.resize(destCap);
@@ -233,6 +249,7 @@ std::string Encode(std::u16string_view src, CharsetCode targetCode) {
     default:
         assert(0);
     }
+    return u8"internal error";
 }
 
 std::string Convert(std::string_view src, ConvertParam inputParam) {

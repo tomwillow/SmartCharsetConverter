@@ -125,12 +125,13 @@ private:
     const int SELECT_LANUAGE_ID_CONST = 20000;
     const int SELECT_LANUAGE_ID_START = SELECT_LANUAGE_ID_CONST + 0;
     int GetSelectLanguageIdEnd() noexcept {
-        return SELECT_LANUAGE_ID_START + languageService->GetLanguageArray().size();
+        return static_cast<int>(SELECT_LANUAGE_ID_START + languageService->GetLanguageArray().size());
     }
 
     int LanguageNameToCommandId(const std::string &languageName) noexcept {
-        return SELECT_LANUAGE_ID_START + std::distance(languageService->GetLanguagesTable().begin(),
-                                                       languageService->GetLanguagesTable().find(languageName));
+        return static_cast<int>(SELECT_LANUAGE_ID_START +
+                                std::distance(languageService->GetLanguagesTable().begin(),
+                                              languageService->GetLanguagesTable().find(languageName)));
     }
 
     std::string CommandIdToLanguageName(int id) noexcept {
