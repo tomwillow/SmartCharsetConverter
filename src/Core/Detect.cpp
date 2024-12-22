@@ -1,6 +1,5 @@
 #include "Core.h"
 
-#include "Language.h"
 #include "UCNVHelper.h"
 
 #include <unicode/ucnv.h>
@@ -103,44 +102,40 @@ std::tuple<CharsetCode, bool> DetectByCED(const char *buf, int len) {
     return {code, is_reliable};
 }
 
-CharsetCode ToCharsetCodeFinal(std::string charsetStr, const char *buf, int bufSize) {
-
-    // filter
-    CharsetCode code;
-    if (charsetStr == "UTF-8") {
+CharsetCode ToCharsetCodeFinal(CharsetCode inputCode, const char *buf, int bufSize) {
+    switch (inputCode) {
+    case CharsetCode::UTF8:
         // 区分有无BOM
         if (bufSize >= sizeof(UTF8BOM_DATA) && memcmp(buf, UTF8BOM_DATA, sizeof(UTF8BOM_DATA)) == 0) {
-            code = CharsetCode::UTF8BOM;
-        } else {
-            code = CharsetCode::UTF8;
+            return CharsetCode::UTF8BOM;
         }
-    } else if (charsetStr == "UTF-16LE") {
-        // 区分有无BOM
-        if (bufSize >= sizeof(UTF16LEBOM_DATA) && memcmp(buf, UTF16LEBOM_DATA, sizeof(UTF16LEBOM_DATA)) == 0) {
-            code = CharsetCode::UTF16LEBOM;
-        } else {
-            code = CharsetCode::UTF16LE;
-        }
-    } else if (charsetStr == "UTF-16BE") {
+        return inputCode;
+    case CharsetCode::UTF16BE:
         // 区分有无BOM
         if (bufSize >= sizeof(UTF16BEBOM_DATA) && memcmp(buf, UTF16BEBOM_DATA, sizeof(UTF16BEBOM_DATA)) == 0) {
-            code = CharsetCode::UTF16BEBOM;
-        } else {
-            code = CharsetCode::UTF16BE;
+            return CharsetCode::UTF16BEBOM;
         }
-    } else if (charsetStr == "") // 没识别出来
-    {
-        code = CharsetCode::UNKNOWN;
-    } else {
-        try {
-            code = ToCharsetCode(to_wstring(charsetStr));
-        } catch (...) {
-            string info = MyPrintf(GetLanguageService().GetUtf8String(StringId::INVALID_CHARACTERS),
-                                   charsetStr.size() + 1LL, charsetStr.c_str());
-            throw runtime_error(info);
+        return inputCode;
+    case CharsetCode::UTF16LE:
+        // 区分有无BOM
+        if (bufSize >= sizeof(UTF16LEBOM_DATA) && memcmp(buf, UTF16LEBOM_DATA, sizeof(UTF16LEBOM_DATA)) == 0) {
+            return CharsetCode::UTF16LEBOM;
         }
+        return inputCode;
+    case CharsetCode::UTF32BE:
+        // 区分有无BOM
+        if (bufSize >= sizeof(UTF32BEBOM_DATA) && memcmp(buf, UTF32BEBOM_DATA, sizeof(UTF32BEBOM_DATA)) == 0) {
+            return CharsetCode::UTF32BEBOM;
+        }
+        return inputCode;
+    case CharsetCode::UTF32LE:
+        // 区分有无BOM
+        if (bufSize >= sizeof(UTF32LEBOM_DATA) && memcmp(buf, UTF32LEBOM_DATA, sizeof(UTF32LEBOM_DATA)) == 0) {
+            return CharsetCode::UTF32LEBOM;
+        }
+        return inputCode;
     }
-    return code;
+    return inputCode;
 }
 
 CharsetCode DetectEncodingPlain(uchardet *det, const char *buf, int bufSize, int times) {
@@ -152,13 +147,13 @@ CharsetCode DetectEncodingPlain(uchardet *det, const char *buf, int bufSize, int
 
     if (ucsdetConfidence >= 95 && ucsdetResult.find("UTF") != string::npos) {
         // ucsdet如果判定为UTF-8/UTF-16BE|LE等，那么相信它
-        return ToCharsetCodeFinal(ucsdetResult, buf, bufSize);
+        return ToCharsetCodeFinal(ToCharsetCode(string_to_wstring(ucsdetResult)), buf, bufSize);
     }
 
     auto [uchardetResult, uchardetConfidence] = DetectByUCharDet(det, buf, bufSize);
     if (uchardetConfidence >= 95) {
         // uchardet如果有95及以上的信心，那么直接相信它
-        return ToCharsetCodeFinal(uchardetResult, buf, bufSize);
+        return ToCharsetCodeFinal(ToCharsetCode(string_to_wstring(uchardetResult)), buf, bufSize);
     }
 
     // ucsdet和uchardet都没把握

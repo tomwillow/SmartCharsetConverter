@@ -1,6 +1,5 @@
 #include "Core.h"
 
-#include "Language.h"
 #include "Detect.h"
 #include "UCNVHelper.h"
 #include "Exceptions.h"
@@ -72,8 +71,8 @@ std::u16string DecodeToLimitBytes(std::string_view src, uint64_t maxInputBytes, 
         try {
             output = Decode(std::string_view(src.data(), use_bytes), code);
             break;
-        } catch (const UCNVError &err) {
-            if (use_bytes != src.size() && err.GetErrorCode() == U_TRUNCATED_CHAR_FOUND) {
+        } catch (const TruncatedCharFoundError &err) {
+            if (use_bytes != src.size()) {
                 use_bytes--;
                 continue;
             }
@@ -179,13 +178,10 @@ std::string Encode(std::u16string_view src, CharsetCode targetCode) {
         UErrorCode err = U_ZERO_ERROR;
 
         // 打开转换器
-        unique_ptr<UConverter, function<void(UConverter *)>> conv(ucnv_open(to_string(icuCharsetName).c_str(), &err),
+        unique_ptr<UConverter, function<void(UConverter *)>> conv(ucnv_open(icuCharsetName.c_str(), &err),
                                                                   [](UConverter *p) {
                                                                       ucnv_close(p);
                                                                   });
-        if (err == 4) {
-            throw UCNVError(err, u8"ICU does not support: " + icuCharsetName);
-        }
         DealWithUCNVError(err);
 
         int32_t destCap = src.size() * sizeof(UChar) + 2;
@@ -220,8 +216,9 @@ std::string Encode(std::u16string_view src, CharsetCode targetCode) {
             UChar32 *s = context->unassigned.data();
 
             // UTF32LE -> UTF16LE
-            std::u16string temp = Decode(std::string_view(reinterpret_cast<char *>(s), context->unassigned.size() * 4),
-                                         CharsetCode::UTF32LE);
+            std::u16string temp =
+                Decode(std::string_view(reinterpret_cast<char *>(s), (context->unassigned.size() - 1) * 4),
+                       CharsetCode::UTF32LE);
 
             // UTF16LE -> UTF8
             std::string ret = Encode(temp, CharsetCode::UTF8);
@@ -348,7 +345,7 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
 
     // 如果重复了
     if (listFileNames.find(filename) != listFileNames.end()) {
-        throw runtime_error(GetLanguageService().GetUtf8String(StringId::ADD_REDUNDANTLY));
+        throw MyRuntimeError(MessageId::ADD_REDUNDANTLY);
     }
 
     // 读入文件，只读入部分。因为读入大文件会占用太长时间。
@@ -467,7 +464,7 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
 
         // 原编码集
         if (originCode == CharsetCode::UNKNOWN) {
-            throw runtime_error(GetLanguageService().GetUtf8String(StringId::NO_DETECTED_ENCODING));
+            throw MyRuntimeError(MessageId::NO_DETECTED_ENCODING);
         }
 
         // 返回原字符集和目标字符集的条件为不需要转换的情形
@@ -494,8 +491,7 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
                 if (GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR) {
                     bool ok = CopyFile(inputFilename.c_str(), ret.outputFileName.c_str(), false);
                     if (!ok) {
-                        throw runtime_error(GetLanguageService().GetUtf8String(StringId::FAILED_TO_WRITE_FILE) +
-                                            to_utf8(ret.outputFileName));
+                        throw FileIOError(MessageId::FAILED_TO_WRITE_FILE, to_utf8(ret.outputFileName));
                     }
                 }
 
@@ -520,7 +516,7 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
                 auto [raw, rawSize] = ReadFileToBuffer(inputFilename);
 
                 if (rawSize >= std::numeric_limits<int>::max()) {
-                    throw runtime_error(GetLanguageService().GetUtf8String(StringId::FILE_SIZE_OUT_OF_LIMIT));
+                    throw MyRuntimeError(MessageId::FILE_SIZE_OUT_OF_LIMIT);
                 }
 
                 // 根据BOM偏移
@@ -541,13 +537,7 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
                 param.targetLineBreak = GetConfig().lineBreak;
 
                 // 转到目标编码
-                std::string outputBuf;
-                try {
-                    outputBuf = ::Convert(std::string_view(rawStart, rawSize), param);
-                } catch (const UnassignedCharError &err) {
-                    throw std::runtime_error(GetLanguageService().GetUtf8String(StringId::WILL_LOST_CHARACTERS) +
-                                             err.what());
-                };
+                std::string outputBuf = ::Convert(std::string_view(rawStart, rawSize), param);
 
                 if (param.doConvertLineBreaks) {
                     ret.targetLineBreaks = param.targetLineBreak;
@@ -559,8 +549,7 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
                 FILE *fp = nullptr;
                 errno_t err = _tfopen_s(&fp, ret.outputFileName.c_str(), TEXT("wb"));
                 if (fp == nullptr) {
-                    throw runtime_error(GetLanguageService().GetUtf8String(StringId::FAILED_TO_OPEN_FILE) +
-                                        to_utf8(ret.outputFileName));
+                    throw FileIOError(MessageId::FAILED_TO_OPEN_FILE, to_utf8(ret.outputFileName));
                 }
                 unique_ptr<FILE, function<void(FILE *)>> upFile(fp, [](FILE *fp) {
                     fclose(fp);
@@ -574,8 +563,7 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
                     size_t wrote = fwrite(bomData, BomSize(targetCode), 1, fp);
                     ret.outputFileSize += BomSize(targetCode);
                     if (wrote != 1) {
-                        throw runtime_error(GetLanguageService().GetUtf8String(StringId::FAILED_TO_WRITE_FILE) +
-                                            to_utf8(ret.outputFileName));
+                        throw FileIOError(MessageId::FAILED_TO_WRITE_FILE, to_utf8(ret.outputFileName));
                     }
                 }
 
@@ -583,8 +571,7 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
                 size_t wrote = fwrite(outputBuf.data(), outputBuf.size(), 1, fp);
                 ret.outputFileSize += outputBuf.size();
                 if (outputBuf.size() != 0 && wrote != 1) {
-                    throw runtime_error(GetLanguageService().GetUtf8String(StringId::FAILED_TO_WRITE_FILE) +
-                                        to_utf8(ret.outputFileName));
+                    throw FileIOError(MessageId::FAILED_TO_WRITE_FILE, to_utf8(ret.outputFileName));
                 }
             }
 

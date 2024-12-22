@@ -2,7 +2,6 @@
 
 // self
 #include "Control/TMenu.h"
-#include "Core/Language.h"
 
 #include <Common/tstring.h>
 #include <Common/FileFunction.h>
@@ -22,8 +21,11 @@ const std::tstring appTitle = TEXT("SmartCharsetConverter v0.9.2 by Tom Willow")
 
 const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
 
-const std::vector<int> innerLanguageIds = {IDR_LANGUAGEJSON_ENGLISH, IDR_LANGUAGEJSON_SIMPLIFIED_CHINESE,
-                                           IDR_LANGUAGEJSON_SPANISH};
+const std::vector<int> innerLanguageIds = {
+    // IDR_LANGUAGEJSON_ENGLISH,
+    IDR_LANGUAGEJSON_SIMPLIFIED_CHINESE,
+    // IDR_LANGUAGEJSON_SPANISH,
+}; // FIXME
 
 using namespace std;
 
@@ -52,7 +54,8 @@ DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilena
         };
         option.resourceIds = innerLanguageIds;
         option.resourceType = L"LanguageJson";
-        InitLanguageService(option);
+
+        languageService = std::make_unique<LanguageService>(option);
     } catch (const nlohmann::json::exception &err) {
         throw;
     } catch (const std::exception &err) {
@@ -72,49 +75,50 @@ void DialogMain::OnClose() {
 
 void DialogMain::RefreshInterfaceByCurrentLanguage() noexcept {
     // set controls by language settings
-    GetDlgItem(IDC_STATIC_FILE_LISTS).SetWindowTextW(GetLanguageService().GetWString(StringId::FILE_LISTS).c_str());
+    GetDlgItem(IDC_STATIC_FILE_LISTS).SetWindowTextW(languageService->GetWString(v0_2::StringId::FILE_LISTS).c_str());
     GetDlgItem(IDC_STATIC_SET_FILTER_MODE)
-        .SetWindowTextW(GetLanguageService().GetWString(StringId::SET_FILTER_MODE).c_str());
+        .SetWindowTextW(languageService->GetWString(v0_2::StringId::SET_FILTER_MODE).c_str());
     GetDlgItem(IDC_RADIO_STRETEGY_NO_FILTER)
-        .SetWindowTextW(GetLanguageService().GetWString(StringId::NO_FILTER).c_str());
+        .SetWindowTextW(languageService->GetWString(v0_2::StringId::NO_FILTER).c_str());
     GetDlgItem(IDC_RADIO_STRETEGY_SMART)
-        .SetWindowTextW(GetLanguageService().GetWString(StringId::SMART_FILE_DETECTION).c_str());
+        .SetWindowTextW(languageService->GetWString(v0_2::StringId::SMART_FILE_DETECTION).c_str());
     GetDlgItem(IDC_RADIO_STRETEGY_MANUAL)
-        .SetWindowTextW(GetLanguageService().GetWString(StringId::USE_FILE_EXTENSION).c_str());
+        .SetWindowTextW(languageService->GetWString(v0_2::StringId::USE_FILE_EXTENSION).c_str());
     GetDlgItem(IDC_STATIC_ADD_FILES_OR_FOLDER)
-        .SetWindowTextW(GetLanguageService().GetWString(StringId::ADD_FILES_OR_FOLDER).c_str());
-    GetDlgItem(IDC_BUTTON_ADD_FILES).SetWindowTextW(GetLanguageService().GetWString(StringId::ADD_FILES).c_str());
-    GetDlgItem(IDC_BUTTON_ADD_DIR).SetWindowTextW(GetLanguageService().GetWString(StringId::ADD_FOLDER).c_str());
-    GetDlgItem(IDC_STATIC_SET_OUTPUT).SetWindowTextW(GetLanguageService().GetWString(StringId::SET_OUTPUT).c_str());
-    GetDlgItem(IDC_RADIO_TO_ORIGIN).SetWindowTextW(GetLanguageService().GetWString(StringId::OUTPUT_TO_ORIGIN).c_str());
-    GetDlgItem(IDC_RADIO_TO_DIR).SetWindowTextW(GetLanguageService().GetWString(StringId::OUTPUT_TO_FOLDER).c_str());
+        .SetWindowTextW(languageService->GetWString(v0_2::StringId::ADD_FILES_OR_FOLDER).c_str());
+    GetDlgItem(IDC_BUTTON_ADD_FILES).SetWindowTextW(languageService->GetWString(v0_2::StringId::ADD_FILES).c_str());
+    GetDlgItem(IDC_BUTTON_ADD_DIR).SetWindowTextW(languageService->GetWString(v0_2::StringId::ADD_FOLDER).c_str());
+    GetDlgItem(IDC_STATIC_SET_OUTPUT).SetWindowTextW(languageService->GetWString(v0_2::StringId::SET_OUTPUT).c_str());
+    GetDlgItem(IDC_RADIO_TO_ORIGIN)
+        .SetWindowTextW(languageService->GetWString(v0_2::StringId::OUTPUT_TO_ORIGIN).c_str());
+    GetDlgItem(IDC_RADIO_TO_DIR).SetWindowTextW(languageService->GetWString(v0_2::StringId::OUTPUT_TO_FOLDER).c_str());
     GetDlgItem(IDC_BUTTON_SET_OUTPUT_DIR)
-        .SetWindowTextW(GetLanguageService().GetWString(StringId::SELECT_FOLDER).c_str());
+        .SetWindowTextW(languageService->GetWString(v0_2::StringId::SELECT_FOLDER).c_str());
     GetDlgItem(IDC_STATIC_SET_OUTPUT_CHARSET)
-        .SetWindowTextW(GetLanguageService().GetWString(StringId::SET_OUTPUT_CHARSET).c_str());
-    GetDlgItem(IDC_RADIO_OTHER).SetWindowTextW(GetLanguageService().GetWString(StringId::OTHERS).c_str());
+        .SetWindowTextW(languageService->GetWString(v0_2::StringId::SET_OUTPUT_CHARSET).c_str());
+    GetDlgItem(IDC_RADIO_OTHER).SetWindowTextW(languageService->GetWString(v0_2::StringId::OTHERS).c_str());
     GetDlgItem(IDC_CHECK_CONVERT_RETURN)
-        .SetWindowTextW(GetLanguageService().GetWString(StringId::CHANGE_LINE_BREAKS).c_str());
-    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(GetLanguageService().GetWString(StringId::START_CONVERT).c_str());
-    GetDlgItem(IDC_BUTTON_CLEAR).SetWindowTextW(GetLanguageService().GetWString(StringId::CLEAR_LISTS).c_str());
+        .SetWindowTextW(languageService->GetWString(v0_2::StringId::CHANGE_LINE_BREAKS).c_str());
+    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(languageService->GetWString(v0_2::StringId::START_CONVERT).c_str());
+    GetDlgItem(IDC_BUTTON_CLEAR).SetWindowTextW(languageService->GetWString(v0_2::StringId::CLEAR_LISTS).c_str());
 
     listview.SetColumnText(static_cast<int>(ListViewColumn::INDEX),
-                           GetLanguageService().GetWString(StringId::INDEX).c_str());
+                           languageService->GetWString(v0_2::StringId::INDEX).c_str());
     listview.SetColumnText(static_cast<int>(ListViewColumn::FILENAME),
-                           GetLanguageService().GetWString(StringId::FILENAME).c_str());
+                           languageService->GetWString(v0_2::StringId::FILENAME).c_str());
     listview.SetColumnText(static_cast<int>(ListViewColumn::FILESIZE),
-                           GetLanguageService().GetWString(StringId::SIZE).c_str());
+                           languageService->GetWString(v0_2::StringId::SIZE).c_str());
     listview.SetColumnText(static_cast<int>(ListViewColumn::ENCODING),
-                           GetLanguageService().GetWString(StringId::ENCODING).c_str());
+                           languageService->GetWString(v0_2::StringId::ENCODING).c_str());
     listview.SetColumnText(static_cast<int>(ListViewColumn::LINE_BREAK),
-                           GetLanguageService().GetWString(StringId::LINE_BREAKS).c_str());
+                           languageService->GetWString(v0_2::StringId::LINE_BREAKS).c_str());
     listview.SetColumnText(static_cast<int>(ListViewColumn::TEXT_PIECE),
-                           GetLanguageService().GetWString(StringId::TEXT_PIECE).c_str());
+                           languageService->GetWString(v0_2::StringId::TEXT_PIECE).c_str());
 
-    rightMenu->SetItemTextById(ID_OPEN_WITH_NOTEPAD, GetLanguageService().GetWString(StringId::OPEN_WITH_NOTEPAD));
+    rightMenu->SetItemTextById(ID_OPEN_WITH_NOTEPAD, languageService->GetWString(v0_2::StringId::OPEN_WITH_NOTEPAD));
     rightMenu->SetItemTextById(ID_SPECIFY_ORIGIN_CHARSET,
-                               GetLanguageService().GetWString(StringId::SPECIFY_ORIGIN_ENCODING));
-    rightMenu->SetItemTextById(ID_REMOVE_ITEM, GetLanguageService().GetWString(StringId::REMOVE));
+                               languageService->GetWString(v0_2::StringId::SPECIFY_ORIGIN_ENCODING));
+    rightMenu->SetItemTextById(ID_REMOVE_ITEM, languageService->GetWString(v0_2::StringId::REMOVE));
 }
 
 BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
@@ -169,27 +173,27 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
     listview.ModifyStyle(0, LVS_REPORT);
     listview.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
 
-    listview.AddColumn(GetLanguageService().GetWString(StringId::INDEX).c_str(),
+    listview.AddColumn(languageService->GetWString(v0_2::StringId::INDEX).c_str(),
                        static_cast<int>(ListViewColumn::INDEX));
     listview.SetColumnWidth(0, 40);
 
-    listview.AddColumn(GetLanguageService().GetWString(StringId::FILENAME).c_str(),
+    listview.AddColumn(languageService->GetWString(v0_2::StringId::FILENAME).c_str(),
                        static_cast<int>(ListViewColumn::FILENAME));
     listview.SetColumnWidth(1, 280);
 
-    listview.AddColumn(GetLanguageService().GetWString(StringId::SIZE).c_str(),
+    listview.AddColumn(languageService->GetWString(v0_2::StringId::SIZE).c_str(),
                        static_cast<int>(ListViewColumn::FILESIZE));
     listview.SetColumnWidth(2, 60);
 
-    listview.AddColumn(GetLanguageService().GetWString(StringId::ENCODING).c_str(),
+    listview.AddColumn(languageService->GetWString(v0_2::StringId::ENCODING).c_str(),
                        static_cast<int>(ListViewColumn::ENCODING));
     listview.SetColumnWidth(3, 60);
 
-    listview.AddColumn(GetLanguageService().GetWString(StringId::LINE_BREAKS).c_str(),
+    listview.AddColumn(languageService->GetWString(v0_2::StringId::LINE_BREAKS).c_str(),
                        static_cast<int>(ListViewColumn::LINE_BREAK));
     listview.SetColumnWidth(4, 80);
 
-    listview.AddColumn(GetLanguageService().GetWString(StringId::TEXT_PIECE).c_str(),
+    listview.AddColumn(languageService->GetWString(v0_2::StringId::TEXT_PIECE).c_str(),
                        static_cast<int>(ListViewColumn::TEXT_PIECE));
     listview.SetColumnWidth(5, 200);
 
@@ -298,7 +302,7 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
             });
         } catch (const std::runtime_error &err) {
             MessageBox(utf8_to_wstring(err.what()).c_str(),
-                       GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(), MB_OK | MB_ICONERROR);
+                       languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(), MB_OK | MB_ICONERROR);
             return {};
         }
         break;
@@ -350,14 +354,14 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
 AddItemsAbort:
 
     if (!failed.empty()) {
-        string info = GetLanguageService().GetUtf8String(StringId::FAILED_ADD_BELOW) + u8"\r\n";
+        string info = languageService->GetUtf8String(v0_2::StringId::FAILED_ADD_BELOW) + u8"\r\n";
         for (auto &pr : failed) {
-            info += to_utf8(pr.first) + u8" " + GetLanguageService().GetUtf8String(StringId::REASON) + u8" " +
+            info += to_utf8(pr.first) + u8" " + languageService->GetUtf8String(v0_2::StringId::REASON) + u8" " +
                     pr.second + u8"\r\n ";
         }
 
         MyMessage *msg = new MyMessage([this, info]() {
-            MessageBox(utf8_to_wstring(info).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+            MessageBox(utf8_to_wstring(info).c_str(), languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(),
                        MB_OK | MB_ICONERROR);
         });
         PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
@@ -367,7 +371,7 @@ AddItemsAbort:
         stringstream ss;
 
         std::string dest =
-            MyPrintf(GetLanguageService().GetUtf8String(StringId::NON_TEXT_OR_NO_DETECTED), 32LL, ignored.size());
+            MyPrintf(languageService->GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), 32LL, ignored.size());
 
         ss << dest << u8"\r\n";
 
@@ -377,17 +381,17 @@ AddItemsAbort:
             count++;
 
             if (count >= 5) {
-                ss << GetLanguageService().GetUtf8String(StringId::AND_SO_ON);
+                ss << languageService->GetUtf8String(v0_2::StringId::AND_SO_ON);
                 break;
             }
         }
 
         ss << u8"\r\n\r\n";
-        ss << GetLanguageService().GetUtf8String(StringId::TIPS_USE_NO_FILTER);
+        ss << languageService->GetUtf8String(v0_2::StringId::TIPS_USE_NO_FILTER);
 
         string s = ss.str();
         PostUIFunc([this, s]() {
-            MessageBox(utf8_to_wstring(s).c_str(), GetLanguageService().GetWString(StringId::PROMPT).c_str(),
+            MessageBox(utf8_to_wstring(s).c_str(), languageService->GetWString(v0_2::StringId::PROMPT).c_str(),
                        MB_OK | MB_ICONINFORMATION);
         });
         return ignored;
@@ -416,7 +420,7 @@ void DialogMain::AddItemsAsync(const std::vector<std::tstring> &filenames) noexc
         } catch (const runtime_error &err) {
             PostUIFunc([this, err]() {
                 MessageBox(utf8_to_wstring(err.what()).c_str(),
-                           GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(), MB_OK | MB_ICONERROR);
+                           languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(), MB_OK | MB_ICONERROR);
             });
         }
     });
@@ -437,13 +441,13 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
 
     // 如果没有内容
     if (listview.GetItemCount() == 0) {
-        throw runtime_error(GetLanguageService().GetUtf8String(StringId::NO_FILE_TO_CONVERT));
+        throw runtime_error(languageService->GetUtf8String(v0_2::StringId::NO_FILE_TO_CONVERT));
     }
 
     // 检查输出目录
     if (core->GetConfig().outputTarget != Configuration::OutputTarget::ORIGIN) {
         if (core->GetConfig().outputDir.empty()) {
-            throw runtime_error(GetLanguageService().GetUtf8String(StringId::INVALID_OUTPUT_DIR));
+            throw runtime_error(languageService->GetUtf8String(v0_2::StringId::INVALID_OUTPUT_DIR));
         }
     }
 
@@ -501,40 +505,40 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
         stringstream ss;
 
         std::string dest =
-            MyPrintf(GetLanguageService().GetUtf8String(StringId::SUCCEED_SOME_FILES), 32LL, succeed.size());
+            MyPrintf(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), 32LL, succeed.size());
 
         ss << dest << u8"\r\n\r\n";
-        ss << GetLanguageService().GetUtf8String(StringId::FAILED_CONVERT_BELOW) + u8"\r\n";
+        ss << languageService->GetUtf8String(v0_2::StringId::FAILED_CONVERT_BELOW) + u8"\r\n";
         for (auto &pr : failed) {
-            ss << to_utf8(pr.first) << u8" " << GetLanguageService().GetUtf8String(StringId::REASON) << pr.second
+            ss << to_utf8(pr.first) << u8" " << languageService->GetUtf8String(v0_2::StringId::REASON) << pr.second
                << u8"\r\n";
         }
         if (doCancel) {
-            ss << u8"\r\n\r\n" << GetLanguageService().GetUtf8String(StringId::NO_DEAL_DUE_TO_CANCEL);
+            ss << u8"\r\n\r\n" << languageService->GetUtf8String(v0_2::StringId::NO_DEAL_DUE_TO_CANCEL);
         }
 
         string s = ss.str();
         PostUIFunc([this, s]() {
-            MessageBox(utf8_to_wstring(s).c_str(), GetLanguageService().GetWString(StringId::CONVERT_RESULT).c_str(),
+            MessageBox(utf8_to_wstring(s).c_str(), languageService->GetWString(v0_2::StringId::CONVERT_RESULT).c_str(),
                        MB_OK | MB_ICONERROR);
         });
     } else {
         // 全部成功之后
         stringstream ss;
         std::string dest =
-            MyPrintf(GetLanguageService().GetUtf8String(StringId::SUCCEED_SOME_FILES), 32LL, succeed.size());
+            MyPrintf(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), 32LL, succeed.size());
         ss << dest << u8"\r\n\r\n";
 
         if (targetCode == CharsetCode::GB18030) {
-            ss << u8"\r\n\r\n" << GetLanguageService().GetUtf8String(StringId::NOTICE_SHOW_AS_UTF8);
+            ss << u8"\r\n\r\n" << languageService->GetUtf8String(v0_2::StringId::NOTICE_SHOW_AS_UTF8);
         }
         if (doCancel) {
-            ss << u8"\r\n\r\n" << GetLanguageService().GetUtf8String(StringId::NO_DEAL_DUE_TO_CANCEL);
+            ss << u8"\r\n\r\n" << languageService->GetUtf8String(v0_2::StringId::NO_DEAL_DUE_TO_CANCEL);
         }
 
         string s = ss.str();
         PostUIFunc([this, s]() {
-            MessageBox(utf8_to_wstring(s).c_str(), GetLanguageService().GetWString(StringId::PROMPT).c_str(),
+            MessageBox(utf8_to_wstring(s).c_str(), languageService->GetWString(v0_2::StringId::PROMPT).c_str(),
                        MB_OK | MB_ICONINFORMATION);
         });
     }
@@ -542,8 +546,8 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
     return;
 } catch (const runtime_error &err) {
     PostUIFunc([this, err]() {
-        MessageBox(utf8_to_wstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
-                   MB_OK | MB_ICONERROR);
+        MessageBox(utf8_to_wstring(err.what()).c_str(),
+                   languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(), MB_OK | MB_ICONERROR);
     });
     return;
 }
@@ -605,13 +609,13 @@ void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstr
     // 切分
     auto exts = Split(extsStr, TEXT(" ,|"));
 
-    string filterExampleStr = GetLanguageService().GetUtf8String(StringId::SUPPORT_FORMAT_BELOW) +
+    string filterExampleStr = languageService->GetUtf8String(v0_2::StringId::SUPPORT_FORMAT_BELOW) +
                               u8"\r\n *.h *.hpp *.c *.cpp *.txt\r\n h hpp c cpp txt\r\n h|hpp|c|cpp\r\n" +
-                              GetLanguageService().GetUtf8String(StringId::SEPERATOR_DESCRIPTION);
+                              languageService->GetUtf8String(v0_2::StringId::SEPERATOR_DESCRIPTION);
 
     // 如果为空
     if (exts.empty()) {
-        throw runtime_error(GetLanguageService().GetUtf8String(StringId::NO_SPECIFY_FILTER_EXTEND) + u8"\r\n\r\n" +
+        throw runtime_error(languageService->GetUtf8String(v0_2::StringId::NO_SPECIFY_FILTER_EXTEND) + u8"\r\n\r\n" +
                             filterExampleStr);
     }
 
@@ -622,7 +626,7 @@ void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstr
         wregex r(pattern);
         wsmatch results;
         if (regex_match(extStr, results, r) == false) {
-            throw runtime_error(GetLanguageService().GetUtf8String(StringId::INVALID_EXTEND_FILTER) +
+            throw runtime_error(languageService->GetUtf8String(v0_2::StringId::INVALID_EXTEND_FILTER) +
                                 to_string(extStr) + u8"\r\n\r\n" + filterExampleStr);
         }
 
@@ -636,7 +640,7 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
     switch (core->GetConfig().filterMode) {
     case Configuration::FilterMode::NO_FILTER:
     case Configuration::FilterMode::SMART: // 智能识别文本
-        dialogFilter = {{GetLanguageService().GetWString(StringId::ALL_FILES) + L"*.*", L"*.*"}};
+        dialogFilter = {{languageService->GetWString(v0_2::StringId::ALL_FILES) + L"*.*", L"*.*"}};
         break;
     case Configuration::FilterMode::ONLY_SOME_EXTANT: {
         // 只包括指定后缀
@@ -663,7 +667,7 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
     }
     return 0;
 } catch (runtime_error &err) {
-    MessageBox(utf8_to_wstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+    MessageBox(utf8_to_wstring(err.what()).c_str(), languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(),
                MB_OK | MB_ICONERROR);
     return 0;
 }
@@ -679,7 +683,7 @@ LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, 
 
     return 0;
 } catch (runtime_error &err) {
-    MessageBox(utf8_to_wstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+    MessageBox(utf8_to_wstring(err.what()).c_str(), languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(),
                MB_OK | MB_ICONERROR);
     return 0;
 }
@@ -804,14 +808,14 @@ LRESULT DialogMain::OnSpecifyOriginCharset(WORD /*wNotifyCode*/, WORD wID, HWND 
     }
 
     if (!failed.empty()) {
-        string info = GetLanguageService().GetUtf8String(StringId::FAILED_TO_SET_CHARSET_MANUALLY) + u8"\r\n";
+        string info = languageService->GetUtf8String(v0_2::StringId::FAILED_TO_SET_CHARSET_MANUALLY) + u8"\r\n";
         for (auto &pr : failed) {
-            info += to_utf8(pr.first) + u8" " + GetLanguageService().GetUtf8String(StringId::REASON) +
+            info += to_utf8(pr.first) + u8" " + languageService->GetUtf8String(v0_2::StringId::REASON) +
                     to_utf8(pr.second) + u8"\r\n";
         }
 
         MyMessage *msg = new MyMessage([this, info]() {
-            MessageBox(utf8_to_wstring(info).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+            MessageBox(utf8_to_wstring(info).c_str(), languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(),
                        MB_OK | MB_ICONERROR);
         });
         PostMessage(WM_MY_MESSAGE, 0, reinterpret_cast<LPARAM>(msg));
@@ -823,10 +827,10 @@ LRESULT DialogMain::OnSelectLanguage(WORD, WORD wID, HWND, BOOL &) {
     std::string languageName = CommandIdToLanguageName(wID);
 
     try {
-        GetLanguageService().SetCurrentLanguage(languageName);
+        languageService->SetCurrentLanguage(languageName);
     } catch (const std::runtime_error &err) {
-        MessageBox(utf8_to_wstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
-                   MB_OK | MB_ICONERROR);
+        MessageBox(utf8_to_wstring(err.what()).c_str(),
+                   languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(), MB_OK | MB_ICONERROR);
         return 0;
     }
 
@@ -847,7 +851,7 @@ LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/
     if (edit.GetWindowTextLengthW() != 0) {
         bool ok = edit.GetWindowTextW(bstr);
         if (!ok)
-            throw runtime_error(GetLanguageService().GetUtf8String(StringId::NO_MEMORY));
+            throw runtime_error(languageService->GetUtf8String(v0_2::StringId::NO_MEMORY));
         filterStr = bstr;
         SysFreeString(bstr);
     }
@@ -857,7 +861,7 @@ LRESULT DialogMain::OnEnChangeEditIncludeText(WORD /*wNotifyCode*/, WORD /*wID*/
 
     return 0;
 } catch (runtime_error &err) {
-    MessageBox(utf8_to_wstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+    MessageBox(utf8_to_wstring(err.what()).c_str(), languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(),
                MB_OK | MB_ICONERROR);
     return 0;
 }
@@ -915,7 +919,7 @@ LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &b
 
     return 0;
 } catch (const std::runtime_error &err) {
-    MessageBox(utf8_to_wstring(err.what()).c_str(), GetLanguageService().GetWString(StringId::MSGBOX_ERROR).c_str(),
+    MessageBox(utf8_to_wstring(err.what()).c_str(), languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(),
                MB_OK | MB_ICONERROR);
     return 0;
 }
@@ -947,7 +951,7 @@ std::vector<pair<int, bool>> DialogMain::SetBusyState() noexcept {
     }
 
     // 开始按钮text变更为“取消”，并额外enable，用于让用户按“取消”
-    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(GetLanguageService().GetWString(StringId::CANCEL).c_str());
+    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(languageService->GetWString(v0_2::StringId::CANCEL).c_str());
     GetDlgItem(IDC_BUTTON_START).EnableWindow(true);
     return restore;
 }
@@ -958,7 +962,7 @@ void DialogMain::RestoreReadyState(const std::vector<std::pair<int, bool>> &rest
         wnd.EnableWindow(pr.second);
     }
 
-    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(GetLanguageService().GetWString(StringId::START_CONVERT).c_str());
+    GetDlgItem(IDC_BUTTON_START).SetWindowTextW(languageService->GetWString(v0_2::StringId::START_CONVERT).c_str());
 }
 
 void DialogMain::AppendListViewItem(std::wstring filename, uint64_t fileSize, CharsetCode charset, LineBreaks lineBreak,

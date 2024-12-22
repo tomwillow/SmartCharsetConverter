@@ -2,7 +2,6 @@
 
 #include "memory_leak_detection.h"
 
-#include <Core/Language.h>
 #include <Core/Core.h>
 #include <Core/Detect.h>
 #include <Common/FileFunction.h>

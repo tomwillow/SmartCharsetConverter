@@ -3,7 +3,7 @@
 #include "Core/Core.h"
 #include "Common/ThreadPool/ThreadPool.h"
 #include "Control/TMenu.h"
-#include "Core/Language.h"
+#include <Translator/LanguageService.h>
 
 #include "resource.h"
 
@@ -33,43 +33,6 @@ struct MyMessage {
     }
 };
 
-/*
-    为了动态地在listview的右键菜单"指定原编码"项目里面添加字符集菜单选项，需要为每个字符集指定一个id。
-    但手动指定太麻烦，根据观察，菜单项目的起始编号为40000，所以这里选定了一个30000为起始编号，目的是不和其他id重合。
-    然后这个30000加上字符集的index则得到菜单项的id。
-*/
-const int SPECIFY_ORIGIN_CHARSET_ID_CONST = 30000;
-const int SPECIFY_ORIGIN_CHARSET_ID_START = SPECIFY_ORIGIN_CHARSET_ID_CONST + static_cast<int>(CharsetCode::UTF8);
-const int SPECIFY_ORIGIN_CHARSET_ID_END =
-    SPECIFY_ORIGIN_CHARSET_ID_CONST + static_cast<int>(CharsetCode::CHARSET_CODE_END);
-inline int CharsetCodeToCommandId(CharsetCode code) noexcept {
-    return SPECIFY_ORIGIN_CHARSET_ID_CONST + static_cast<int>(code);
-}
-
-inline CharsetCode CommandIdToCharsetCode(int id) noexcept {
-    return static_cast<CharsetCode>(id - SPECIFY_ORIGIN_CHARSET_ID_CONST);
-}
-
-/*
-    为了动态地在Settings按钮"右键菜单"Language"项目里面添加语言菜单选项，需要为每个语言包指定一个id。
-    但只能动态指定。根据观察，菜单项目的起始编号为40000，所以这里选定了一个20000为起始编号，目的是不和其他id重合。
-    然后这个20000加上语言包的index则得到菜单项的id。
-*/
-const int SELECT_LANUAGE_ID_CONST = 20000;
-const int SELECT_LANUAGE_ID_START = SELECT_LANUAGE_ID_CONST + 0;
-inline int GetSelectLanguageIdEnd() noexcept {
-    return SELECT_LANUAGE_ID_START + GetLanguageService().GetLanguageArray().size();
-}
-
-inline int LanguageNameToCommandId(const std::string &languageName) noexcept {
-    return SELECT_LANUAGE_ID_START + std::distance(GetLanguageService().GetLanguagesTable().begin(),
-                                                   GetLanguageService().GetLanguagesTable().find(languageName));
-}
-
-inline std::string CommandIdToLanguageName(int id) noexcept {
-    return GetLanguageService().GetLanguageArray()[id - SELECT_LANUAGE_ID_START];
-}
-
 class DialogMain : public CDialogImpl<DialogMain> {
 public:
     enum { IDD = IDD_DIALOG_MAIN };
@@ -87,6 +50,7 @@ private:
     std::vector<std::tstring> inputFilenames;
 
     std::unique_ptr<Core> core;
+    std::unique_ptr<LanguageService> languageService;
 
     CComboBox comboBoxOther;
     TListView listview;
@@ -133,6 +97,46 @@ private:
     void StartConvert(const std::vector<std::pair<int, bool>> &restore, const std::vector<Item> &items);
 
     void OnClose();
+
+    // ================================================
+
+    /*
+        为了动态地在listview的右键菜单"指定原编码"项目里面添加字符集菜单选项，需要为每个字符集指定一个id。
+        但手动指定太麻烦，根据观察，菜单项目的起始编号为40000，所以这里选定了一个30000为起始编号，目的是不和其他id重合。
+        然后这个30000加上字符集的index则得到菜单项的id。
+    */
+    const int SPECIFY_ORIGIN_CHARSET_ID_CONST = 30000;
+    const int SPECIFY_ORIGIN_CHARSET_ID_START = SPECIFY_ORIGIN_CHARSET_ID_CONST + static_cast<int>(CharsetCode::UTF8);
+    const int SPECIFY_ORIGIN_CHARSET_ID_END =
+        SPECIFY_ORIGIN_CHARSET_ID_CONST + static_cast<int>(CharsetCode::CHARSET_CODE_END);
+    int CharsetCodeToCommandId(CharsetCode code) noexcept {
+        return SPECIFY_ORIGIN_CHARSET_ID_CONST + static_cast<int>(code);
+    }
+
+    CharsetCode CommandIdToCharsetCode(int id) noexcept {
+        return static_cast<CharsetCode>(id - SPECIFY_ORIGIN_CHARSET_ID_CONST);
+    }
+
+    /*
+        为了动态地在Settings按钮"右键菜单"Language"项目里面添加语言菜单选项，需要为每个语言包指定一个id。
+        但只能动态指定。根据观察，菜单项目的起始编号为40000，所以这里选定了一个20000为起始编号，目的是不和其他id重合。
+        然后这个20000加上语言包的index则得到菜单项的id。
+    */
+    const int SELECT_LANUAGE_ID_CONST = 20000;
+    const int SELECT_LANUAGE_ID_START = SELECT_LANUAGE_ID_CONST + 0;
+    int GetSelectLanguageIdEnd() noexcept {
+        return SELECT_LANUAGE_ID_START + languageService->GetLanguageArray().size();
+    }
+
+    int LanguageNameToCommandId(const std::string &languageName) noexcept {
+        return SELECT_LANUAGE_ID_START + std::distance(languageService->GetLanguagesTable().begin(),
+                                                       languageService->GetLanguagesTable().find(languageName));
+    }
+
+    std::string CommandIdToLanguageName(int id) noexcept {
+        return languageService->GetLanguageArray()[id - SELECT_LANUAGE_ID_START];
+    }
+    // ================================================
 
     BEGIN_MSG_MAP(DialogMain)
     MSG_WM_INITDIALOG(OnInitDialog)
