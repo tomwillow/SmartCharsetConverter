@@ -39,7 +39,7 @@ endif ()
 
 add_definitions(
 	-DVERSION="${UCHARDET_VERSION}"
-	-Wall
+#	-Wall
 )
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
