@@ -22,10 +22,10 @@ const std::tstring appTitle = TEXT("SmartCharsetConverter v0.9.2 by Tom Willow")
 const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
 
 const std::vector<int> innerLanguageIds = {
-    // IDR_LANGUAGEJSON_ENGLISH,
+    IDR_LANGUAGEJSON_ENGLISH,
     IDR_LANGUAGEJSON_SIMPLIFIED_CHINESE,
-    // IDR_LANGUAGEJSON_SPANISH,
-}; // FIXME
+    IDR_LANGUAGEJSON_SPANISH,
+};
 
 using namespace std;
 
@@ -324,6 +324,8 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
             });
         } catch (io_error_ignore) {
             ignored.push_back(filename);
+        } catch (const MyRuntimeError &err) {
+            failed.push_back({filename, err.ToLocalString(languageService.get())});
         } catch (const runtime_error &err) {
             failed.push_back({filename, err.what()});
         }

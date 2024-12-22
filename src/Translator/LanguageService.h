@@ -22,7 +22,7 @@ struct LanguageServiceOption {
     等待配置读取当前语言，如果没有设置，
     那么读取系统语言。如果系统语言没有对应的语言包，那么加载英语。
 */
-class LanguageService {
+class LanguageService : public TranslatorBase {
 public:
     /**
      * @exception json解析失败抛出异常
@@ -44,6 +44,8 @@ public:
     std::vector<std::string> GetLanguageArray() const noexcept;
 
     const std::unordered_map<std::string, std::unique_ptr<internal::LanguagePack>> &GetLanguagesTable() const noexcept;
+
+    virtual std::string MessageIdToString(MessageId mid) const noexcept;
 
 private:
     LanguageServiceOption option;

@@ -81,7 +81,7 @@ class Core {
 public:
     Core(std::tstring configFileName, CoreInitOption opt);
 
-    const Configuration &GetConfig() const;
+    const Configuration &GetConfig() const noexcept;
 
     const std::unique_ptr<uchardet, std::function<void(uchardet *)>> &GetUCharDet() const;
 
@@ -135,8 +135,8 @@ public:
      * @brief 转换一个文件。
      * @return <输出文件的文件名, 出错信息>
      */
-    ConvertFileResult Convert(const std::tstring &inputFilename, CharsetCode originCode,
-                              LineBreaks originLineBreak) noexcept;
+    ConvertFileResult Convert(const std::tstring &inputFilename, CharsetCode originCode, LineBreaks originLineBreak,
+                              TranslatorBase *translator = nullptr) noexcept;
 
 private:
     std::tstring configFileName;
