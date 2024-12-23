@@ -6,15 +6,16 @@
 
 // standard
 #include <unordered_map>
+#include <array>
 
 const std::string StringIdVersion = "0.2";
 
 namespace v0_2 {
 enum class StringId {
-    BEGIN = MessageId::BEGIN,
+    BEGIN = 100,
 
     // 序号
-    INDEX = MessageId::END,
+    INDEX,
     FILENAME,
     SIZE,
     ENCODING,
@@ -72,6 +73,11 @@ enum class StringId {
     SELECT_FOLDER,
 
     END
+};
+
+constexpr std::array<std::pair<int, int>, 2> STRING_ID_RANGES = {
+    std::pair<int, int>{static_cast<int>(MessageId::BEGIN), static_cast<int>(MessageId::END)},
+    std::pair<int, int>{static_cast<int>(StringId::BEGIN), static_cast<int>(StringId::END)},
 };
 
 } // namespace v0_2
