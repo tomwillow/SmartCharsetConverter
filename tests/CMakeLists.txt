@@ -1,7 +1,5 @@
 find_package(GTest CONFIG REQUIRED)
 
-enable_testing()
-
 # === CoreUnitTest ===
 file(GLOB TEST_CODE
 	*.h

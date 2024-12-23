@@ -1,19 +1,32 @@
 {
-	"version": 4,
-	"configurePresets": [{
+	"version": 8,
+	"configurePresets": [
+		{
 			"name": "default",
 			"binaryDir": "${sourceDir}/build",
 			"cacheVariables": {
 				"VCPKG_TARGET_TRIPLET": "x64-windows-static",
 				"CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
 			}
-	}],
-	"buildPresets": [{
-		"name": "default",
-		"configurePreset": "default"
-	}],
-	"testPresets": [{
-		"name": "default",
-		"configurePreset": "default"
-	}]
+		}
+	],
+	"buildPresets": [
+		{
+			"name": "default",
+			"configurePreset": "default"
+		}
+	],
+	"testPresets": [
+		{
+			"name": "default",
+			"configurePreset": "default",
+			"output": {
+				"outputOnFailure": true
+			},
+			"execution": {
+				"noTestsAction": "error",
+				"stopOnFailure": true
+			}
+		}
+	]
 }
