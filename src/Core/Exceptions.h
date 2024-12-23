@@ -1,7 +1,10 @@
 #pragma once
 
 #include "Vietnamese.h"
+#include "CharsetCode.h"
 #include "Messages.h"
+
+#include <Common/tstring.h>
 
 #include <fmt/format.h>
 #include <unicode/utypes.h>
@@ -71,7 +74,7 @@ private:
     int errCode;
 };
 
-class TruncatedCharFoundError : UCNVError {
+class TruncatedCharFoundError : public UCNVError {
 public:
     TruncatedCharFoundError() : UCNVError(U_TRUNCATED_CHAR_FOUND) {}
 
@@ -79,6 +82,25 @@ public:
         return fmt::format(translator->MessageIdToString(MessageId::TRUNCATED_CHAR_FOUND));
     }
 };
+
+class IllegalCharFoundError : public UCNVError {
+public:
+    IllegalCharFoundError(CharsetCode decodeAs, std::size_t position, std::string corruptedDataPiece)
+        : UCNVError(U_ILLEGAL_CHAR_FOUND), decodeAs(decodeAs), position(position),
+          corruptedDataPiece(corruptedDataPiece) {}
+
+    virtual const std::string ToLocalString(TranslatorBase *translator) const noexcept {
+        return fmt::format(translator->MessageIdToString(MessageId::CORRUPTED_DATA),
+                           to_utf8(ToViewCharsetName(decodeAs)), position, 32, to_hex(corruptedDataPiece));
+    }
+
+private:
+    CharsetCode decodeAs;
+    std::size_t position;
+    std::string corruptedDataPiece; // the data at corrupted position, at least 32 bytes
+};
+
+using InvalidCharFoundError = IllegalCharFoundError;
 
 class ConvertError : public MyRuntimeError {
 public:

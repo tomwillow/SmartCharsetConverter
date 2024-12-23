@@ -16,6 +16,7 @@
 		[9,"File size exceeds limit: {}"],
 		[10,"String length exceeds limit"],
 		[11,"Failed to open file: {}"],
+		[12,"Corrupted data found while decode as {}. position: {} content(in hex, shown {} bytes at most): {}"],
 		[101,"Index"],
 		[102,"File Name"],
 		[103,"Size"],

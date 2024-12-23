@@ -17,6 +17,8 @@ enum class MessageId {
     FILE_SIZE_OUT_OF_LIMIT,     // "File size exceeds limit: {}"
     STRING_LENGTH_OUT_OF_LIMIT, // "String length exceeds limit"
     FAILED_TO_OPEN_FILE,        // "Failed to open file: {}"
+    CORRUPTED_DATA, // "Corrupted data found while decode as {}. position: {} content(in hex, shown {} bytes at
+                    // most): {}"
     END,
 };
 
@@ -44,6 +46,9 @@ inline std::string MessageIdToBasicString(MessageId mid) noexcept {
         return "String length exceeds limit";
     case MessageId::FAILED_TO_OPEN_FILE:
         return "Failed to open file: {}";
+    case MessageId::CORRUPTED_DATA:
+        return "Corrupted data found while decode as {}. position: {} content(in hex, shown {} bytes at most): "
+               "{}";
     default:
         assert(0);
     }

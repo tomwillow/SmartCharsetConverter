@@ -61,6 +61,18 @@ std::u16string Decode(std::string_view src, CharsetCode code) {
         int retLen = ucnv_toUChars(conv.get(), target.data(), static_cast<uint32_t>(cap), src.data(),
                                    static_cast<uint32_t>(src.size()), &err);
         target.resize(retLen);
+
+        int corruptedDataPieceSize = static_cast<int>(std::min(32ull, src.size() - retLen));
+        // if there is corrupted data at src.data(), err will be U_ILLEGAL_CHAR_FOUND(12).
+        // TODO: at this case, maybe prompt user to decide how to deal with.
+        // current we just throw a clear error message.
+        if (err == U_ILLEGAL_CHAR_FOUND) {
+            throw IllegalCharFoundError(code, retLen, std::string(src.substr(retLen, corruptedDataPieceSize)));
+        }
+        if (err == U_INVALID_CHAR_FOUND) {
+            throw InvalidCharFoundError(code, retLen, std::string(src.substr(retLen, corruptedDataPieceSize)));
+        }
+
         DealWithUCNVError(err);
 
         return target;
@@ -413,7 +425,19 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
     if (bufSize < fileSize) {
         std::tie(buf, bufSize) = ReadFileToBuffer(filename);
     }
-    auto wholeUtfStr = Decode(std::string_view(buf.get(), bufSize), charsetCode);
+
+    std::u16string wholeUtfStr;
+    try {
+        wholeUtfStr = Decode(std::string_view(buf.get(), bufSize), charsetCode);
+    } catch (const IllegalCharFoundError &err) {
+        (err);
+        // if current is NO-FILTER mode, treat it as UNKOWN charset
+        if (GetConfig().filterMode != Configuration::FilterMode::NO_FILTER) {
+            throw;
+        }
+        listFileNames.insert(filename);
+        return AddItemResult{false, fileSize, CharsetCode::UNKNOWN, LineBreaks::UNKNOWN, {}};
+    }
 
     // 检查换行符
     auto lineBreak = GetLineBreaks(wholeUtfStr.data(), wholeUtfStr.size());
