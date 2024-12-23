@@ -134,7 +134,8 @@ TEST(Vietnamese, ConvertFuzz) {
 
     const int count = 1024;
     std::string randUtf8Str;
-    std::default_random_engine eng(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    std::default_random_engine eng(
+        static_cast<unsigned char>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
     std::uniform_int_distribution<int> unif(0, viet::internal::TABLE_LENGTH - 1);
     for (int i = 0; i < count; ++i) {
         int index = unif(eng);
@@ -191,7 +192,8 @@ TEST(Vietnamese, ConvertWithUTF16LEFuzz) {
 
     const int count = 1024;
     std::u16string randUtf16LEStr;
-    std::default_random_engine eng(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+    std::default_random_engine eng(
+        static_cast<unsigned char>(std::chrono::high_resolution_clock::now().time_since_epoch().count()));
     std::uniform_int_distribution<int> unif(0, viet::internal::TABLE_LENGTH - 1);
     for (int i = 0; i < count; ++i) {
         int index = unif(eng);
