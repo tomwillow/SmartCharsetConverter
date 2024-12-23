@@ -44,7 +44,6 @@ TEST(Core, uchardet_sample_test) {
             continue;
         }
 
-        SetConsoleColor(ConsoleColor::RED);
         std::cout << std::string(20, '=') << std::endl;
         std::cout << "file: " << filename << std::endl;
         std::cout << "detect: " << to_utf8(ToViewCharsetName(charsetCode)) << std::endl;
@@ -53,7 +52,6 @@ TEST(Core, uchardet_sample_test) {
 
         // EXPECT_EQ(charsetCode, expectedEncoding);  // not pass now
     }
-    SetConsoleColor();
 
     double rate = static_cast<double>(passed) / static_cast<double>(table.size());
     std::cout << "PASSED: " << rate * 100.0 << "% \n";

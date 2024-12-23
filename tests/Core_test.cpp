@@ -55,9 +55,7 @@ TEST(Core, DetectEncodingMulti) {
         auto charsetCode = DetectEncoding(core.GetUCharDet().get(), buf.get(), len);
 
         if (charsetCode == expectedEncoding) {
-            SetConsoleColor(ConsoleColor::GREEN);
-        } else {
-            SetConsoleColor(ConsoleColor::RED);
+            continue;
         }
         std::cout << std::string(20, '=') << std::endl;
         std::cout << "file: " << filename << std::endl;
