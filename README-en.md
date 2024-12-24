@@ -82,6 +82,9 @@ v0.9.1 bugfix: fixed the error of "ucnv error. code=11" due to invalid trucated 
 
 v0.9.2 Support Win7 x64 OS. Compiles into a single exe file.
 
+v0.9.3 [Issue 14]Change the Chinese character "未知" to "Unknown" when the charset is not detected.
+Fix the issue where error characters during charset detection in "no filtering" mode cause an "UCNV error," preventing files from being added.
+
 # Build
 
 1. Confirm the compilation environment: win10+ x64, Visual Studio 2019+, cmake.
