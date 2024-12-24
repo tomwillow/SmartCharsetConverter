@@ -78,7 +78,7 @@ std::u16string Decode(std::string_view src, CharsetCode code) {
         return target;
     }
     case ConvertEngine::NO_ENGINE:
-        throw std::runtime_error(u8"not supported convert this encoding: " + to_utf8(ToViewCharsetName(code)));
+        throw CharsetNotSupportedError(code);
     default:
         assert(0);
     }
@@ -257,7 +257,7 @@ std::string Encode(std::u16string_view src, CharsetCode targetCode) {
         return target;
     }
     case ConvertEngine::NO_ENGINE:
-        throw std::runtime_error(u8"not supported convert this encoding: " + to_utf8(ToViewCharsetName(targetCode)));
+        throw CharsetNotSupportedError(targetCode);
     default:
         assert(0);
     }

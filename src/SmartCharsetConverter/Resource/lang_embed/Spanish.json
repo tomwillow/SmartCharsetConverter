@@ -17,6 +17,7 @@
 		[10,"La longitud de la cadena excede el límite"],
 		[11,"Fallo al abrir el archivo: {}"],
 		[12,"Se encontraron datos dañados mientras se intentaba decodificar como {}. posición: {} contenido (en hexadecimal, mostrando como máximo {} bytes): {}"],
+		[13,"No se admite la conversión al conjunto de caracteres {}"],
 		[101,"#"],
 		[102,"Archivo"],
 		[103,"Tamaño"],

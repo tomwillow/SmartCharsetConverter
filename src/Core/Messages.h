@@ -17,8 +17,9 @@ enum class MessageId {
     FILE_SIZE_OUT_OF_LIMIT,     // "File size exceeds limit: {}"
     STRING_LENGTH_OUT_OF_LIMIT, // "String length exceeds limit"
     FAILED_TO_OPEN_FILE,        // "Failed to open file: {}"
-    CORRUPTED_DATA, // "Corrupted data found while decode as {}. position: {} content(in hex, shown {} bytes at
-                    // most): {}"
+    CORRUPTED_DATA,         // "Corrupted data found while decode as {}. position: {} content(in hex, shown {} bytes at
+                            // most): {}"
+    CANNOT_CONVERT_CHARSET, // "Conversion to the {} charset is not supported"
     END,
 };
 
@@ -49,6 +50,8 @@ inline std::string MessageIdToBasicString(MessageId mid) noexcept {
     case MessageId::CORRUPTED_DATA:
         return "Corrupted data found while decode as {}. position: {} content(in hex, shown {} bytes at most): "
                "{}";
+    case MessageId::CANNOT_CONVERT_CHARSET:
+        return "Conversion to the {} charset is not supported";
     default:
         assert(0);
     }
