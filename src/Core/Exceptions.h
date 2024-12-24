@@ -85,7 +85,7 @@ public:
 
 class IllegalCharFoundError : public UCNVError {
 public:
-    IllegalCharFoundError(CharsetCode decodeAs, std::size_t position, std::string corruptedDataPiece)
+    IllegalCharFoundError(CharsetCode decodeAs, std::size_t position, std::string corruptedDataPiece) noexcept
         : UCNVError(U_ILLEGAL_CHAR_FOUND), decodeAs(decodeAs), position(position),
           corruptedDataPiece(corruptedDataPiece) {}
 
@@ -101,6 +101,22 @@ private:
 };
 
 using InvalidCharFoundError = IllegalCharFoundError;
+
+class CharsetNotSupportedError : public MyRuntimeError {
+public:
+    CharsetNotSupportedError(CharsetCode targetCode)
+        : MyRuntimeError(MessageId::CANNOT_CONVERT_CHARSET,
+                         fmt::format(MessageIdToBasicString(MessageId::CANNOT_CONVERT_CHARSET),
+                                     to_utf8(ToViewCharsetName(targetCode)))),
+          targetCode(targetCode) {}
+
+    virtual const std::string ToLocalString(TranslatorBase *translator) const noexcept {
+        return fmt::format(translator->MessageIdToString(mid), to_utf8(ToViewCharsetName(targetCode)));
+    }
+
+private:
+    CharsetCode targetCode;
+};
 
 class ConvertError : public MyRuntimeError {
 public:
