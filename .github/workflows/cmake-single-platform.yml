@@ -54,7 +54,7 @@ jobs:
         run: |
           cd ${{github.workspace}}/scripts
           python extract_change_log.py --tag=${{github.ref_name}}
-          cd ${{github.workspace}}/build/Release
+          cd ${{github.workspace}}/build/src/SmartCharsetConverter/Release
           mv SmartCharsetConverter.exe 'SmartCharsetConverter ${{github.ref_name}}.exe'
           Compress-Archive -Path 'SmartCharsetConverter ${{github.ref_name}}.exe' -DestinationPath 'SmartCharsetConverter ${{github.ref_name}}.zip'
 
@@ -68,4 +68,4 @@ jobs:
           draft: true
           body_path: ./build/CHANGELOG.txt
           files: |
-            ./build/Release/SmartCharsetConverter ${{github.ref_name}}.zip
+            ./build/src/SmartCharsetConverter/Release/SmartCharsetConverter ${{github.ref_name}}.zip
