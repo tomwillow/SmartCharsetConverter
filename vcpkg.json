@@ -3,7 +3,14 @@
     "icu",
     "nlohmann-json",
     "gtest",
-    "fmt"
+    "fmt",
+    {
+		"name": "imgui",
+		"features": [
+			"sdl2-binding",
+			"opengl3-binding"
+		]
+	}
   ],
   "builtin-baseline": "9b5cb8e554487f3edb5d50b80188883846f81e14"
 }
