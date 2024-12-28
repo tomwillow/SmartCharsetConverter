@@ -8,9 +8,13 @@
 // - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
 // - Introduction, links and more at the top of imgui.cpp
 
+#include "MainWindow.h"
+
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_freetype.h"
+
 #include <stdio.h>
 
 #define SDL_MAIN_HANDLED
@@ -123,7 +127,24 @@ int main(int, char **) {
     // - Our Emscripten build process allows embedding fonts to be accessible at runtime from the "fonts/" folder. See
     // Makefile.emscripten for details.
     // io.Fonts->AddFontDefault();
-    // io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", 18.0f);
+
+    auto fontName = "c:\\Windows\\Fonts\\simsun.ttc";
+    float fontSize = 12;
+    ImFontConfig fontConfig;
+#ifdef _DEBUG
+    ImFont *font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 14, &fontConfig,
+                                                io.Fonts->GetGlyphRangesChineseSimplifiedCommon()); //
+    assert(font);
+    fontConfig.MergeMode = true;
+    font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", fontSize, &fontConfig); //
+    assert(font);
+    font = io.Fonts->AddFontFromFileTTF(fontName, fontSize, &fontConfig,
+                                        io.Fonts->GetGlyphRangesChineseSimplifiedCommon()); //
+    assert(font);
+#else
+    io.Fonts->AddFontFromFileTTF(fontName, fontSize, NULL, io.Fonts->GetGlyphRangesChineseFull());
+#endif
+    io.Fonts->Build();
     // io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
     // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
     // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
@@ -136,16 +157,9 @@ int main(int, char **) {
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Main loop
+    MainWindow mainWindow;
     bool done = false;
-#ifdef __EMSCRIPTEN__
-    // For an Emscripten build we are disabling file-system access, so let's not attempt to do a fopen() of the
-    // imgui.ini file. You may manually call LoadIniSettingsFromMemory() to load settings from your own storage.
-    io.IniFilename = nullptr;
-    EMSCRIPTEN_MAINLOOP_BEGIN
-#else
-    while (!done)
-#endif
-    {
+    while (!done) {
         // Poll and handle events (inputs, window resize, etc.)
         // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your
         // inputs.
@@ -173,45 +187,7 @@ int main(int, char **) {
         ImGui_ImplSDL2_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code
-        // to learn more about Dear ImGui!).
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
-
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-        {
-            static float f = 0.0f;
-            static int counter = 0;
-
-            ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");          // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window); // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &show_another_window);
-
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);             // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float *)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button(
-                    "Button")) // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            ImGui::End();
-        }
-
-        // 3. Show another simple window.
-        if (show_another_window) {
-            ImGui::Begin("Another Window",
-                         &show_another_window); // Pass a pointer to our bool variable (the window will have a closing
-                                                // button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
-            if (ImGui::Button("Close Me"))
-                show_another_window = false;
-            ImGui::End();
-        }
+        mainWindow.Render();
 
         // Rendering
         ImGui::Render();
