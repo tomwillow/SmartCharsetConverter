@@ -9,11 +9,13 @@
 // - Introduction, links and more at the top of imgui.cpp
 
 #include "MainWindow.h"
+#include "FontAnalyzer.h"
 
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_freetype.h"
+#include <fmt/chrono.h>
 
 #include <stdio.h>
 
@@ -25,13 +27,30 @@
 #include <SDL_opengl.h>
 #endif
 
+#include <iostream>
+#include <unordered_set>
+#include <chrono>
+
 // This example can also compile and run with Emscripten! See 'Makefile.emscripten' for details.
 #ifdef __EMSCRIPTEN__
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
 
-// Main code
+// Helper function to print Unicode ranges.
+void PrintUnicodeRange(FT_UInt first, FT_UInt last) {
+    if (first <= last) {
+        std::cout << "U+" << std::hex << first << "..U+" << last << std::endl;
+    }
+}
+
+#ifndef NDEBUG
 int main(int, char **) {
+#else
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR szCmdLine, int nCmdShow) {
+#endif
+
+    auto startTime = std::chrono::system_clock::now();
+
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0) {
         printf("Error: %s\n", SDL_GetError());
@@ -54,19 +73,19 @@ int main(int, char **) {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #elif defined(__APPLE__)
-    // GL 3.2 Core + GLSL 150
-    const char *glsl_version = "#version 150";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+// GL 3.2 Core + GLSL 150
+const char *glsl_version = "#version 150";
+SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 #else
-    // GL 3.0 + GLSL 130
-    const char *glsl_version = "#version 130";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+// GL 3.0 + GLSL 130
+const char *glsl_version = "#version 130";
+SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 #endif
 
     // From 2.0.18: Enable native IME.
@@ -129,27 +148,35 @@ int main(int, char **) {
     // io.Fonts->AddFontDefault();
 
     auto fontName = "c:\\Windows\\Fonts\\simsun.ttc";
+
     float fontSize = 12;
     ImFontConfig fontConfig;
-#ifdef _DEBUG
-    ImFont *font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 14, &fontConfig,
-                                                io.Fonts->GetGlyphRangesChineseSimplifiedCommon()); //
+
+    // FontAnalyzer<std::unordered_set<uint32_t>> fontAnalyzer([](std::unordered_set<uint32_t> &c, uint32_t val) {
+    //     c.insert(val);
+    // });
+    FontAnalyzer<std::vector<ImWchar>> fontAnalyzer([](std::vector<ImWchar> &c, ImWchar val) {
+        c.push_back(val);
+    });
+    auto ret = fontAnalyzer.GetUnicodePointRange("c:\\Windows\\Fonts\\segoeui.ttf");
+    ret.push_back(0);
+
+    ImFont *font =
+        io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", fontSize, &fontConfig, ret.data()); //
     assert(font);
     fontConfig.MergeMode = true;
-    font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\segoeui.ttf", fontSize, &fontConfig); //
+    font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\msyh.ttc", 14, &fontConfig,
+                                        io.Fonts->GetGlyphRangesChineseSimplifiedCommon()); //
     assert(font);
     font = io.Fonts->AddFontFromFileTTF(fontName, fontSize, &fontConfig,
                                         io.Fonts->GetGlyphRangesChineseSimplifiedCommon()); //
     assert(font);
-#else
-    io.Fonts->AddFontFromFileTTF(fontName, fontSize, NULL, io.Fonts->GetGlyphRangesChineseFull());
-#endif
-    io.Fonts->Build();
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
-    // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
-    // ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr,
-    // io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != nullptr);
+    // io.Fonts->Build();
+    //  io.Fonts->AddFontFromFileTTF("../../misc/fonts/DroidSans.ttf", 16.0f);
+    //  io.Fonts->AddFontFromFileTTF("../../misc/fonts/Roboto-Medium.ttf", 16.0f);
+    //  io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
+    //  ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr,
+    //  io.Fonts->GetGlyphRangesJapanese()); IM_ASSERT(font != nullptr);
 
     // Our state
     bool show_demo_window = true;
@@ -158,6 +185,10 @@ int main(int, char **) {
 
     // Main loop
     MainWindow mainWindow;
+
+    auto initEndTime = std::chrono::system_clock::now();
+    fmt::print("init time: {}s", std::chrono::duration<double>(initEndTime - startTime).count());
+
     bool done = false;
     while (!done) {
         // Poll and handle events (inputs, window resize, etc.)

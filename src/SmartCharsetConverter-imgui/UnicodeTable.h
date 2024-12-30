@@ -15,6 +15,8 @@
 #include <string>
 #include <array>
 
+namespace uni_table {
+
 using Utf8Str = std::array<char, 6>;
 Utf8Str PointToUtf8(int point) noexcept {
     Utf8Str utf8 = {{0, 0, 0, 0, 0, 0}};
@@ -81,21 +83,24 @@ struct ExampleAsset {
         Type = type;
     }
 
-    static const ImGuiTableSortSpecs *s_current_sort_specs;
+    static const ImGuiTableSortSpecs *&Gets_current_sort_specs() {
+        static const ImGuiTableSortSpecs *p = nullptr;
+        return p;
+    }
 
     static void SortWithSortSpecs(ImGuiTableSortSpecs *sort_specs, ExampleAsset *items, int items_count) {
-        s_current_sort_specs = sort_specs; // Store in variable accessible by the sort function.
+        Gets_current_sort_specs() = sort_specs; // Store in variable accessible by the sort function.
         if (items_count > 1)
             qsort(items, (size_t)items_count, sizeof(items[0]), ExampleAsset::CompareWithSortSpecs);
-        s_current_sort_specs = NULL;
+        Gets_current_sort_specs() = NULL;
     }
 
     // Compare function to be used by qsort()
     static int IMGUI_CDECL CompareWithSortSpecs(const void *lhs, const void *rhs) {
         const ExampleAsset *a = (const ExampleAsset *)lhs;
         const ExampleAsset *b = (const ExampleAsset *)rhs;
-        for (int n = 0; n < s_current_sort_specs->SpecsCount; n++) {
-            const ImGuiTableColumnSortSpecs *sort_spec = &s_current_sort_specs->Specs[n];
+        for (int n = 0; n < Gets_current_sort_specs()->SpecsCount; n++) {
+            const ImGuiTableColumnSortSpecs *sort_spec = &Gets_current_sort_specs()->Specs[n];
             int delta = 0;
             if (sort_spec->ColumnIndex == 0)
                 delta = ((int)a->ID - (int)b->ID);
@@ -209,7 +214,7 @@ struct ExampleAssetsBrowser {
 
     // Functions
     ExampleAssetsBrowser() {
-        AddItems(10000);
+        AddItems(UTF8_SPACE_SIZE);
     }
     void AddItems(int count) {
         if (Items.Size == 0)
@@ -462,7 +467,7 @@ struct ExampleAssetsBrowser {
                                 ImU32 label_col =
                                     ImGui::GetColorU32(item_is_selected ? ImGuiCol_Text : ImGuiCol_TextDisabled);
                                 char label[32];
-                                sprintf(label, "%d", item_data->ID);
+                                sprintf(label, "%d", item_data->ID); //, utf8table[item_data->ID].data()
                                 draw_list->AddText(ImVec2(box_min.x, box_max.y - ImGui::GetFontSize()), label_col,
                                                    label);
                             }
@@ -531,3 +536,5 @@ struct ExampleAssetsBrowser {
         ImGui::End();
     }
 };
+
+} // namespace uni_table

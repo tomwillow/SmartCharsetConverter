@@ -6,7 +6,9 @@
 
 class MainWindow {
 public:
-    MainWindow() {}
+    MainWindow() {
+        uni_table::InitUtf8Table();
+    }
 
     void Render() {
 
@@ -44,7 +46,7 @@ public:
         }
 
         {
-            static ExampleAssetsBrowser brower;
+            static uni_table::ExampleAssetsBrowser brower;
             bool open = true;
             brower.Draw("aa", &open);
         }
