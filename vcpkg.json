@@ -7,9 +7,11 @@
     {
 		"name": "imgui",
 		"features": [
-			"sdl2-binding",
+			"glfw-binding",
+			"win32-binding",
 			"opengl3-binding",
-			"freetype"
+			"freetype",
+			"wchar32"
 		]
 	}
   ],
