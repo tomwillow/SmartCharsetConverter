@@ -12,6 +12,8 @@
 
 #include "FontLoader.h"
 
+#include <Common/tstring.h>
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -21,6 +23,8 @@
 #include <GLES2/gl2.h>
 #endif
 #include <GLFW/glfw3.h> // Will drag system OpenGL headers
+
+#include <Windows.h>
 
 #include <chrono>
 #include <thread>
@@ -43,9 +47,9 @@ static void glfw_error_callback(int error, const char *description) {
 }
 
 #ifndef NDEBUG
-int main(int, char **) {
+int main(int, char **) try {
 #else
-int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR szCmdLine, int nCmdShow) {
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR szCmdLine, int nCmdShow) try {
 #endif
 
     auto startTime = std::chrono::system_clock::now();
@@ -178,4 +182,7 @@ glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwTerminate();
 
     return 0;
+} catch (const std::exception &e) {
+    MessageBoxW(NULL, utf8_to_wstring(e.what()).c_str(), L"Error", MB_ICONERROR | MB_OK);
+    return -1;
 }

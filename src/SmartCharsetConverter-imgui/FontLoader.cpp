@@ -3,9 +3,11 @@
 #include "FontAnalyzer.h"
 
 #include <imgui.h>
+#include <fmt/format.h>
 
 #include <string>
 #include <vector>
+#include <filesystem>
 
 struct FontInfo {
     std::string fontPath;
@@ -46,9 +48,12 @@ void LoadFonts(ImGuiIO &io) {
         if (loadedTheFirst) {
             fontConfig.MergeMode = true;
         }
-        // FontAnalyzer<std::unordered_set<uint32_t>> fontAnalyzer([](std::unordered_set<uint32_t> &c, uint32_t val) {
-        //     c.insert(val);
-        // });
+
+        auto &fontInfo = fontInfos[i];
+        if (!std::filesystem::is_regular_file(fontInfo.fontPath)) {
+            continue;
+        }
+
         FontAnalyzer<std::vector<ImWchar>> fontAnalyzer([](std::vector<ImWchar> &c, ImWchar val) {
             c.push_back(val);
         });
@@ -59,12 +64,16 @@ void LoadFonts(ImGuiIO &io) {
         ImFont *font =
             io.Fonts->AddFontFromFileTTF(fontInfos[i].fontPath.c_str(), static_cast<float>(fontInfos[i].fontSize),
                                          &fontConfig, fontInfos[i].dict.data());
-        assert(font);
+        if (!font) {
+            throw std::runtime_error(fmt::format("failed to add font: {}", fontInfo.fontPath));
+        }
         loadedTheFirst = true;
     }
 
     io.Fonts->Build();
     for (auto font : io.Fonts->Fonts) {
-        assert(font->IsLoaded());
+        if (!font->IsLoaded()) {
+            throw std::runtime_error(fmt::format("failed to load font: {}", font->ConfigData->Name));
+        }
     }
 }
