@@ -113,7 +113,10 @@ glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #endif
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    LoadFonts(io);
+    bool loadedFonts = false;
+
+    FontLoader fontLoader;
+    fontLoader.StartAsyncLoad();
 
     // Our state
     bool show_demo_window = true;
@@ -148,6 +151,11 @@ glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
         if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             continue;
+        }
+
+        if (!loadedFonts) {
+            LoadFonts(io.Fonts);
+            loadedFonts = true;
         }
 
         // Start the Dear ImGui frame
