@@ -113,7 +113,7 @@ glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 #endif
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    bool loadedFonts = false;
+    bool fontLoaded = false;
 
     FontLoader fontLoader;
     fontLoader.StartAsyncLoad();
@@ -153,9 +153,13 @@ glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
             continue;
         }
 
-        if (!loadedFonts) {
-            LoadFonts(io.Fonts);
-            loadedFonts = true;
+        while (!fontLoaded) {
+            auto newIoFonts = fontLoader.TryGetFontAtlas();
+            if (newIoFonts) {
+                io.Fonts = newIoFonts.release();
+                fontLoaded = true;
+                break;
+            }
         }
 
         // Start the Dear ImGui frame
