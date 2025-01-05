@@ -153,13 +153,13 @@ glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
             continue;
         }
 
-        while (!fontLoaded) {
-            auto newIoFonts = fontLoader.TryGetFontAtlas();
-            if (newIoFonts) {
-                io.Fonts = newIoFonts.release();
-                fontLoaded = true;
-                break;
-            }
+        auto newIoFonts = fontLoader.TryGetFontAtlas();
+        if (newIoFonts) {
+            ImGui_ImplOpenGL3_DestroyFontsTexture();
+
+            io.Fonts = newIoFonts.release();
+
+            ImGui_ImplOpenGL3_CreateFontsTexture();
         }
 
         // Start the Dear ImGui frame
