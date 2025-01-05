@@ -49,9 +49,7 @@ DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilena
 
         //
         LanguageServiceOption option;
-        option.fnGetLanguageFromConfig = [this]() -> std::string {
-            return core->GetConfig().language;
-        };
+        option.languageName = core->GetConfig().language;
         option.resourceIds = innerLanguageIds;
         option.resourceType = L"LanguageJson";
 

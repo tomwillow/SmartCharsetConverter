@@ -19,7 +19,7 @@ LanguageService::LanguageService(LanguageServiceOption option) : option(option) 
 
     LoadLanguageNameFromDir("lang");
 
-    std::string lang = option.fnGetLanguageFromConfig();
+    std::string lang = option.languageName;
     if (lang.empty()) {
         LANGID langId = GetUserDefaultLangID();
 
