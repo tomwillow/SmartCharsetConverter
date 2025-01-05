@@ -9,6 +9,7 @@ file(GLOB SRC_CODE
 # 目标exe
 add_executable(${target_name}
 	${SRC_CODE}
+	SmartCharsetConverter.rc
 )
 
 find_package(imgui CONFIG REQUIRED)
