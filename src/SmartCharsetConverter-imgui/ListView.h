@@ -31,15 +31,8 @@ public:
         // called very often by the sorting algorithm it would be a little wasteful.
         static const ImGuiTableSortSpecs *s_current_sort_specs;
 
-        static void SortWithSortSpecs(ImGuiTableSortSpecs *sort_specs, MyItem *items, int items_count) {
-            s_current_sort_specs = sort_specs; // Store in variable accessible by the sort function.
-            if (items_count > 1)
-                qsort(items, (size_t)items_count, sizeof(items[0]), MyItem::CompareWithSortSpecs);
-            s_current_sort_specs = NULL;
-        }
-
         // Compare function to be used by qsort()
-        static int IMGUI_CDECL CompareWithSortSpecs(const void *lhs, const void *rhs) {
+        static int __cdecl CompareWithSortSpecs(const void *lhs, const void *rhs) {
             const MyItem *a = (const MyItem *)lhs;
             const MyItem *b = (const MyItem *)rhs;
             for (int n = 0; n < s_current_sort_specs->SpecsCount; n++) {
@@ -75,6 +68,13 @@ public:
             // Your own compare function may want to avoid fallback on implicit sort specs.
             // e.g. a Name compare if it wasn't already part of the sort specs.
             return (a->ID - b->ID);
+        }
+
+        static void SortWithSortSpecs(ImGuiTableSortSpecs *sort_specs, MyItem *items, int items_count) {
+            s_current_sort_specs = sort_specs; // Store in variable accessible by the sort function.
+            if (items_count > 1)
+                qsort(items, (size_t)items_count, sizeof(items[0]), MyItem::CompareWithSortSpecs);
+            s_current_sort_specs = NULL;
         }
     };
 
@@ -185,4 +185,3 @@ public:
         }
     }
 };
-const ImGuiTableSortSpecs *ListView::MyItem::s_current_sort_specs = NULL;
