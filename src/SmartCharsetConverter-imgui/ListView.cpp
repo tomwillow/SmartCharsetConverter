@@ -4,7 +4,7 @@ const ImGuiTableSortSpecs *ListView::MyItem::s_current_sort_specs = NULL;
 
 // Compare function to be used by qsort()
 
-inline int __cdecl ListView::MyItem::CompareWithSortSpecs(const void *lhs, const void *rhs) {
+int __cdecl ListView::MyItem::CompareWithSortSpecs(const void *lhs, const void *rhs) {
     const MyItem *a = (const MyItem *)lhs;
     const MyItem *b = (const MyItem *)rhs;
     for (int n = 0; n < s_current_sort_specs->SpecsCount; n++) {
@@ -42,14 +42,14 @@ inline int __cdecl ListView::MyItem::CompareWithSortSpecs(const void *lhs, const
     return (a->ID - b->ID);
 }
 
-inline void ListView::MyItem::SortWithSortSpecs(ImGuiTableSortSpecs *sort_specs, MyItem *items, int items_count) {
+void ListView::MyItem::SortWithSortSpecs(ImGuiTableSortSpecs *sort_specs, MyItem *items, int items_count) {
     s_current_sort_specs = sort_specs; // Store in variable accessible by the sort function.
     if (items_count > 1)
         qsort(items, (size_t)items_count, sizeof(items[0]), MyItem::CompareWithSortSpecs);
     s_current_sort_specs = NULL;
 }
 
-inline void ListView::Render() {
+void ListView::Render() {
     static const char *template_items_names[] = {"Banana",     "Apple", "Cherry",  "Watermelon", "Grapefruit",
                                                  "Strawberry", "Mango", "Kiwi",    "Orange",     "Pineapple",
                                                  "Blueberry",  "Plum",  "Coconut", "Pear",       "Apricot"};
