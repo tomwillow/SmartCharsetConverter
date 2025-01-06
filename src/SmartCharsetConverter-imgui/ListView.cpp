@@ -1,65 +1,70 @@
 #include "ListView.h"
 
-const ImGuiTableSortSpecs *ListView::MyItem::s_current_sort_specs = NULL;
+#include <algorithm>
+#include <vector>
 
-// Compare function to be used by qsort()
-
-int __cdecl ListView::MyItem::CompareWithSortSpecs(const void *lhs, const void *rhs) {
-    const MyItem *a = (const MyItem *)lhs;
-    const MyItem *b = (const MyItem *)rhs;
-    for (int n = 0; n < s_current_sort_specs->SpecsCount; n++) {
+bool CompareWithSortSpecs(ImGuiTableSortSpecs *sort_specs, const ListView::MyItem *a, const ListView::MyItem *b) {
+    for (int n = 0; n < sort_specs->SpecsCount; n++) {
         // Here we identify columns using the ColumnUserID value that we ourselves passed to TableSetupColumn()
         // We could also choose to identify columns based on their index (sort_spec->ColumnIndex), which is
         // simpler!
-        const ImGuiTableColumnSortSpecs *sort_spec = &s_current_sort_specs->Specs[n];
-        int delta = 0;
+        const ImGuiTableColumnSortSpecs *sort_spec = &sort_specs->Specs[n];
         switch (sort_spec->ColumnUserID) {
-        case MyItemColumnID_ID:
-            delta = (a->ID - b->ID);
+        case ListView::MyItemColumnID::MyItemColumnID_ID:
+            if (a->ID == b->ID) {
+                break;
+            }
+            if (sort_spec->SortDirection == ImGuiSortDirection_Ascending)
+                return a->ID < b->ID;
+            else
+                return a->ID > b->ID;
+        case ListView::MyItemColumnID::MyItemColumnID_Name:
+            if (a->Name == b->Name) {
+                break;
+            }
+            if (sort_spec->SortDirection == ImGuiSortDirection_Ascending)
+                return a->Name < b->Name;
+            else
+                return a->Name > b->Name;
             break;
-        case MyItemColumnID_Name:
-            delta = (strcmp(a->Name, b->Name));
+        case ListView::MyItemColumnID::MyItemColumnID_Quantity:
+            if (a->Quantity == b->Quantity) {
+                break;
+            }
+            if (sort_spec->SortDirection == ImGuiSortDirection_Ascending)
+                return a->Quantity < b->Quantity;
+            else
+                return a->Quantity > b->Quantity;
             break;
-        case MyItemColumnID_Quantity:
-            delta = (a->Quantity - b->Quantity);
-            break;
-        case MyItemColumnID_Description:
-            delta = (strcmp(a->Name, b->Name));
+        case ListView::MyItemColumnID::MyItemColumnID_Description:
+            if (a->Name == b->Name) {
+                break;
+            }
+            if (sort_spec->SortDirection == ImGuiSortDirection_Ascending)
+                return a->Name < b->Name;
+            else
+                return a->Name > b->Name;
             break;
         default:
             IM_ASSERT(0);
             break;
         }
-        if (delta > 0)
-            return (sort_spec->SortDirection == ImGuiSortDirection_Ascending) ? +1 : -1;
-        if (delta < 0)
-            return (sort_spec->SortDirection == ImGuiSortDirection_Ascending) ? -1 : +1;
     }
 
-    // qsort() is instable so always return a way to differenciate items.
-    // Your own compare function may want to avoid fallback on implicit sort specs.
-    // e.g. a Name compare if it wasn't already part of the sort specs.
-    return (a->ID - b->ID);
-}
-
-void ListView::MyItem::SortWithSortSpecs(ImGuiTableSortSpecs *sort_specs, MyItem *items, int items_count) {
-    s_current_sort_specs = sort_specs; // Store in variable accessible by the sort function.
-    if (items_count > 1)
-        qsort(items, (size_t)items_count, sizeof(items[0]), MyItem::CompareWithSortSpecs);
-    s_current_sort_specs = NULL;
+    return false;
 }
 
 void ListView::Render() {
-    static const char *template_items_names[] = {"Banana",     "Apple", "Cherry",  "Watermelon", "Grapefruit",
-                                                 "Strawberry", "Mango", "Kiwi",    "Orange",     "Pineapple",
-                                                 "Blueberry",  "Plum",  "Coconut", "Pear",       "Apricot"};
+    static const char *template_items_names[] = {u8"香蕉", u8"苹果", u8"樱桃",   u8"西瓜", u8"葡萄柚",
+                                                 u8"草莓", u8"芒果", u8"猕猴桃", u8"橙子", u8"菠萝",
+                                                 u8"蓝莓", u8"李子", u8"椰子",   u8"梨",   u8"杏"};
 
     const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
     // Create item list
-    static ImVector<MyItem> items;
-    if (items.Size == 0) {
+    static std::vector<MyItem> items;
+    if (items.size() == 0) {
         items.resize(50, MyItem());
-        for (int n = 0; n < items.Size; n++) {
+        for (int n = 0; n < items.size(); n++) {
             const int template_n = n % IM_ARRAYSIZE(template_items_names);
             MyItem &item = items[n];
             item.ID = n;
@@ -108,13 +113,15 @@ void ListView::Render() {
         // Sort our data if sort specs have been changed!
         if (ImGuiTableSortSpecs *sort_specs = ImGui::TableGetSortSpecs())
             if (sort_specs->SpecsDirty) {
-                MyItem::SortWithSortSpecs(sort_specs, items.Data, items.Size);
+                std::sort(items.begin(), items.end(), [sort_specs](const MyItem &lhs, const MyItem &rhs) -> bool {
+                    return CompareWithSortSpecs(sort_specs, &lhs, &rhs);
+                });
                 sort_specs->SpecsDirty = false;
             }
 
         // Demonstrate using clipper for large vertical lists
         ImGuiListClipper clipper;
-        clipper.Begin(items.Size);
+        clipper.Begin(static_cast<int>(items.size()));
         while (clipper.Step())
             for (int row_n = clipper.DisplayStart; row_n < clipper.DisplayEnd; row_n++) {
                 // Display a data item
@@ -145,7 +152,7 @@ void ListView::Render() {
                 }
 
                 ImGui::TableNextColumn();
-                ImGui::TextUnformatted(item->Name);
+                ImGui::TextUnformatted(item->Name.c_str());
                 ImGui::TableNextColumn();
                 ImGui::SmallButton("None");
                 ImGui::TableNextColumn();
