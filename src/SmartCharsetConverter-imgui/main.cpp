@@ -46,11 +46,19 @@ static void glfw_error_callback(int error, const char *description) {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
+// File drop callback function
+void drop_callback(GLFWwindow *window, int count, const char **paths) {
+    for (int i = 0; i < count; i++) {
+        printf("%s\n", paths[i]);
+    }
+}
+
 #ifndef NDEBUG
 int main(int, char **) try {
 #else
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR szCmdLine, int nCmdShow) try {
 #endif
+    std::setlocale(LC_CTYPE, ".UTF-8");
 
     auto startTime = std::chrono::system_clock::now();
 
@@ -91,6 +99,10 @@ glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     GLFWwindow *window = glfwCreateWindow(1280, 720, "Dear ImGui GLFW+OpenGL3 example", nullptr, nullptr);
     if (window == nullptr)
         return 1;
+
+    // Set the file drop callback
+    glfwSetDropCallback(window, drop_callback);
+
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1); // Enable vsync
 
