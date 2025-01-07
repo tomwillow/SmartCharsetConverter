@@ -17,7 +17,8 @@ MainWindow::MainWindow()
           option.resourceIds = innerLanguageIds;
           option.resourceType = L"LanguageJson";
           return option;
-      }()) {
+      }()),
+      listView(languageService) {
     uni_table::InitUtf8Table();
 }
 

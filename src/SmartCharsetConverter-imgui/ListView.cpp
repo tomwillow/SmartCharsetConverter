@@ -3,48 +3,75 @@
 #include <algorithm>
 #include <vector>
 
+/**
+ * @return <return_value, should_break>
+ */
+template <std::size_t ItemIndex>
+std::tuple<bool, bool> Compare(const ListView::MyItem *a, const ListView::MyItem *b, bool ascending) {
+    if (std::get<ItemIndex>(a->AsTuple()) == std::get<ItemIndex>(b->AsTuple())) {
+        return {false, true};
+    }
+
+    bool isLessThan = std::get<ItemIndex>(a->AsTuple()) < std::get<ItemIndex>(b->AsTuple());
+    return {ascending ? isLessThan : !isLessThan, false};
+}
+
 bool CompareWithSortSpecs(ImGuiTableSortSpecs *sort_specs, const ListView::MyItem *a, const ListView::MyItem *b) {
     for (int n = 0; n < sort_specs->SpecsCount; n++) {
         // Here we identify columns using the ColumnUserID value that we ourselves passed to TableSetupColumn()
         // We could also choose to identify columns based on their index (sort_spec->ColumnIndex), which is
         // simpler!
         const ImGuiTableColumnSortSpecs *sort_spec = &sort_specs->Specs[n];
+
         switch (sort_spec->ColumnUserID) {
-        case ListView::MyItemColumnID::MyItemColumnID_ID:
-            if (a->ID == b->ID) {
+        case 0: {
+            auto [returnValue, shouldBreak] =
+                Compare<0>(a, b, sort_spec->SortDirection == ImGuiSortDirection_Ascending);
+            if (shouldBreak) {
                 break;
             }
-            if (sort_spec->SortDirection == ImGuiSortDirection_Ascending)
-                return a->ID < b->ID;
-            else
-                return a->ID > b->ID;
-        case ListView::MyItemColumnID::MyItemColumnID_Name:
-            if (a->Name == b->Name) {
+            return returnValue;
+        }
+        case 1: {
+            auto [returnValue, shouldBreak] =
+                Compare<1>(a, b, sort_spec->SortDirection == ImGuiSortDirection_Ascending);
+            if (shouldBreak) {
                 break;
             }
-            if (sort_spec->SortDirection == ImGuiSortDirection_Ascending)
-                return a->Name < b->Name;
-            else
-                return a->Name > b->Name;
-            break;
-        case ListView::MyItemColumnID::MyItemColumnID_Quantity:
-            if (a->Quantity == b->Quantity) {
+            return returnValue;
+        }
+        case 2: {
+            auto [returnValue, shouldBreak] =
+                Compare<2>(a, b, sort_spec->SortDirection == ImGuiSortDirection_Ascending);
+            if (shouldBreak) {
                 break;
             }
-            if (sort_spec->SortDirection == ImGuiSortDirection_Ascending)
-                return a->Quantity < b->Quantity;
-            else
-                return a->Quantity > b->Quantity;
-            break;
-        case ListView::MyItemColumnID::MyItemColumnID_Description:
-            if (a->Name == b->Name) {
+            return returnValue;
+        }
+        case 3: {
+            auto [returnValue, shouldBreak] =
+                Compare<3>(a, b, sort_spec->SortDirection == ImGuiSortDirection_Ascending);
+            if (shouldBreak) {
                 break;
             }
-            if (sort_spec->SortDirection == ImGuiSortDirection_Ascending)
-                return a->Name < b->Name;
-            else
-                return a->Name > b->Name;
-            break;
+            return returnValue;
+        }
+        case 4: {
+            auto [returnValue, shouldBreak] =
+                Compare<4>(a, b, sort_spec->SortDirection == ImGuiSortDirection_Ascending);
+            if (shouldBreak) {
+                break;
+            }
+            return returnValue;
+        }
+        case 5: {
+            auto [returnValue, shouldBreak] =
+                Compare<5>(a, b, sort_spec->SortDirection == ImGuiSortDirection_Ascending);
+            if (shouldBreak) {
+                break;
+            }
+            return returnValue;
+        }
         default:
             IM_ASSERT(0);
             break;
@@ -53,6 +80,8 @@ bool CompareWithSortSpecs(ImGuiTableSortSpecs *sort_specs, const ListView::MyIte
 
     return false;
 }
+
+ListView::ListView(LanguageService &languageService) noexcept : languageService(languageService) {}
 
 void ListView::Render() {
     static const char *template_items_names[] = {u8"香蕉", u8"苹果", u8"樱桃",   u8"西瓜", u8"葡萄柚",
@@ -67,9 +96,9 @@ void ListView::Render() {
         for (int n = 0; n < items.size(); n++) {
             const int template_n = n % IM_ARRAYSIZE(template_items_names);
             MyItem &item = items[n];
-            item.ID = n;
-            item.Name = template_items_names[template_n];
-            item.Quantity = (n * n - n) % 20; // Assign default quantities
+            item.index = n;
+            item.fileName = template_items_names[template_n];
+            item.fileSize = (n * n - n) % 20; // Assign default quantities
         }
     }
 
@@ -89,7 +118,8 @@ void ListView::Render() {
     //            "return specs where (SpecsCount == 0).");
     // PopStyleCompact();
 
-    if (ImGui::BeginTable("table_sorting", 4, flags, ImVec2(0.0f, TEXT_BASE_HEIGHT * 15), 0.0f)) {
+    if (ImGui::BeginTable("table_sorting", static_cast<int>(ListViewColumn::TEXT_PIECE) + 1, flags,
+                          ImVec2(0.0f, TEXT_BASE_HEIGHT * 15), 0.0f)) {
         // Declare columns
         // We use the "user_id" parameter of TableSetupColumn() to specify a user id that will be stored in the
         // sort specifications. This is so our sort function can identify a column given our own identifier. We
@@ -99,14 +129,21 @@ void ListView::Render() {
         // - ImGuiTableColumnFlags_NoSort / ImGuiTableColumnFlags_NoSortAscending /
         // ImGuiTableColumnFlags_NoSortDescending
         // - ImGuiTableColumnFlags_PreferSortAscending / ImGuiTableColumnFlags_PreferSortDescending
-        ImGui::TableSetupColumn("ID", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthFixed, 0.0f,
-                                MyItemColumnID_ID);
-        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 0.0f, MyItemColumnID_Name);
-        ImGui::TableSetupColumn("Action", ImGuiTableColumnFlags_NoSort | ImGuiTableColumnFlags_WidthFixed, 0.0f,
-                                MyItemColumnID_Action);
-        ImGui::TableSetupColumn("Quantity",
-                                ImGuiTableColumnFlags_PreferSortDescending | ImGuiTableColumnFlags_WidthStretch, 0.0f,
-                                MyItemColumnID_Quantity);
+        ImGui::TableSetupColumn(languageService.GetUtf8String(v0_2::StringId::INDEX).c_str(),
+                                ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthFixed, 0.0f,
+                                static_cast<ImGuiID>(ListViewColumn::INDEX));
+        ImGui::TableSetupColumn(languageService.GetUtf8String(v0_2::StringId::FILENAME).c_str(),
+                                ImGuiTableColumnFlags_WidthFixed, 0.0f, static_cast<ImGuiID>(ListViewColumn::FILENAME));
+        ImGui::TableSetupColumn(languageService.GetUtf8String(v0_2::StringId::SIZE).c_str(),
+                                ImGuiTableColumnFlags_WidthFixed, 0.0f, static_cast<ImGuiID>(ListViewColumn::FILESIZE));
+        ImGui::TableSetupColumn(languageService.GetUtf8String(v0_2::StringId::ENCODING).c_str(),
+                                ImGuiTableColumnFlags_WidthFixed, 0.0f, static_cast<ImGuiID>(ListViewColumn::ENCODING));
+        ImGui::TableSetupColumn(languageService.GetUtf8String(v0_2::StringId::LINE_BREAKS).c_str(),
+                                ImGuiTableColumnFlags_WidthFixed, 0.0f,
+                                static_cast<ImGuiID>(ListViewColumn::LINE_BREAK));
+        ImGui::TableSetupColumn(languageService.GetUtf8String(v0_2::StringId::TEXT_PIECE).c_str(),
+                                ImGuiTableColumnFlags_WidthStretch, 0.0f,
+                                static_cast<ImGuiID>(ListViewColumn::TEXT_PIECE));
         ImGui::TableSetupScrollFreeze(0, 1); // Make row always visible
         ImGui::TableHeadersRow();
 
@@ -126,37 +163,36 @@ void ListView::Render() {
             for (int row_n = clipper.DisplayStart; row_n < clipper.DisplayEnd; row_n++) {
                 // Display a data item
                 MyItem *item = &items[row_n];
-                ImGui::PushID(item->ID);
+                ImGui::PushID(item->index);
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
                 // ImGui::Text("%04d", item->ID);
 
                 {
                     static ImVector<int> selection;
-                    const bool item_is_selected = selection.contains(item->ID);
-                    std::string label = fmt::format("{}", item->ID);
+                    const bool item_is_selected = selection.contains(item->index);
+                    std::string label = fmt::format("{}", item->index);
 
                     ImGuiSelectableFlags selectable_flags =
                         ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowOverlap;
                     if (ImGui::Selectable(label.c_str(), item_is_selected, selectable_flags, ImVec2(0, 0))) {
                         if (ImGui::GetIO().KeyCtrl) {
                             if (item_is_selected)
-                                selection.find_erase_unsorted(item->ID);
+                                selection.find_erase_unsorted(item->index);
                             else
-                                selection.push_back(item->ID);
+                                selection.push_back(item->index);
                         } else {
                             selection.clear();
-                            selection.push_back(item->ID);
+                            selection.push_back(item->index);
                         }
                     }
                 }
 
                 ImGui::TableNextColumn();
-                ImGui::TextUnformatted(item->Name.c_str());
+                ImGui::TextUnformatted(item->fileName.c_str());
                 ImGui::TableNextColumn();
-                ImGui::SmallButton("None");
+                ImGui::Text("%d", item->fileSize);
                 ImGui::TableNextColumn();
-                ImGui::Text("%d", item->Quantity);
                 ImGui::PopID();
             }
         ImGui::EndTable();
