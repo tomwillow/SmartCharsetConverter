@@ -195,6 +195,16 @@ void ListView::Render() {
                 ImGui::TableNextColumn();
                 ImGui::PopID();
             }
+
         ImGui::EndTable();
+    }
+    bool b = ImGui::IsItemHovered();
+    bool hover = ImGui::IsWindowHovered();
+    if (ImGui::BeginDragDropTarget()) {
+
+        auto payload = ImGui::AcceptDragDropPayload("files", ImGuiDragDropFlags_AcceptBeforeDelivery);
+        fmt::print("accept: {} delivery: {}\n", reinterpret_cast<const char *>(payload->Data), payload->IsDelivery());
+
+        ImGui::EndDragDropTarget();
     }
 }

@@ -49,7 +49,11 @@ static void glfw_error_callback(int error, const char *description) {
 // File drop callback function
 void drop_callback(GLFWwindow *window, int count, const char **paths) {
     for (int i = 0; i < count; i++) {
-        printf("%s\n", paths[i]);
+        printf("send: %s\n", paths[i]);
+        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceExtern | ImGuiDragDropFlags_SourceNoPreviewTooltip)) {
+            ImGui::SetDragDropPayload("files", paths[i], strlen(paths[i]));
+            ImGui::EndDragDropSource();
+        }
     }
 }
 
@@ -139,7 +143,7 @@ glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     MainWindow mainWindow;
 
     auto initEndTime = std::chrono::system_clock::now();
-    fmt::print("init time: {}s", std::chrono::duration<double>(initEndTime - startTime).count());
+    fmt::print("init time: {}s\n", std::chrono::duration<double>(initEndTime - startTime).count());
 
     // Main loop
 #ifdef __EMSCRIPTEN__

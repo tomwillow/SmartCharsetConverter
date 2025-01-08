@@ -14,6 +14,8 @@ public:
 
     void Render();
 
+    void OnDropFiles(const std::vector<std::string> &files);
+
 private:
     Core core;
     LanguageService languageService;
