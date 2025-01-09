@@ -1,7 +1,8 @@
 #include "CommandLineParser.h"
+#include "tstring.h"
 
-std::vector<std::wstring> GetCommandLineArgs() {
-    std::vector<std::wstring> args;
+std::vector<std::string> GetCommandLineArgs() {
+    std::vector<std::string> args;
     LPWSTR *szArglist;
     int nArgs;
     int i;
@@ -12,7 +13,7 @@ std::vector<std::wstring> GetCommandLineArgs() {
     }
 
     for (i = 0; i < nArgs; i++) {
-        args.push_back(szArglist[i]);
+        args.push_back(to_utf8(szArglist[i]));
     }
 
     // Free memory allocated for CommandLineToArgvW arguments.

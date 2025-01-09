@@ -66,7 +66,7 @@ void TFileDialog::SetFilter(std::vector<std::pair<std::tstring, std::tstring>> v
 
     filter = ToTCHARArray(ret);
 
-    ofn.lpstrFilter = filter.get(); //两个\0表示结束
+    ofn.lpstrFilter = filter.get(); // 两个\0表示结束
 }
 
 void TFileDialog::SetTitle(const std::tstring &title) {
@@ -163,8 +163,8 @@ void TFileDialog::SetResult(const std::tstring &s) {
 bool TFileDialog::Save() {
     ofn.Flags = OFN_PATHMUSTEXIST;
 
-    //设为空可以自动加上选择的后缀名，否则无论选什么后缀，
-    //只要没有输入.txt这种，都是无后缀
+    // 设为空可以自动加上选择的后缀名，否则无论选什么后缀，
+    // 只要没有输入.txt这种，都是无后缀
     ofn.lpstrDefExt = TEXT("");
 
     return ::GetSaveFileName(&ofn);
@@ -185,11 +185,11 @@ bool TFolderBrowser::Open(std::tstring &fileName) {
 
     BROWSEINFO bi = {0};
     bi.hwndOwner = hWndOwner;
-    bi.pszDisplayName = szBuffer; //接收文件夹的缓冲区
-    bi.lpszTitle = title.c_str(); //标题
+    bi.pszDisplayName = szBuffer; // 接收文件夹的缓冲区
+    bi.lpszTitle = title.c_str(); // 标题
     bi.ulFlags = BIF_NEWDIALOGSTYLE;
 
-    //使用回调传入初始路径
+    // 使用回调传入初始路径
     bi.lParam = (LPARAM)fileName.c_str();
     bi.lpfn = (BFFCALLBACK)BrowserCallbackProc;
 
@@ -200,8 +200,8 @@ bool TFolderBrowser::Open(std::tstring &fileName) {
     return ret;
 }
 
-//传入index=1则得到传入文件名
-//失败返回空串
+// 传入index=1则得到传入文件名
+// 失败返回空串
 #ifdef UNICODE
 std::wstring GetCommandLineByIndex(int index) {
     int nArgs;
@@ -223,11 +223,11 @@ std::string GetCommandLineByIndex(int index) {
 
 #endif
 
-bool GetFileExists(const std::tstring filename) {
+bool GetFileExists(const std::string filename) {
     WIN32_FIND_DATA FindFileData;
     HANDLE hFind;
 
-    hFind = FindFirstFile(filename.c_str(), &FindFileData);
+    hFind = FindFirstFileW(utf8_to_wstring(filename).c_str(), &FindFileData);
 
     if (hFind == INVALID_HANDLE_VALUE) {
         return false;
@@ -245,12 +245,12 @@ bool GetFileExists(const std::tstring filename) {
 
 vector<tstring> SplitPath(const std::tstring &s) {
     vector<tstring> ret;
-    auto slash = s.find_last_of(TEXT("/\\")); //找最后一个正斜杠或者反斜杠位置
+    auto slash = s.find_last_of(TEXT("/\\")); // 找最后一个正斜杠或者反斜杠位置
 
-    if (slash != tstring::npos) //存在
+    if (slash != tstring::npos) // 存在
     {
-        ret.push_back(s.substr(0, slash));             //得到纯路径
-        auto vec = SplitFileName(s.substr(slash + 1)); //分割文件名
+        ret.push_back(s.substr(0, slash));             // 得到纯路径
+        auto vec = SplitFileName(s.substr(slash + 1)); // 分割文件名
         ret.insert(ret.end(), vec.begin(), vec.end());
     } else {
         ret.push_back(TEXT(""));
@@ -268,10 +268,10 @@ vector<tstring> SplitFileName(const std::tstring &s) {
         return {s, TEXT("")};
 }
 
-std::tstring GetNameAndExt(std::tstring s) noexcept {
-    tstring ret;
-    auto slash = s.find_last_of(TEXT("/\\")); //从后寻找正反斜杠
-    if (slash != tstring::npos) {
+std::string GetNameAndExt(std::string s) noexcept {
+    string ret;
+    auto slash = s.find_last_of("/\\"); // 从后寻找正反斜杠
+    if (slash != string::npos) {
         ret = s.substr(slash + 1);
     } else {
         ret = s;
@@ -291,17 +291,17 @@ tstring ChangeExtend(tstring fileName, tstring ext) {
     return fileName.substr(0, dot_pos) + TEXT('.') + ext;
 }
 
-std::tstring GetExtend(std::tstring fileName) {
+std::string GetExtend(std::string fileName) {
     auto slash_pos = fileName.find_last_of('\\');
     auto dot_pos = fileName.find_last_of('.');
-    if (dot_pos == tstring::npos || (slash_pos != tstring::npos && dot_pos < slash_pos)) // e.g. "Name" "dir.dir\file"
+    if (dot_pos == string::npos || (slash_pos != string::npos && dot_pos < slash_pos)) // e.g. "Name" "dir.dir\file"
     {
-        return TEXT("");
+        return "";
     }
     return fileName.substr(dot_pos + 1);
 }
 
-//取得文件大小，不改变读写位置
+// 取得文件大小，不改变读写位置
 uint64_t GetFileSize(FILE *fp) {
     long long origin_pos = _ftelli64(fp);
     _fseeki64(fp, 0LL, SEEK_END);
@@ -310,38 +310,39 @@ uint64_t GetFileSize(FILE *fp) {
     return ret;
 }
 
-uint64_t GetFileSize(std::tstring fileName) {
-    FILE *fp = _tfopen(fileName.c_str(), TEXT("rb"));
+uint64_t GetFileSize(std::string fileName) {
+    std::wstring wfilename = utf8_to_wstring(fileName);
+    FILE *fp = _wfopen(wfilename.c_str(), L"rb");
     if (fp == nullptr)
-        throw file_io_error(to_string(TEXT("\"") + fileName + TEXT("\"") + TEXT(" can't open.")).c_str(), fileName);
+        throw file_io_error(string("\"") + fileName + "\" can't open.", fileName);
     uint64_t sz = GetFileSize(fp);
     fclose(fp);
     return sz;
 }
 
-std::tstring FileSizeToTString(uint64_t fileSize) {
+std::string FileSizeToHumanString(uint64_t fileSize) {
     double d;
-    TCHAR buf[64];
+    char buf[64];
     if (fileSize >= GB) {
         d = fileSize / (double)GB;
-        _stprintf(buf, TEXT("%.2f GB"), d);
+        sprintf(buf, "%.2f GB", d);
     } else {
         if (fileSize >= MB) {
             d = fileSize / (double)MB;
-            _stprintf(buf, TEXT("%.2f MB"), d);
+            sprintf(buf, "%.2f MB", d);
         } else if (fileSize >= KB) {
             d = fileSize / (double)KB;
-            _stprintf(buf, TEXT("%.2f KB"), d);
+            sprintf(buf, "%.2f KB", d);
         } else {
             d = static_cast<double>(fileSize);
-            _stprintf(buf, TEXT("%.0f B"), d);
+            sprintf(buf, "%.0f B", d);
         }
     }
 
     return buf;
 }
 
-std::tuple<std::unique_ptr<char[]>, uint64_t> ReadFileToBuffer(std::tstring fileName, uint64_t limitSize) {
+std::tuple<std::unique_ptr<char[]>, uint64_t> ReadFileToBuffer(std::string fileName, uint64_t limitSize) {
     uint64_t bufSize = GetFileSize(fileName);
 
     if (limitSize != 0) {
@@ -355,27 +356,29 @@ std::tuple<std::unique_ptr<char[]>, uint64_t> ReadFileToBuffer(std::tstring file
         return make_tuple(std::move(buf), bufSize);
     }
 
-    FILE *fp = _tfopen(fileName.c_str(), TEXT("rb"));
+    std::wstring wfilename = utf8_to_wstring(fileName);
+    FILE *fp = _wfopen(wfilename.c_str(), TEXT("rb"));
     if (fp == nullptr)
-        throw file_io_error(to_string(TEXT("\"") + fileName + TEXT("\"") + TEXT(" can't open.")).c_str(), fileName);
+        throw file_io_error(string("\"") + fileName + "\" can't open.", fileName);
     auto ret = fread(buf.get(), bufSize, 1, fp);
     if (ret < 1) {
         fclose(fp);
-        throw file_io_error(to_string(TEXT("\"") + fileName + TEXT("\"") + TEXT(" can't open.")).c_str(), fileName);
+        throw file_io_error(string("\"") + fileName + "\" can't read.", fileName);
     }
     fclose(fp);
 
     return make_tuple(std::move(buf), bufSize);
 }
 
-void WriteFileFromBuffer(std::tstring fileName, const char buf[], uint64_t bufSize) {
-    FILE *fp = _tfopen(fileName.c_str(), TEXT("wb"));
+void WriteFileFromBuffer(std::string fileName, const char buf[], uint64_t bufSize) {
+    std::wstring wfilename = utf8_to_wstring(fileName);
+    FILE *fp = _wfopen(wfilename.c_str(), TEXT("wb"));
     if (fp == nullptr)
-        throw file_io_error(to_string(TEXT("\"") + fileName + TEXT("\"") + TEXT(" can't open.")).c_str(), fileName);
+        throw file_io_error(string("\"") + fileName + "\" can't open.", fileName);
     auto ret = fwrite(buf, bufSize, 1, fp);
     if (ret < 1) {
         fclose(fp);
-        throw file_io_error(to_string(TEXT("\"") + fileName + TEXT("\"") + TEXT(" can't write.")).c_str(), fileName);
+        throw file_io_error(string("\"") + fileName + "\" can't write.", fileName);
     }
     fclose(fp);
 }
@@ -400,51 +403,42 @@ void WriteDetailFile(HWND hWnd, std::tstring filename, std::function<void(std::t
     }
 }
 
-//失败抛出file_io_error类型自定义异常
-void findFiles(std::vector<std::tstring> &ret, std::tstring lpPath, std::vector<std::tstring> dotextNames,
+// 失败抛出file_io_error类型自定义异常
+void findFiles(std::vector<std::string> &ret, std::string lpPath, std::vector<std::string> dotextNames,
                bool enterSubFolder) {
-    tstring szFile;
+    string szFile;
     WIN32_FIND_DATA FindFileData;
 
-    tstring szFind = lpPath + TEXT("\\*");
+    string szFind = lpPath + "\\*";
 
-    HANDLE hFind = ::FindFirstFile(szFind.c_str(), &FindFileData);
+    HANDLE hFind = ::FindFirstFileW(utf8_to_wstring(szFind).c_str(), &FindFileData);
 
     if (INVALID_HANDLE_VALUE == hFind) {
-        throw file_io_error(to_string(tstring(TEXT("Invalid folder:")) + szFind).c_str(), szFind);
+        throw file_io_error("Invalid folder:" + szFind, szFind);
         return;
     }
 
     do {
         if (FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-            //是目录
-            if (FindFileData.cFileName[0] != TEXT('.')) //不是以.开头的目录
+            // 是目录
+            if (FindFileData.cFileName[0] != TEXT('.')) // 不是以.开头的目录
             {
                 if (enterSubFolder) {
-                    //进入子目录
-                    szFile = lpPath + TEXT("\\") + FindFileData.cFileName;
+                    // 进入子目录
+                    szFile = lpPath + "\\" + to_utf8(FindFileData.cFileName);
                     findFiles(ret, szFile, dotextNames, enterSubFolder);
                 }
             }
         } else {
-            //是文件
-            std::tstring filePath = lpPath + TEXT("\\") + FindFileData.cFileName;
-
+            // 是文件
+            std::string filePath = lpPath + "\\" + to_utf8(FindFileData.cFileName);
             if (dotextNames.empty()) {
                 ret.push_back(filePath);
             } else {
-                auto tstolower = [](tstring s) -> tstring {
-                    tstring temp(s);
-                    for_each(temp.begin(), temp.end(), [](TCHAR &c) {
-                        c = tolower(c);
-                    });
-                    return temp;
-                };
-
-                tstring filename(tstolower(FindFileData.cFileName));
+                string filename(tolower(to_utf8(FindFileData.cFileName)));
                 for (auto &dotext : dotextNames) {
                     if (filename.substr(filename.length() - dotext.length(), dotext.length()) ==
-                        dotext) //文件名后n位和扩展名相同
+                        dotext) // 文件名后n位和扩展名相同
                     {
                         ret.push_back(filePath);
                     }
@@ -469,10 +463,10 @@ void findFiles(std::vector<std::tstring> &ret, std::tstring lpPath, std::vector<
     ::FindClose(hFind);
 }
 
-//失败抛出file_io_error类型自定义异常
-std::vector<std::tstring> TraversalAllFileNames(std::tstring lpPath, std::vector<std::tstring> dotextNames,
-                                                bool enterSubFolder) {
-    std::vector<std::tstring> file_lists;
+// 失败抛出file_io_error类型自定义异常
+std::vector<std::string> TraversalAllFileNames(std::string lpPath, std::vector<std::string> dotextNames,
+                                               bool enterSubFolder) {
+    std::vector<std::string> file_lists;
     findFiles(file_lists, lpPath, dotextNames, enterSubFolder);
     return file_lists;
 }

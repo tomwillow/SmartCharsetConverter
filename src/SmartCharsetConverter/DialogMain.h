@@ -40,14 +40,14 @@ public:
     /*
      * 如果需要初始时就添加文件/文件夹，则传入filenames参数
      */
-    DialogMain(const std::vector<std::tstring> &filenames = {});
+    DialogMain(const std::vector<std::string> &filenames = {});
 
     ~DialogMain();
 
 private:
     const std::string caption;
 
-    std::vector<std::tstring> inputFilenames;
+    std::vector<std::string> inputFilenames;
 
     std::unique_ptr<Core> core;
     std::unique_ptr<LanguageService> languageService;
@@ -80,16 +80,16 @@ private:
      * 如果有添加失败的文件，会在事件队列中Post一个弹窗事件
      * 线程安全。
      */
-    std::vector<std::tstring> AddItems(const std::vector<std::tstring> &filenames) noexcept;
+    std::vector<std::string> AddItems(const std::vector<std::string> &filenames) noexcept;
 
     /*
      * 加入多个文件/文件夹到列表。
      * 如果有添加失败的文件，会在事件队列中Post一个弹窗事件
      */
-    void AddItemsAsync(const std::vector<std::tstring> &filenames) noexcept;
+    void AddItemsAsync(const std::vector<std::string> &filenames) noexcept;
 
     struct Item {
-        std::tstring filename;
+        std::string filename;
         CharsetCode originCode;
         LineBreaks originLineBreak;
     };
@@ -194,7 +194,7 @@ private:
      * 检查 include过滤器。
      * @exception runtime_error 过滤器字符串不合法
      */
-    void CheckAndTraversalIncludeRule(std::function<void(const std::tstring &dotExt)> fn);
+    void CheckAndTraversalIncludeRule(std::function<void(const std::string &dotExt)> fn);
 
     LRESULT OnBnClickedRadioOther(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
     LRESULT OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
@@ -239,6 +239,6 @@ private:
      */
     void RestoreReadyState(const std::vector<std::pair<int, bool>> &restore) noexcept;
 
-    void AppendListViewItem(std::wstring filename, uint64_t fileSize, CharsetCode charset, LineBreaks lineBreak,
+    void AppendListViewItem(std::string filename, uint64_t fileSize, CharsetCode charset, LineBreaks lineBreak,
                             std::u16string textPiece) noexcept;
 };

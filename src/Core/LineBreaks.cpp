@@ -4,15 +4,15 @@
 #include <stdexcept>
 
 // LineBreaks类型到字符串的映射表
-const doublemap<LineBreaks, std::tstring> lineBreaksMap = {
-    {LineBreaks::CRLF, TEXT("CRLF")}, {LineBreaks::LF, TEXT("LF")},          {LineBreaks::CR, TEXT("CR")},
-    {LineBreaks::EMPTY, TEXT("")},    {LineBreaks::MIX, TEXT("N/A(Mixed)")}, {LineBreaks::UNKNOWN, TEXT("Unknown")}};
+const doublemap<LineBreaks, std::string> lineBreaksMap = {
+    {LineBreaks::CRLF, u8"CRLF"}, {LineBreaks::LF, u8"LF"},          {LineBreaks::CR, u8"CR"},
+    {LineBreaks::EMPTY, u8""},    {LineBreaks::MIX, u8"N/A(Mixed)"}, {LineBreaks::UNKNOWN, u8"Unknown"}};
 
-std::tstring LineBreaksToViewName(LineBreaks linebreaks) noexcept {
+std::string LineBreaksToViewName(LineBreaks linebreaks) noexcept {
     return lineBreaksMap.at(linebreaks);
 }
 
-LineBreaks ViewNameToLineBreaks(std::tstring viewName) noexcept {
+LineBreaks ViewNameToLineBreaks(std::string viewName) noexcept {
     return lineBreaksMap.at(viewName);
 }
 
