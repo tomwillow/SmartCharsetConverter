@@ -17,6 +17,7 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include <nlohmann/json.hpp>
 #include <stdio.h>
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -48,12 +49,18 @@ static void glfw_error_callback(int error, const char *description) {
 
 // File drop callback function
 void drop_callback(GLFWwindow *window, int count, const char **paths) {
+    std::vector<std::string> filenames;
     for (int i = 0; i < count; i++) {
         printf("send: %s\n", paths[i]);
-        if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceExtern | ImGuiDragDropFlags_SourceNoPreviewTooltip)) {
-            ImGui::SetDragDropPayload("files", paths[i], strlen(paths[i]));
-            ImGui::EndDragDropSource();
-        }
+        filenames.push_back(std::string(paths[i]));
+    }
+    nlohmann::json j;
+    j["data"] = filenames;
+    std::string s = j.dump();
+
+    if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceExtern | ImGuiDragDropFlags_SourceNoPreviewTooltip)) {
+        ImGui::SetDragDropPayload("files", s.c_str(), s.size());
+        ImGui::EndDragDropSource();
     }
 }
 
