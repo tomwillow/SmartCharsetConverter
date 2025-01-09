@@ -1,8 +1,5 @@
 #include "ListView.h"
 
-#include <fmt/ranges.h>
-#include <nlohmann/json.hpp>
-
 #include <algorithm>
 #include <vector>
 
@@ -200,17 +197,5 @@ void ListView::Render() {
             }
 
         ImGui::EndTable();
-    }
-    if (ImGui::BeginDragDropTarget()) {
-
-        auto payload = ImGui::AcceptDragDropPayload("files", ImGuiDragDropFlags_AcceptBeforeDelivery);
-        if (payload->IsDelivery()) {
-            std::string s(reinterpret_cast<const char *>(payload->Data), payload->DataSize);
-            auto j = nlohmann::json::parse(s);
-            std::vector<std::string> filenames = j["data"].get<std::vector<std::string>>();
-            fmt::print("accept: {}\n", filenames);
-        }
-
-        ImGui::EndDragDropTarget();
     }
 }

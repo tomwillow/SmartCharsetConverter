@@ -1,6 +1,8 @@
 #include "MainWindow.h"
-
 #include "resource.h"
+
+#include <fmt/ranges.h>
+#include <nlohmann/json.hpp>
 
 const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
 
@@ -118,4 +120,16 @@ void MainWindow::Render() {
     static bool show_demo_window = true;
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
+
+    if (ImGui::BeginDragDropTarget()) {
+        auto payload = ImGui::AcceptDragDropPayload("files", ImGuiDragDropFlags_AcceptBeforeDelivery);
+        if (payload->IsDelivery()) {
+            std::string s(reinterpret_cast<const char *>(payload->Data), payload->DataSize);
+            auto j = nlohmann::json::parse(s);
+            std::vector<std::string> filenames = j["data"].get<std::vector<std::string>>();
+            fmt::print("accept: {}\n", filenames);
+        }
+
+        ImGui::EndDragDropTarget();
+    }
 }
