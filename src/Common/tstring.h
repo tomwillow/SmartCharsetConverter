@@ -99,6 +99,7 @@ std::enable_if_t<std::is_same_v<T, std::string> || std::is_same_v<T, std::wstrin
 
 std::string to_utf8(const std::wstring &wstr);
 std::string to_utf8(const std::string &str);
+std::vector<std::string> to_utf8(const std::vector<std::wstring> &wstrs);
 
 std::string utf8_to_string(const std::string &str);
 std::wstring utf8_to_wstring(const std::string &str);
@@ -115,7 +116,7 @@ std::tistream &safeGetline(std::tistream &is, std::tstring &t);
  * 切分字符串。
  * dep填入分隔符，可以支持多种分隔符。例如"\n\t"。
  */
-std::vector<std::tstring_view> Split(std::tstring_view s, const std::tstring &dep) noexcept;
+std::vector<std::string_view> Split(std::string_view s, const std::string &dep) noexcept;
 
 template <typename... Args>
 std::string MyPrintf(const std::string &fmtStr, std::size_t reservedBytes, Args... args) {

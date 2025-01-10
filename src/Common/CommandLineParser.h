@@ -6,4 +6,4 @@
 #include <vector>
 #include <string>
 
-std::vector<std::wstring> GetCommandLineArgs();
+std::vector<std::string> GetCommandLineArgs();

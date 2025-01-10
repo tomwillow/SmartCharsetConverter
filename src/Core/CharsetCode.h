@@ -97,14 +97,14 @@ enum class ConvertEngine {
     END,
 };
 
-std::tstring ToViewCharsetName(CharsetCode code) noexcept;
+std::string ToViewCharsetName(CharsetCode code) noexcept;
 
 /**
  * 编码集名字转CharsetCode
  * @exception runtime_error 未识别的字符串
  */
 //
-CharsetCode ToCharsetCode(const std::tstring &name);
+CharsetCode ToCharsetCode(const std::string &name);
 
 std::string ToICUCharsetName(CharsetCode code) noexcept;
 

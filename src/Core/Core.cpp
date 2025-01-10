@@ -281,7 +281,7 @@ viet::Encoding CharsetCodeToVietEncoding(CharsetCode code) noexcept {
     return viet::to_encoding(to_utf8(ToViewCharsetName(code)));
 }
 
-Core::Core(std::tstring configFileName, CoreInitOption opt) : configFileName(configFileName), opt(opt) {
+Core::Core(std::string configFileName, CoreInitOption opt) : configFileName(configFileName), opt(opt) {
     // 读ini
     ReadConfigFromFile();
 
@@ -361,11 +361,11 @@ void RemoveASCII(std::vector<char> &data) noexcept {
     data.erase(itor, data.end());
 }
 
-Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unordered_set<std::tstring> &filterDotExts) {
+Core::AddItemResult Core::AddItem(const std::string &filename, const std::unordered_set<std::string> &filterDotExts) {
     // 如果是只包括指定后缀的模式，且文件后缀不符合，则忽略掉，且不提示
     if (GetConfig().filterMode == Configuration::FilterMode::ONLY_SOME_EXTANT) {
         auto ext = GetExtend(filename);
-        auto dotExt = TEXT(".") + tolower(ext);
+        auto dotExt = "." + tolower(ext);
 
         if (filterDotExts.find(dotExt) == filterDotExts.end()) {
             return {};
@@ -450,14 +450,14 @@ Core::AddItemResult Core::AddItem(const std::tstring &filename, const std::unord
     return AddItemResult{false, fileSize, charsetCode, lineBreak, content};
 }
 
-void Core::SpecifyItemCharset(int index, const std::tstring &filename, CharsetCode charsetCode) {
+void Core::SpecifyItemCharset(int index, const std::string &filename, CharsetCode charsetCode) {
     assert(listFileNames.find(filename) != listFileNames.end());
 
     // 读入文件，只读入部分。因为读入大文件会占用太长时间。
     auto [buf, bufSize] = ReadFileToBuffer(filename, tryReadSize);
 
     auto fileSize = GetFileSize(filename);
-    auto fileSizeStr = FileSizeToTString(fileSize);
+    auto fileSizeStr = FileSizeToHumanString(fileSize);
 
     auto charsetName = ToViewCharsetName(charsetCode);
 
@@ -477,7 +477,7 @@ void Core::SpecifyItemCharset(int index, const std::tstring &filename, CharsetCo
     opt.fnUIUpdateItem(index, filename, fileSizeStr, charsetName, lineBreakStr, stringPiece);
 }
 
-void Core::RemoveItem(const std::tstring &filename) {
+void Core::RemoveItem(const std::string &filename) {
     listFileNames.erase(filename);
 }
 
@@ -485,7 +485,7 @@ void Core::Clear() {
     listFileNames.clear();
 }
 
-Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, CharsetCode originCode,
+Core::ConvertFileResult Core::Convert(const std::string &inputFilename, CharsetCode originCode,
                                       LineBreaks originLineBreak, TranslatorBase *translator) noexcept {
     CharsetCode targetCode = config.outputCharset;
 
@@ -500,7 +500,7 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
             // 纯文件名
             auto pureFileName = GetNameAndExt(ret.outputFileName);
 
-            ret.outputFileName = utf8_to_wstring(GetConfig().outputDir) + TEXT("\\") + pureFileName;
+            ret.outputFileName = GetConfig().outputDir + "\\" + pureFileName;
         }
 
         // 原编码集
@@ -530,7 +530,8 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
 
                 // 如果不是原位置转换，复制过去
                 if (GetConfig().outputTarget == Configuration::OutputTarget::TO_DIR) {
-                    bool ok = CopyFile(inputFilename.c_str(), ret.outputFileName.c_str(), false);
+                    bool ok = CopyFileW(utf8_to_wstring(inputFilename).c_str(),
+                                        utf8_to_wstring(ret.outputFileName).c_str(), false);
                     if (!ok) {
                         throw FileIOError(MessageId::FAILED_TO_WRITE_FILE, to_utf8(ret.outputFileName));
                     }
@@ -588,9 +589,9 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
 
                 // 写入文件
                 FILE *fp = nullptr;
-                errno_t err = _tfopen_s(&fp, ret.outputFileName.c_str(), TEXT("wb"));
+                errno_t err = _wfopen_s(&fp, utf8_to_wstring(ret.outputFileName).c_str(), L"wb");
                 if (fp == nullptr) {
-                    throw FileIOError(MessageId::FAILED_TO_OPEN_FILE, to_utf8(ret.outputFileName));
+                    throw FileIOError(MessageId::FAILED_TO_OPEN_FILE, ret.outputFileName);
                 }
                 unique_ptr<FILE, function<void(FILE *)>> upFile(fp, [](FILE *fp) {
                     fclose(fp);
@@ -604,7 +605,7 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
                     size_t wrote = fwrite(bomData, BomSize(targetCode), 1, fp);
                     ret.outputFileSize += BomSize(targetCode);
                     if (wrote != 1) {
-                        throw FileIOError(MessageId::FAILED_TO_WRITE_FILE, to_utf8(ret.outputFileName));
+                        throw FileIOError(MessageId::FAILED_TO_WRITE_FILE, ret.outputFileName);
                     }
                 }
 
@@ -612,7 +613,7 @@ Core::ConvertFileResult Core::Convert(const std::tstring &inputFilename, Charset
                 size_t wrote = fwrite(outputBuf.data(), outputBuf.size(), 1, fp);
                 ret.outputFileSize += outputBuf.size();
                 if (outputBuf.size() != 0 && wrote != 1) {
-                    throw FileIOError(MessageId::FAILED_TO_WRITE_FILE, to_utf8(ret.outputFileName));
+                    throw FileIOError(MessageId::FAILED_TO_WRITE_FILE, ret.outputFileName);
                 }
             }
 
