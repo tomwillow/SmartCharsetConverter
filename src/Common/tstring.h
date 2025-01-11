@@ -98,6 +98,7 @@ std::enable_if_t<std::is_same_v<T, std::string> || std::is_same_v<T, std::wstrin
 }
 
 std::string to_utf8(const std::wstring &wstr);
+std::string to_utf8(const std::u16string &wstr);
 std::string to_utf8(const std::string &str);
 std::vector<std::string> to_utf8(const std::vector<std::wstring> &wstrs);
 

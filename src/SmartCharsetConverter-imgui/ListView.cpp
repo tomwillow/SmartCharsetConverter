@@ -81,16 +81,14 @@ bool CompareWithSortSpecs(ImGuiTableSortSpecs *sort_specs, const ListView::MyIte
     return false;
 }
 
-ListView::ListView(LanguageService &languageService) noexcept : languageService(languageService) {}
+ListView::ListView(LanguageService &languageService) noexcept : languageService(languageService) {
 
-void ListView::Render() {
     static const char *template_items_names[] = {u8"香蕉", u8"苹果", u8"樱桃",   u8"西瓜", u8"葡萄柚",
                                                  u8"草莓", u8"芒果", u8"猕猴桃", u8"橙子", u8"菠萝",
                                                  u8"蓝莓", u8"李子", u8"椰子",   u8"梨",   u8"杏"};
 
     const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
     // Create item list
-    static std::vector<MyItem> items;
     if (items.size() == 0) {
         items.resize(50, MyItem());
         for (int n = 0; n < items.size(); n++) {
@@ -101,6 +99,10 @@ void ListView::Render() {
             item.fileSize = (n * n - n) % 20; // Assign default quantities
         }
     }
+}
+
+void ListView::Render() {
+    const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
 
     // Options
     static ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable |
@@ -198,4 +200,9 @@ void ListView::Render() {
 
         ImGui::EndTable();
     }
+}
+
+void ListView::AddItem(MyItem myItem) {
+    myItem.index = static_cast<int>(items.size()) + 1;
+    items.push_back(std::move(myItem));
 }

@@ -1,10 +1,12 @@
 #include "MainWindow.h"
 #include "resource.h"
 
+#include <Common/tstring.h>
+
 #include <fmt/ranges.h>
 #include <nlohmann/json.hpp>
 
-const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
+const std::string configFileName = "SmartCharsetConverter.json";
 
 const std::vector<int> innerLanguageIds = {
     IDR_LANGUAGEJSON_ENGLISH,
@@ -120,6 +122,9 @@ void MainWindow::Render() {
     static bool show_demo_window = true;
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
+}
+
+void MainWindow::HandleDragDrop() {
 
     if (ImGui::BeginDragDropTarget()) {
         auto payload = ImGui::AcceptDragDropPayload("files", ImGuiDragDropFlags_AcceptBeforeDelivery);
@@ -128,8 +133,14 @@ void MainWindow::Render() {
             auto j = nlohmann::json::parse(s);
             std::vector<std::string> filenames = j["data"].get<std::vector<std::string>>();
             fmt::print("accept: {}\n", filenames);
+            for (auto &filename : filenames) {
+                auto ret = core.AddItem(filename, {});
+                listView.AddItem(ListView::MyItem{-1, filename, ret.filesize, ret.srcCharset, ret.srcLineBreak,
+                                                  to_utf8(ret.strPiece)});
+            }
         }
 
         ImGui::EndDragDropTarget();
     }
+    HandleDragDrop();
 }

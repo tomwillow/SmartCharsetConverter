@@ -16,12 +16,12 @@ public:
     struct MyItem {
         int index;
         std::string fileName;
-        int fileSize;
+        std::size_t fileSize;
         CharsetCode encoding;
         LineBreaks lineBreak;
         std::string textPiece;
 
-        const std::tuple<const int &, const std::string &, const int &, const CharsetCode &, const LineBreaks &,
+        const std::tuple<const int &, const std::string &, const std::size_t &, const CharsetCode &, const LineBreaks &,
                          const std::string &>
         AsTuple() const noexcept {
             return std::tie(index, fileName, fileSize, encoding, lineBreak, textPiece);
@@ -30,6 +30,10 @@ public:
 
     void Render();
 
+    void AddItem(MyItem myItem);
+
 private:
     LanguageService &languageService;
+
+    std::vector<MyItem> items;
 };

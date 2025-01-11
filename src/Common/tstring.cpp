@@ -113,6 +113,13 @@ std::string to_utf8(const std::wstring &wstr) {
     return std::string(buf.get());
 }
 
+std::string to_utf8(const std::u16string &wstr) {
+#if WIN32
+    const std::wstring &w = reinterpret_cast<const std::wstring &>(wstr);
+    return to_utf8(w);
+#endif
+}
+
 std::string to_utf8(const std::string &str) {
     int nwLen = MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
     unique_ptr<wchar_t[]> pwBuf(new wchar_t[nwLen]);
