@@ -5,6 +5,8 @@
 
 #include <fmt/ranges.h>
 #include <nlohmann/json.hpp>
+#include <imgui_internal.h>
+#include <spdlog/spdlog.h>
 
 const std::string configFileName = "SmartCharsetConverter.json";
 
@@ -81,6 +83,9 @@ void MainWindow::Render() {
                 ImGui::EndChild();
                 ImGui::EndGroup();
             }
+            // here can catch the drop event at left panel
+            HandleDragDrop();
+
             ImGui::SameLine();
 
             // Right
@@ -108,8 +113,12 @@ void MainWindow::Render() {
                 if (ImGui::Button("Save")) {}
                 ImGui::EndGroup();
             }
+            // here can catch the drop event at right panel
+            HandleDragDrop();
         }
         ImGui::End();
+        // in theory here is the whole window's end, but HandleDragDrop() not work if it's at here.
+        // so have to put two HandleDragDrop at both left panel and right panel's end.
     }
 
     {
@@ -125,7 +134,6 @@ void MainWindow::Render() {
 }
 
 void MainWindow::HandleDragDrop() {
-
     if (ImGui::BeginDragDropTarget()) {
         auto payload = ImGui::AcceptDragDropPayload("files", ImGuiDragDropFlags_AcceptBeforeDelivery);
         if (payload->IsDelivery()) {
@@ -142,5 +150,4 @@ void MainWindow::HandleDragDrop() {
 
         ImGui::EndDragDropTarget();
     }
-    HandleDragDrop();
 }
