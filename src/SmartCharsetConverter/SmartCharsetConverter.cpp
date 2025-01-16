@@ -31,7 +31,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hInstPrev, LPSTR szCmdLine, int nC
     // 第1个参数是程序路径。多于1个参数说明传入更多参数了
     if (args.size() > 1) {
         for (int i = 1; i < args.size(); ++i) {
-            if (!filesystem::is_regular_file(to_string(args[i])) && !filesystem::is_directory(to_string(args[i]))) {
+            auto path = filesystem::u8path(args[i]);
+            if (!filesystem::is_regular_file(path) && !filesystem::is_directory(path)) {
                 useCli = true;
                 break;
             }

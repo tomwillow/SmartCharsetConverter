@@ -82,7 +82,6 @@ std::wstring string_to_wstring(const std::string &str);
 std::string wstring_to_string(const std::wstring &wstr);
 
 std::string to_string(const std::wstring &ws);
-std::string to_string(const std::string &s);
 
 std::wstring to_wstring(const std::string &s);
 std::wstring to_wstring(const std::wstring &s);
@@ -98,7 +97,8 @@ std::enable_if_t<std::is_same_v<T, std::string> || std::is_same_v<T, std::wstrin
 }
 
 std::string to_utf8(const std::wstring &wstr);
-std::string to_utf8(const std::string &str);
+std::string to_utf8(const std::u16string &wstr);
+std::string ansi_to_utf8(const std::string &str);
 std::vector<std::string> to_utf8(const std::vector<std::wstring> &wstrs);
 
 std::string utf8_to_string(const std::string &str);
