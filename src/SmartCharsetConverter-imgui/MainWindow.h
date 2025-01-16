@@ -7,6 +7,7 @@
 
 #include <imgui.h>
 #include <fmt/format.h>
+#include <BS_thread_pool.hpp>
 
 class MainWindow {
 public:
@@ -18,6 +19,10 @@ private:
     Core core;
     LanguageService languageService;
     ListView listView;
+    BS::thread_pool pool;
+
+    std::mutex errMsgsLock;
+    std::vector<std::string> errMsgs;
 
     void HandleDragDrop();
 };

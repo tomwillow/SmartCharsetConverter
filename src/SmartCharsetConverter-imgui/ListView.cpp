@@ -102,6 +102,13 @@ ListView::ListView(LanguageService &languageService) noexcept : languageService(
 }
 
 void ListView::Render() {
+    std::vector<MyItem> itemsTemp;
+    {
+        std::unique_lock ul(itemsLock);
+        itemsTemp.swap(itemsQueue);
+    }
+    items.insert(items.end(), itemsTemp.begin(), itemsTemp.end());
+
     const float TEXT_BASE_HEIGHT = ImGui::GetTextLineHeightWithSpacing();
 
     // Options
@@ -203,6 +210,6 @@ void ListView::Render() {
 }
 
 void ListView::AddItem(MyItem myItem) {
-    myItem.index = static_cast<int>(items.size()) + 1;
-    items.push_back(std::move(myItem));
+    std::unique_lock ul(itemsLock);
+    itemsQueue.push_back(std::move(myItem));
 }

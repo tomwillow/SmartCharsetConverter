@@ -7,6 +7,8 @@
 #include <imgui.h>
 #include <fmt/format.h>
 
+#include <mutex>
+
 class ListView {
 public:
     ListView(LanguageService &languageService) noexcept;
@@ -35,5 +37,7 @@ public:
 private:
     LanguageService &languageService;
 
+    std::mutex itemsLock;
+    std::vector<MyItem> itemsQueue;
     std::vector<MyItem> items;
 };
