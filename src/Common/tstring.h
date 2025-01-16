@@ -117,11 +117,3 @@ std::tistream &safeGetline(std::tistream &is, std::tstring &t);
  * dep填入分隔符，可以支持多种分隔符。例如"\n\t"。
  */
 std::vector<std::string_view> Split(std::string_view s, const std::string &dep) noexcept;
-
-template <typename... Args>
-std::string MyPrintf(const std::string &fmtStr, std::size_t reservedBytes, Args... args) {
-    std::string dest(fmtStr.size() + reservedBytes, '\0');
-    snprintf(dest.data(), dest.size(), fmtStr.c_str(), args...);
-    dest.erase(dest.begin() + dest.find_last_not_of('\0') + 1, dest.end());
-    return dest;
-}

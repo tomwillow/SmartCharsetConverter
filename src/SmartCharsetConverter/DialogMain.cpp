@@ -376,7 +376,7 @@ AddItemsAbort:
         string s;
 
         std::string dest =
-            MyPrintf(languageService->GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), 32LL, ignored.size());
+            fmt::format(languageService->GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), ignored.size());
 
         s += dest + u8"\r\n";
 
@@ -511,7 +511,7 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
         string s;
 
         std::string dest =
-            MyPrintf(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), 32LL, succeed.size());
+            fmt::format(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), succeed.size());
 
         s += dest + u8"\r\n\r\n";
         s += languageService->GetUtf8String(v0_2::StringId::FAILED_CONVERT_BELOW) + u8"\r\n";
@@ -530,7 +530,7 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
         // 全部成功之后
         stringstream ss;
         std::string dest =
-            MyPrintf(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), 32LL, succeed.size());
+            fmt::format(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), succeed.size());
         ss << dest << u8"\r\n\r\n";
 
         if (targetCode == CharsetCode::GB18030) {
