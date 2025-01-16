@@ -105,7 +105,7 @@ CharsetCode ToCharsetCode(const std::string &name) {
 
     // 查找name是否有吻合的icuName
     it = std::find_if(charsetCodeMap.begin(), charsetCodeMap.end(), [&](const std::pair<CharsetCode, MyCharset> &pr) {
-        return tolower(pr.second.icuName) == tolower(to_string(name));
+        return tolower(pr.second.icuName) == tolower(name);
     });
     if (it != charsetCodeMap.end()) {
         return it->first;
@@ -114,16 +114,16 @@ CharsetCode ToCharsetCode(const std::string &name) {
     // 查找name是否有吻合的icuNames
     for (auto &pr : charsetCodeMap) {
         for (auto &icuName : pr.second.icuNames) {
-            if (tolower(icuName) == tolower(to_string(name))) {
+            if (tolower(icuName) == tolower(name)) {
                 return pr.first;
             }
         }
     }
-    throw std::runtime_error("unsupported: " + to_utf8(name));
+    throw std::runtime_error("unsupported: " + name);
 }
 
 std::string ToICUCharsetName(CharsetCode code) noexcept {
-    return to_string(charsetCodeMap.at(code).icuName);
+    return charsetCodeMap.at(code).icuName;
 }
 
 bool HasBom(CharsetCode code) {

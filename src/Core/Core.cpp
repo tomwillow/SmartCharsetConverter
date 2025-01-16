@@ -37,7 +37,7 @@ std::u16string Decode(std::string_view src, CharsetCode code) {
         UErrorCode err = U_ZERO_ERROR;
 
         // 打开转换器
-        unique_ptr<UConverter, function<void(UConverter *)>> conv(ucnv_open(to_string(icuCharsetName).c_str(), &err),
+        unique_ptr<UConverter, function<void(UConverter *)>> conv(ucnv_open(icuCharsetName.c_str(), &err),
                                                                   [](UConverter *p) {
                                                                       ucnv_close(p);
                                                                   });
@@ -278,7 +278,7 @@ std::string Convert(std::string_view src, ConvertParam inputParam) {
 }
 
 viet::Encoding CharsetCodeToVietEncoding(CharsetCode code) noexcept {
-    return viet::to_encoding(to_utf8(ToViewCharsetName(code)));
+    return viet::to_encoding(ToViewCharsetName(code));
 }
 
 Core::Core(std::string configFileName, CoreInitOption opt) : configFileName(configFileName), opt(opt) {
@@ -533,7 +533,7 @@ Core::ConvertFileResult Core::Convert(const std::string &inputFilename, CharsetC
                     bool ok = CopyFileW(utf8_to_wstring(inputFilename).c_str(),
                                         utf8_to_wstring(ret.outputFileName).c_str(), false);
                     if (!ok) {
-                        throw FileIOError(MessageId::FAILED_TO_WRITE_FILE, to_utf8(ret.outputFileName));
+                        throw FileIOError(MessageId::FAILED_TO_WRITE_FILE, ret.outputFileName);
                     }
                 }
 
@@ -637,28 +637,18 @@ void Core::ReadConfigFromFile() {
         return;
     }
 
-    std::ifstream ifs(to_string(configFileName));
-    if (!ifs) {
-        throw std::runtime_error("open file fail: " + to_string(configFileName));
-    }
+    auto [buf, bufSize] = ReadFileToBuffer(configFileName);
 
-    nlohmann::json j = nlohmann::json::parse(ifs);
+    nlohmann::json j = nlohmann::json::parse(std::string_view(buf.get(), bufSize));
     from_json(j, config);
-
-    ifs.close();
 }
 
 void Core::WriteConfigToFile() {
-    std::ofstream ofs(to_string(configFileName));
-    if (!ofs) {
-        throw std::runtime_error("write file fail: " + to_string(configFileName));
-    }
-
     nlohmann::json j;
     to_json(j, config);
 
-    ofs << std::setw(4) << j;
-    ofs.close();
+    std::string jsonStr = j.dump(4);
+    WriteFileFromBuffer(configFileName, jsonStr.data(), jsonStr.size());
 }
 
 // UINT Configuration::ToWinCodePage(OutputCharset charset)

@@ -218,7 +218,7 @@ int CLIMain(const std::vector<std::string> &args) noexcept {
         case 50:
             setOutput = true;
             core.SetOutputTarget(Configuration::OutputTarget::TO_DIR);
-            core.SetOutputDir(to_utf8(arg));
+            core.SetOutputDir(arg);
             state = 0;
             break;
         } // end of switch

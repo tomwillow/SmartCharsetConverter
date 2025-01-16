@@ -84,10 +84,6 @@ std::string to_string(const std::wstring &ws) {
     return wstring_to_string(ws);
 }
 
-std::string to_string(const std::string &s) {
-    return s;
-}
-
 std::wstring to_wstring(const std::string &s) {
     return string_to_wstring(s);
 }
@@ -120,7 +116,7 @@ std::string to_utf8(const std::u16string &wstr) {
 #endif
 }
 
-std::string to_utf8(const std::string &str) {
+std::string ansi_to_utf8(const std::string &str) {
     int nwLen = MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
     unique_ptr<wchar_t[]> pwBuf(new wchar_t[nwLen]);
     MultiByteToWideChar(CP_ACP, 0, str.c_str(), static_cast<int>(str.length()), pwBuf.get(), nwLen);

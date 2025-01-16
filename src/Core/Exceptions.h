@@ -90,8 +90,8 @@ public:
           corruptedDataPiece(corruptedDataPiece) {}
 
     virtual const std::string ToLocalString(TranslatorBase *translator) const noexcept {
-        return fmt::format(translator->MessageIdToString(MessageId::CORRUPTED_DATA),
-                           to_utf8(ToViewCharsetName(decodeAs)), position, 32, to_hex(corruptedDataPiece));
+        return fmt::format(translator->MessageIdToString(MessageId::CORRUPTED_DATA), ToViewCharsetName(decodeAs),
+                           position, 32, to_hex(corruptedDataPiece));
     }
 
 private:
@@ -105,13 +105,13 @@ using InvalidCharFoundError = IllegalCharFoundError;
 class CharsetNotSupportedError : public MyRuntimeError {
 public:
     CharsetNotSupportedError(CharsetCode targetCode)
-        : MyRuntimeError(MessageId::CANNOT_CONVERT_CHARSET,
-                         fmt::format(MessageIdToBasicString(MessageId::CANNOT_CONVERT_CHARSET),
-                                     to_utf8(ToViewCharsetName(targetCode)))),
+        : MyRuntimeError(
+              MessageId::CANNOT_CONVERT_CHARSET,
+              fmt::format(MessageIdToBasicString(MessageId::CANNOT_CONVERT_CHARSET), ToViewCharsetName(targetCode))),
           targetCode(targetCode) {}
 
     virtual const std::string ToLocalString(TranslatorBase *translator) const noexcept {
-        return fmt::format(translator->MessageIdToString(mid), to_utf8(ToViewCharsetName(targetCode)));
+        return fmt::format(translator->MessageIdToString(mid), ToViewCharsetName(targetCode));
     }
 
 private:

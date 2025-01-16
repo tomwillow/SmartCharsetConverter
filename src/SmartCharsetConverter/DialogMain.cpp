@@ -361,8 +361,8 @@ AddItemsAbort:
     if (!failed.empty()) {
         string info = languageService->GetUtf8String(v0_2::StringId::FAILED_ADD_BELOW) + u8"\r\n";
         for (auto &pr : failed) {
-            info += to_utf8(pr.first) + u8" " + languageService->GetUtf8String(v0_2::StringId::REASON) + u8" " +
-                    pr.second + u8"\r\n ";
+            info += pr.first + u8" " + languageService->GetUtf8String(v0_2::StringId::REASON) + u8" " + pr.second +
+                    u8"\r\n ";
         }
 
         MyMessage *msg = new MyMessage([this, info]() {
@@ -373,28 +373,27 @@ AddItemsAbort:
     }
 
     if (!ignored.empty()) {
-        stringstream ss;
+        string s;
 
         std::string dest =
-            MyPrintf(languageService->GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), 32LL, ignored.size());
+            fmt::format(languageService->GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), ignored.size());
 
-        ss << dest << u8"\r\n";
+        s += dest + u8"\r\n";
 
         int count = 0;
         for (auto &filename : ignored) {
-            ss << to_utf8(filename) << u8"\r\n";
+            s += filename + u8"\r\n";
             count++;
 
             if (count >= 5) {
-                ss << languageService->GetUtf8String(v0_2::StringId::AND_SO_ON);
+                s += languageService->GetUtf8String(v0_2::StringId::AND_SO_ON);
                 break;
             }
         }
 
-        ss << u8"\r\n\r\n";
-        ss << languageService->GetUtf8String(v0_2::StringId::TIPS_USE_NO_FILTER);
+        s += u8"\r\n\r\n";
+        s += languageService->GetUtf8String(v0_2::StringId::TIPS_USE_NO_FILTER);
 
-        string s = ss.str();
         PostUIFunc([this, s]() {
             MessageBox(utf8_to_wstring(s).c_str(), languageService->GetWString(v0_2::StringId::PROMPT).c_str(),
                        MB_OK | MB_ICONINFORMATION);
@@ -509,22 +508,20 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
 
     // 如果有失败的
     if (failed.empty() == false) {
-        stringstream ss;
+        string s;
 
         std::string dest =
-            MyPrintf(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), 32LL, succeed.size());
+            fmt::format(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), succeed.size());
 
-        ss << dest << u8"\r\n\r\n";
-        ss << languageService->GetUtf8String(v0_2::StringId::FAILED_CONVERT_BELOW) + u8"\r\n";
+        s += dest + u8"\r\n\r\n";
+        s += languageService->GetUtf8String(v0_2::StringId::FAILED_CONVERT_BELOW) + u8"\r\n";
         for (auto &pr : failed) {
-            ss << to_utf8(pr.first) << u8" " << languageService->GetUtf8String(v0_2::StringId::REASON) << pr.second
-               << u8"\r\n";
+            s += pr.first + u8" " + languageService->GetUtf8String(v0_2::StringId::REASON) + pr.second + u8"\r\n";
         }
         if (doCancel) {
-            ss << u8"\r\n\r\n" << languageService->GetUtf8String(v0_2::StringId::NO_DEAL_DUE_TO_CANCEL);
+            s += u8"\r\n\r\n" + languageService->GetUtf8String(v0_2::StringId::NO_DEAL_DUE_TO_CANCEL);
         }
 
-        string s = ss.str();
         PostUIFunc([this, s]() {
             MessageBox(utf8_to_wstring(s).c_str(), languageService->GetWString(v0_2::StringId::CONVERT_RESULT).c_str(),
                        MB_OK | MB_ICONERROR);
@@ -533,7 +530,7 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
         // 全部成功之后
         stringstream ss;
         std::string dest =
-            MyPrintf(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), 32LL, succeed.size());
+            fmt::format(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), succeed.size());
         ss << dest << u8"\r\n\r\n";
 
         if (targetCode == CharsetCode::GB18030) {
@@ -633,8 +630,8 @@ void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::stri
         regex r(pattern);
         smatch results;
         if (regex_match(extStr, results, r) == false) {
-            throw runtime_error(languageService->GetUtf8String(v0_2::StringId::INVALID_EXTEND_FILTER) +
-                                to_string(extStr) + u8"\r\n\r\n" + filterExampleStr);
+            throw runtime_error(languageService->GetUtf8String(v0_2::StringId::INVALID_EXTEND_FILTER) + extStr +
+                                u8"\r\n\r\n" + filterExampleStr);
         }
 
         fn(tolower(u8"." + results.str(2)));
@@ -819,8 +816,7 @@ LRESULT DialogMain::OnSpecifyOriginCharset(WORD /*wNotifyCode*/, WORD wID, HWND 
     if (!failed.empty()) {
         string info = languageService->GetUtf8String(v0_2::StringId::FAILED_TO_SET_CHARSET_MANUALLY) + u8"\r\n";
         for (auto &pr : failed) {
-            info += to_utf8(pr.first) + u8" " + languageService->GetUtf8String(v0_2::StringId::REASON) +
-                    to_utf8(pr.second) + u8"\r\n";
+            info += pr.first + u8" " + languageService->GetUtf8String(v0_2::StringId::REASON) + pr.second + u8"\r\n";
         }
 
         MyMessage *msg = new MyMessage([this, info]() {
