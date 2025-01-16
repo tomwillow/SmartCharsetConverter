@@ -145,7 +145,8 @@ void MainWindow::Render() {
 
     if (ImGui::BeginPopupModal(languageService.GetUtf8String(v0_2::StringId::MSGBOX_ERROR).c_str(), NULL,
                                ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text(languageService.GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED).c_str());
+        ImGui::Text(fmt::format(languageService.GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), errMsgs.size())
+                        .c_str());
         {
             std::unique_lock ul(errMsgsLock);
             for (auto &errMsg : errMsgs) {
