@@ -205,6 +205,11 @@ void ListView::Render() {
                 ImGui::PopID();
             }
 
+        // if in this frame there are new items to add, to scroll table to bottom
+        if (!itemsTemp.empty()) {
+            ImGui::SetScrollHereY(1.0);
+        }
+
         ImGui::EndTable();
     }
 }
