@@ -147,7 +147,7 @@ glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Main loop
-    MainWindow mainWindow;
+    MainWindow mainWindow(window);
 
     auto initEndTime = std::chrono::system_clock::now();
     fmt::print("init time: {}s\n", std::chrono::duration<double>(initEndTime - startTime).count());

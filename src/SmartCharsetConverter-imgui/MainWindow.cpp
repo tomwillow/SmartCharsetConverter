@@ -2,10 +2,15 @@
 #include "resource.h"
 
 #include <Common/tstring.h>
+#include <Common/FileFunction.h>
 
+// third party
 #include <fmt/ranges.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 #include <nlohmann/json.hpp>
 #include <imgui_internal.h>
+#include <imgui_stdlib.h>
 #include <spdlog/spdlog.h>
 
 const std::string configFileName = "SmartCharsetConverter.json";
@@ -16,8 +21,9 @@ const std::vector<int> innerLanguageIds = {
     IDR_LANGUAGEJSON_SPANISH,
 };
 
-MainWindow::MainWindow()
-    : core(configFileName, CoreInitOption{}), languageService([this]() -> LanguageServiceOption {
+MainWindow::MainWindow(GLFWwindow *glfwWindow)
+    : glfwWindow(glfwWindow), core(configFileName, CoreInitOption{}),
+      languageService([this]() -> LanguageServiceOption {
           LanguageServiceOption option;
           option.languageName = core.GetConfig().language;
           option.resourceIds = innerLanguageIds;
@@ -93,6 +99,51 @@ void MainWindow::Render() {
                 ImGui::BeginGroup();
                 ImGui::BeginChild("item view",
                                   ImVec2(0, -ImGui::GetFrameHeightWithSpacing())); // Leave room for 1 line below us
+
+                bool changed = false;
+
+                ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+                if (ImGui::TreeNode(
+                        fmt::format(languageService.GetUtf8String(v0_2::StringId::SET_FILTER_MODE)).c_str())) {
+                    changed |= ImGui::RadioButton(languageService.GetUtf8String(v0_2::StringId::NO_FILTER).c_str(),
+                                                  reinterpret_cast<int *>(&core.GetConfigRef().filterMode),
+                                                  static_cast<int>(Configuration::FilterMode::NO_FILTER));
+                    changed |=
+                        ImGui::RadioButton(languageService.GetUtf8String(v0_2::StringId::SMART_FILE_DETECTION).c_str(),
+                                           reinterpret_cast<int *>(&core.GetConfigRef().filterMode),
+                                           static_cast<int>(Configuration::FilterMode::SMART));
+                    changed |=
+                        ImGui::RadioButton(languageService.GetUtf8String(v0_2::StringId::USE_FILE_EXTENSION).c_str(),
+                                           reinterpret_cast<int *>(&core.GetConfigRef().filterMode),
+                                           static_cast<int>(Configuration::FilterMode::ONLY_SOME_EXTANT));
+                    ImGui::BeginDisabled(core.GetConfigRef().filterMode != Configuration::FilterMode::ONLY_SOME_EXTANT);
+                    ImGui::InputText("##", &core.GetConfigRef().includeRule);
+                    ImGui::EndDisabled();
+
+                    ImGui::TreePop();
+                }
+
+                ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+                if (ImGui::TreeNode(
+                        fmt::format(languageService.GetUtf8String(v0_2::StringId::ADD_FILES_OR_FOLDER)).c_str())) {
+                    ImGui::Button(languageService.GetUtf8String(v0_2::StringId::ADD_FILES).c_str());
+                    ImGui::SameLine();
+                    bool clicked = ImGui::Button(languageService.GetUtf8String(v0_2::StringId::ADD_FOLDER).c_str());
+                    if (clicked) {
+                        static std::wstring dir;
+
+                        TFolderBrowser folderBrowser(glfwGetWin32Window(glfwWindow));
+                        if (folderBrowser.Open(dir)) {
+                            // AddItemsAsync(to_utf8(std::vector<std::wstring>{dir}));
+                        }
+                    }
+                    ImGui::TreePop();
+                }
+
+                if (changed) {
+                    core.WriteConfigToFile();
+                }
+
                 ImGui::Text("MyObject: %d", selected);
                 ImGui::Separator();
                 if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None)) {
@@ -186,6 +237,8 @@ void MainWindow::HandleDragDrop() {
                         errMsgs.push_back(err.what());
                     }
                 }
+
+                // switch to main thread and popup modal message box
             });
         }
 

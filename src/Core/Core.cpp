@@ -309,6 +309,10 @@ const Configuration &Core::GetConfig() const noexcept {
     return config;
 }
 
+Configuration &Core::GetConfigRef() noexcept {
+    return config;
+}
+
 const std::unique_ptr<uchardet, std::function<void(uchardet *)>> &Core::GetUCharDet() const {
     return det;
 }

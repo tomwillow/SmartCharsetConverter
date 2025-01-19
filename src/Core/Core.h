@@ -83,6 +83,8 @@ public:
 
     const Configuration &GetConfig() const noexcept;
 
+    Configuration &GetConfigRef() noexcept;
+
     const std::unique_ptr<uchardet, std::function<void(uchardet *)>> &GetUCharDet() const;
 
     void SetFilterMode(Configuration::FilterMode mode);
@@ -94,6 +96,8 @@ public:
     void SetEnableConvertLineBreak(bool enableLineBreaks);
     void SetLineBreaks(LineBreaks lineBreak);
     void SetLanguage(const std::string &language) noexcept;
+
+    void WriteConfigToFile();
 
     struct AddItemResult {
         bool isIgnore = true; // 是否应该忽略掉
@@ -147,6 +151,4 @@ private:
     std::unordered_set<std::string> listFileNames; // 当前列表中的文件
 
     void ReadConfigFromFile();
-
-    void WriteConfigToFile();
 };
