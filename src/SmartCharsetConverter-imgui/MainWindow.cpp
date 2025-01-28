@@ -13,6 +13,8 @@
 #include <imgui_stdlib.h>
 #include <spdlog/spdlog.h>
 
+#include <regex>
+
 const std::string configFileName = "SmartCharsetConverter.json";
 
 const std::vector<int> innerLanguageIds = {
@@ -222,6 +224,13 @@ void MainWindow::Render() {
     }
 }
 
+void MainWindow::PopupMessageBox(const std::string &text, const std::string &caption) noexcept {
+    std::unique_lock<std::mutex> ul(guiEventsLock);
+    guiEvents.push_back([this, text, caption]() -> EventAction {
+        return ::PopupMessageBox(text, caption);
+    });
+}
+
 void MainWindow::HandleDragDrop() {
     if (ImGui::BeginDragDropTarget()) {
         auto payload = ImGui::AcceptDragDropPayload("files", ImGuiDragDropFlags_AcceptBeforeDelivery);
@@ -231,29 +240,149 @@ void MainWindow::HandleDragDrop() {
             std::vector<std::string> filenames = j["data"].get<std::vector<std::string>>();
             fmt::print("accept: {}\n", filenames);
             pool.detach_task([this, filenames = std::move(filenames)]() {
-                std::string errMsg;
-                for (auto &filename : filenames) {
-                    try {
-
-                        auto ret = core.AddItem(filename, {});
-                        listView.AddItem(ListView::MyItem{-1, filename, ret.filesize, ret.srcCharset, ret.srcLineBreak,
-                                                          to_utf8(ret.strPiece)});
-                    } catch (const std::runtime_error &err) {
-                        fmt::print("{}", err.what());
-                        errMsg += err.what();
-                    }
-                }
-
-                // switch to main thread and popup modal message box
-                if (!errMsg.empty()) {
-                    std::unique_lock<std::mutex> ul(guiEventsLock);
-                    guiEvents.push_back([this, errMsg = std::move(errMsg)]() -> EventAction {
-                        return PopupMessageBox(errMsg, languageService.GetUtf8String(v0_2::StringId::MSGBOX_ERROR));
-                    });
-                }
+                AddItems(filenames);
             });
         }
 
         ImGui::EndDragDropTarget();
     }
+}
+
+void MainWindow::CheckAndTraversalIncludeRule(std::function<void(const std::string &dotExt)> fn) {
+    // 后缀字符串
+    auto &extsStr = core.GetConfig().includeRule;
+
+    // 切分
+    auto exts = Split(extsStr, u8" ,|");
+
+    std::string filterExampleStr = languageService.GetUtf8String(v0_2::StringId::SUPPORT_FORMAT_BELOW) +
+                                   u8"\r\n *.h *.hpp *.c *.cpp *.txt\r\n h hpp c cpp txt\r\n h|hpp|c|cpp\r\n" +
+                                   languageService.GetUtf8String(v0_2::StringId::SEPERATOR_DESCRIPTION);
+
+    // 如果为空
+    if (exts.empty()) {
+        throw std::runtime_error(languageService.GetUtf8String(v0_2::StringId::NO_SPECIFY_FILTER_EXTEND) +
+                                 u8"\r\n\r\n" + filterExampleStr);
+    }
+
+    // 逐个检查
+    for (auto s : exts) {
+        std::string extStr(s);
+        std::string pattern = u8R"((\*\.|\.|)(\w+))"; // 匹配*.xxx/.xxx/xxx的正则
+        std::regex r(pattern);
+        std::smatch results;
+        if (std::regex_match(extStr, results, r) == false) {
+            throw std::runtime_error(languageService.GetUtf8String(v0_2::StringId::INVALID_EXTEND_FILTER) + extStr +
+                                     u8"\r\n\r\n" + filterExampleStr);
+        }
+
+        fn(tolower(u8"." + results.str(2)));
+    }
+}
+
+std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pathes) noexcept {
+    doCancel = false;
+    // 后缀
+    std::unordered_set<std::string> filterDotExts;
+
+    switch (core.GetConfig().filterMode) {
+    case Configuration::FilterMode::NO_FILTER:
+        break;
+    case Configuration::FilterMode::SMART: // 智能识别文本
+        break;
+    case Configuration::FilterMode::ONLY_SOME_EXTANT:
+        // 只包括指定后缀
+        try {
+            CheckAndTraversalIncludeRule([&](const std::string &dotExt) {
+                filterDotExts.insert(dotExt);
+            });
+        } catch (const std::runtime_error &err) {
+            PopupMessageBox(err.what(), languageService.GetUtf8String(v0_2::StringId::MSGBOX_ERROR));
+            return {};
+        }
+        break;
+    default:
+        assert(0);
+    }
+
+    std::vector<std::pair<std::string, std::string>> failed; // 失败的文件
+    std::vector<std::string> ignored;                        // 忽略的文件
+
+    auto AddItemNoException = [&](const std::string &filename) {
+        try {
+            Core::AddItemResult ret = core.AddItem(filename, filterDotExts);
+            if (ret.isIgnore) {
+                return;
+            }
+            listView.AddItem(
+                ListView::MyItem{-1, filename, ret.filesize, ret.srcCharset, ret.srcLineBreak, to_utf8(ret.strPiece)});
+        } catch (io_error_ignore) {
+            ignored.push_back(filename);
+        } catch (const MyRuntimeError &err) {
+            failed.push_back({filename, err.ToLocalString(&languageService)});
+        } catch (const std::runtime_error &err) {
+            failed.push_back({filename, err.what()});
+        }
+    };
+
+    for (auto &path : pathes) {
+        // 如果是目录
+        if (std::filesystem::is_directory(path)) {
+            // 遍历指定目录
+            auto filenames = TraversalAllFileNames(path);
+
+            for (auto &filename : filenames) {
+                if (doCancel) {
+                    goto AddItemsAbort;
+                }
+                AddItemNoException(filename);
+            }
+            continue;
+        }
+
+        // 如果是文件
+        if (doCancel) {
+            goto AddItemsAbort;
+        }
+        AddItemNoException(path);
+    }
+
+AddItemsAbort:
+
+    if (!failed.empty()) {
+        std::string info = languageService.GetUtf8String(v0_2::StringId::FAILED_ADD_BELOW) + u8"\r\n";
+        for (auto &pr : failed) {
+            info += pr.first + u8" " + languageService.GetUtf8String(v0_2::StringId::REASON) + u8" " + pr.second +
+                    u8"\r\n ";
+        }
+
+        PopupMessageBox(info, languageService.GetUtf8String(v0_2::StringId::MSGBOX_ERROR));
+    }
+
+    if (!ignored.empty()) {
+        std::string s;
+
+        std::string dest =
+            fmt::format(languageService.GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), ignored.size());
+
+        s += dest + u8"\r\n";
+
+        int count = 0;
+        for (auto &filename : ignored) {
+            s += filename + u8"\r\n";
+            count++;
+
+            if (count >= 5) {
+                s += languageService.GetUtf8String(v0_2::StringId::AND_SO_ON);
+                break;
+            }
+        }
+
+        s += u8"\r\n\r\n";
+        s += languageService.GetUtf8String(v0_2::StringId::TIPS_USE_NO_FILTER);
+
+        PopupMessageBox(s, languageService.GetUtf8String(v0_2::StringId::PROMPT));
+        return ignored;
+    }
+    return ignored;
 }

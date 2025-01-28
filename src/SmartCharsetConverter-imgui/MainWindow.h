@@ -30,9 +30,14 @@ private:
     ListView listView;
     BS::thread_pool pool;
 
-    std::mutex guiEventsLock;
+    mutable std::mutex guiEventsLock;
     std::vector<std::function<EventAction()>> guiEvents;
     std::vector<std::function<EventAction()>> localGuiEvents;
 
+    std::atomic<bool> doCancel;
+
+    void PopupMessageBox(const std::string &text, const std::string &caption) noexcept;
     void HandleDragDrop();
+    void CheckAndTraversalIncludeRule(std::function<void(const std::string &dotExt)> fn);
+    std::vector<std::string> AddItems(const std::vector<std::string> &pathes) noexcept;
 };
