@@ -11,6 +11,11 @@
 #include <fmt/format.h>
 #include <BS_thread_pool.hpp>
 
+enum class EventAction {
+    KEEP_ALIVE,
+    FINISH,
+};
+
 class MainWindow {
 public:
     MainWindow(GLFWwindow *glfwWindow);
@@ -25,8 +30,9 @@ private:
     ListView listView;
     BS::thread_pool pool;
 
-    std::mutex errMsgsLock;
-    std::vector<std::string> errMsgs;
+    std::mutex guiEventsLock;
+    std::vector<std::function<EventAction()>> guiEvents;
+    std::vector<std::function<EventAction()>> localGuiEvents;
 
     void HandleDragDrop();
 };

@@ -21,6 +21,28 @@ const std::vector<int> innerLanguageIds = {
     IDR_LANGUAGEJSON_SPANISH,
 };
 
+EventAction PopupMessageBox(const std::string &text, const std::string &caption) noexcept {
+    EventAction ret = EventAction::KEEP_ALIVE;
+    ImGui::OpenPopup(caption.c_str());
+
+    // Always center this window when appearing
+    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+    if (ImGui::BeginPopupModal(caption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::Text(text.c_str());
+        ImGui::Separator();
+
+        ImGui::SetItemDefaultFocus();
+        if (ImGui::Button("OK", ImVec2(120, 0))) {
+            ImGui::CloseCurrentPopup();
+            ret = EventAction::FINISH;
+        }
+        ImGui::EndPopup();
+    }
+    return ret;
+}
+
 MainWindow::MainWindow(GLFWwindow *glfwWindow)
     : glfwWindow(glfwWindow), core(configFileName, CoreInitOption{}),
       languageService([this]() -> LanguageServiceOption {
@@ -184,35 +206,19 @@ void MainWindow::Render() {
         ImGui::ShowDemoWindow(&show_demo_window);
 
     {
-        std::unique_lock ul(errMsgsLock);
-        if (!errMsgs.empty()) {
-            ImGui::OpenPopup(languageService.GetUtf8String(v0_2::StringId::MSGBOX_ERROR).c_str());
-        }
+        std::unique_lock<std::mutex> ul(guiEventsLock);
+        localGuiEvents.insert(localGuiEvents.end(), guiEvents.begin(), guiEvents.end());
+        guiEvents.clear();
     }
 
-    // Always center this window when appearing
-    ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-    if (ImGui::BeginPopupModal(languageService.GetUtf8String(v0_2::StringId::MSGBOX_ERROR).c_str(), NULL,
-                               ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::Text(fmt::format(languageService.GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), errMsgs.size())
-                        .c_str());
-        {
-            std::unique_lock ul(errMsgsLock);
-            for (auto &errMsg : errMsgs) {
-                ImGui::Text(errMsg.c_str());
-            }
+    for (auto it = localGuiEvents.begin(); it != localGuiEvents.end();) {
+        auto &ev = *it;
+        EventAction act = ev();
+        if (act == EventAction::FINISH) {
+            it = localGuiEvents.erase(it);
+        } else {
+            it++;
         }
-        ImGui::Separator();
-
-        ImGui::SetItemDefaultFocus();
-        if (ImGui::Button("OK", ImVec2(120, 0))) {
-            ImGui::CloseCurrentPopup();
-            std::unique_lock ul(errMsgsLock);
-            errMsgs.clear();
-        }
-        ImGui::EndPopup();
     }
 }
 
@@ -225,6 +231,7 @@ void MainWindow::HandleDragDrop() {
             std::vector<std::string> filenames = j["data"].get<std::vector<std::string>>();
             fmt::print("accept: {}\n", filenames);
             pool.detach_task([this, filenames = std::move(filenames)]() {
+                std::string errMsg;
                 for (auto &filename : filenames) {
                     try {
 
@@ -233,12 +240,17 @@ void MainWindow::HandleDragDrop() {
                                                           to_utf8(ret.strPiece)});
                     } catch (const std::runtime_error &err) {
                         fmt::print("{}", err.what());
-                        std::unique_lock ul(errMsgsLock);
-                        errMsgs.push_back(err.what());
+                        errMsg += err.what();
                     }
                 }
 
                 // switch to main thread and popup modal message box
+                if (!errMsg.empty()) {
+                    std::unique_lock<std::mutex> ul(guiEventsLock);
+                    guiEvents.push_back([this, errMsg = std::move(errMsg)]() -> EventAction {
+                        return PopupMessageBox(errMsg, languageService.GetUtf8String(v0_2::StringId::MSGBOX_ERROR));
+                    });
+                }
             });
         }
 
