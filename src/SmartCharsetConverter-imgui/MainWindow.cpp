@@ -332,6 +332,28 @@ std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pa
         }
     };
 
+    std::shared_ptr<std::atomic<bool>> finished = std::make_shared<std::atomic<bool>>(false);
+    std::shared_ptr<void> defer = std::shared_ptr<void>(nullptr, [finished](...) {
+        finished->store(true);
+    });
+
+    std::shared_ptr<std::atomic<std::string>> status;
+    status->store(u8"正在添加文件..."); // FIXME
+    AddGuiEvent([status, finished]() -> EventAction {
+        // FIXME
+        ImGui::OpenPopup("adding");
+
+        // Always center this window when appearing
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("adding", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text(status->load().c_str());
+        }
+
+        return finished ? EventAction::FINISH : EventAction::KEEP_ALIVE;
+    });
+
     for (auto &path : pathes) {
         // 如果是目录
         if (std::filesystem::is_directory(path)) {
@@ -409,6 +431,5 @@ AddItemsAbort:
     };
 
     AddGuiEvent(callback);
-
     return ignored;
 }

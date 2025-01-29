@@ -15,7 +15,8 @@
 		]
 	},
 	"spdlog",
-	"bshoshany-thread-pool"
+	"bshoshany-thread-pool",
+	"boost-thread"
   ],
   "builtin-baseline": "9b5cb8e554487f3edb5d50b80188883846f81e14"
 }
