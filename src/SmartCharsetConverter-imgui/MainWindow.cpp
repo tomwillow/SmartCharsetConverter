@@ -23,8 +23,8 @@ const std::vector<int> innerLanguageIds = {
     IDR_LANGUAGEJSON_SPANISH,
 };
 
-EventAction PopupMessageBox(const std::string &text, const std::string &caption) noexcept {
-    EventAction ret = EventAction::KEEP_ALIVE;
+EventAction PopupMessageBox(const std::string &text, const std::string &caption,
+                            std::function<EventAction()> fnInPopupScope = nullptr) noexcept {
     ImGui::OpenPopup(caption.c_str());
 
     // Always center this window when appearing
@@ -32,17 +32,24 @@ EventAction PopupMessageBox(const std::string &text, const std::string &caption)
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
     if (ImGui::BeginPopupModal(caption.c_str(), NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+        std::shared_ptr<void> defer(nullptr, [](...) {
+            ImGui::EndPopup();
+        });
+
         ImGui::Text(text.c_str());
         ImGui::Separator();
 
         ImGui::SetItemDefaultFocus();
         if (ImGui::Button("OK", ImVec2(120, 0))) {
             ImGui::CloseCurrentPopup();
-            ret = EventAction::FINISH;
+            return EventAction::FINISH;
         }
-        ImGui::EndPopup();
+
+        if (fnInPopupScope) {
+            return fnInPopupScope();
+        }
     }
-    return ret;
+    return EventAction::KEEP_ALIVE;
 }
 
 MainWindow::MainWindow(GLFWwindow *glfwWindow)
@@ -154,11 +161,11 @@ void MainWindow::Render() {
                     ImGui::SameLine();
                     bool clicked = ImGui::Button(languageService.GetUtf8String(v0_2::StringId::ADD_FOLDER).c_str());
                     if (clicked) {
-                        static std::wstring dir;
-
                         TFolderBrowser folderBrowser(glfwGetWin32Window(glfwWindow));
-                        if (folderBrowser.Open(dir)) {
-                            // AddItemsAsync(to_utf8(std::vector<std::wstring>{dir}));
+                        if (folderBrowser.Open(folderBrowserDir)) {
+                            pool.detach_task([this]() {
+                                AddItems({to_utf8(folderBrowserDir)});
+                            });
                         }
                     }
                     ImGui::TreePop();
@@ -224,11 +231,9 @@ void MainWindow::Render() {
     }
 }
 
-void MainWindow::PopupMessageBox(const std::string &text, const std::string &caption) noexcept {
+void MainWindow::AddGuiEvent(std::function<EventAction()> guiEvent) noexcept {
     std::unique_lock<std::mutex> ul(guiEventsLock);
-    guiEvents.push_back([this, text, caption]() -> EventAction {
-        return ::PopupMessageBox(text, caption);
-    });
+    guiEvents.push_back(guiEvent);
 }
 
 void MainWindow::HandleDragDrop() {
@@ -297,7 +302,9 @@ std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pa
                 filterDotExts.insert(dotExt);
             });
         } catch (const std::runtime_error &err) {
-            PopupMessageBox(err.what(), languageService.GetUtf8String(v0_2::StringId::MSGBOX_ERROR));
+            AddGuiEvent([this, err]() -> EventAction {
+                return ::PopupMessageBox(err.what(), languageService.GetUtf8String(v0_2::StringId::MSGBOX_ERROR));
+            });
             return {};
         }
         break;
@@ -349,40 +356,59 @@ std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pa
 
 AddItemsAbort:
 
-    if (!failed.empty()) {
-        std::string info = languageService.GetUtf8String(v0_2::StringId::FAILED_ADD_BELOW) + u8"\r\n";
-        for (auto &pr : failed) {
-            info += pr.first + u8" " + languageService.GetUtf8String(v0_2::StringId::REASON) + u8" " + pr.second +
-                    u8"\r\n ";
-        }
+    std::function<EventAction()> callback = [this, failed, ignored]() -> EventAction {
+        // FIXME
+        ImGui::OpenPopup("results");
 
-        PopupMessageBox(info, languageService.GetUtf8String(v0_2::StringId::MSGBOX_ERROR));
-    }
+        // Always center this window when appearing
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-    if (!ignored.empty()) {
-        std::string s;
+        bool open = !failed.empty() || !ignored.empty();
+        if (ImGui::BeginPopupModal("results", &open, ImGuiWindowFlags_AlwaysAutoResize)) {
+            std::shared_ptr<void> defer(nullptr, [](...) {
+                ImGui::EndPopup();
+            });
 
-        std::string dest =
-            fmt::format(languageService.GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), ignored.size());
+            if (!failed.empty()) {
+                ImGui::Text(languageService.GetUtf8String(v0_2::StringId::FAILED_ADD_BELOW).c_str());
+                ImGui::Separator();
+                for (auto &pr : failed) {
+                    ImGui::Text(
+                        (pr.first + u8" " + languageService.GetUtf8String(v0_2::StringId::REASON) + u8" " + pr.second)
+                            .c_str());
+                }
+            }
+            if (!ignored.empty()) {
+                std::string s;
 
-        s += dest + u8"\r\n";
+                ImGui::Text(
+                    fmt::format(languageService.GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), ignored.size())
+                        .c_str());
 
-        int count = 0;
-        for (auto &filename : ignored) {
-            s += filename + u8"\r\n";
-            count++;
+                int count = 0;
+                for (auto &filename : ignored) {
+                    ImGui::Text(filename.c_str());
 
-            if (count >= 5) {
-                s += languageService.GetUtf8String(v0_2::StringId::AND_SO_ON);
-                break;
+                    /*                  if (count >= 5) {
+                                          s += languageService.GetUtf8String(v0_2::StringId::AND_SO_ON); FIXME
+                                          break;
+                                      }*/
+                }
+
+                ImGui::Text(languageService.GetUtf8String(v0_2::StringId::TIPS_USE_NO_FILTER).c_str());
+            }
+
+            ImGui::SetItemDefaultFocus();
+            if (ImGui::Button("OK", ImVec2(120, 0))) {
+                ImGui::CloseCurrentPopup();
+                return EventAction::FINISH;
             }
         }
+        return EventAction::KEEP_ALIVE;
+    };
 
-        s += u8"\r\n\r\n";
-        s += languageService.GetUtf8String(v0_2::StringId::TIPS_USE_NO_FILTER);
+    AddGuiEvent(callback);
 
-        PopupMessageBox(s, languageService.GetUtf8String(v0_2::StringId::PROMPT));
-        return ignored;
-    }
     return ignored;
 }

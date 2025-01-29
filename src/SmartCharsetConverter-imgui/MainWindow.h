@@ -34,9 +34,11 @@ private:
     std::vector<std::function<EventAction()>> guiEvents;
     std::vector<std::function<EventAction()>> localGuiEvents;
 
+    std::wstring folderBrowserDir;
+
     std::atomic<bool> doCancel;
 
-    void PopupMessageBox(const std::string &text, const std::string &caption) noexcept;
+    void AddGuiEvent(std::function<EventAction()> guiEvent) noexcept;
     void HandleDragDrop();
     void CheckAndTraversalIncludeRule(std::function<void(const std::string &dotExt)> fn);
     std::vector<std::string> AddItems(const std::vector<std::string> &pathes) noexcept;
