@@ -13,6 +13,7 @@
 #include "FontLoader.h"
 
 #include <Common/tstring.h>
+#include <Common/CommandLineParser.h>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -146,8 +147,24 @@ glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+    // 得到命令行参数
+    const std::vector<std::string> args = GetCommandLineArgs();
+
+    // GUI模式下的初始输入文件。目的是文件拖到程序图标上时能够自动加载
+    std::vector<std::string> inputFilenames;
+    if (args.size() > 1) {
+        for (int i = 1; i < args.size(); ++i) {
+            auto path = std::filesystem::u8path(args[i]);
+            if (!std::filesystem::is_regular_file(path) && !std::filesystem::is_directory(path)) {
+                throw std::runtime_error(fmt::format("illegal path: {}", path.u8string())); // FIXME
+                break;
+            }
+            inputFilenames.push_back(args[i]);
+        }
+    }
+
     // Main loop
-    MainWindow mainWindow(window);
+    MainWindow mainWindow(window, inputFilenames);
 
     auto initEndTime = std::chrono::system_clock::now();
     fmt::print("init time: {}s\n", std::chrono::duration<double>(initEndTime - startTime).count());

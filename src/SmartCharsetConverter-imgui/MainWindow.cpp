@@ -53,7 +53,7 @@ EventAction PopupMessageBox(const std::string &text, const std::string &caption,
     return EventAction::KEEP_ALIVE;
 }
 
-MainWindow::MainWindow(GLFWwindow *glfwWindow)
+MainWindow::MainWindow(GLFWwindow *glfwWindow, const std::vector<std::string> &filenames)
     : glfwWindow(glfwWindow), core(configFileName, CoreInitOption{}),
       languageService([this]() -> LanguageServiceOption {
           LanguageServiceOption option;
@@ -64,6 +64,10 @@ MainWindow::MainWindow(GLFWwindow *glfwWindow)
       }()),
       listView(languageService) {
     uni_table::InitUtf8Table();
+
+    pool.detach_task([this, filenames = std::move(filenames)]() {
+        AddItems(filenames);
+    });
 }
 
 void MainWindow::Render() {

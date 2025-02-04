@@ -18,7 +18,7 @@ enum class EventAction {
 
 class MainWindow {
 public:
-    MainWindow(GLFWwindow *glfwWindow);
+    MainWindow(GLFWwindow *glfwWindow, const std::vector<std::string> &filenames = {});
 
     void Render();
 
