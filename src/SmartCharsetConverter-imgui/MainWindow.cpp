@@ -321,8 +321,10 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
 
     std::shared_ptr<boost::synchronized_value<std::string>> status =
         std::make_shared<boost::synchronized_value<std::string>>();
-    status->synchronize()->assign(u8"正在统计文件数量..."); // FIXME
-    AddGuiEvent([this, doCancel, status, finished]() -> EventAction {
+    std::shared_ptr<std::atomic<int>> progress = std::make_shared<std::atomic<int>>(-1);
+    std::shared_ptr<std::atomic<int>> progressTotal = std::make_shared<std::atomic<int>>(-1);
+
+    AddGuiEvent([this, doCancel, status, finished, progress, progressTotal]() -> EventAction {
         // FIXME
         ImGui::OpenPopup("adding");
 
@@ -335,6 +337,14 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
                 ImGui::EndPopup();
             });
             ImGui::Text(status->synchronize()->c_str());
+
+            if (progress->load() < 0) {
+                ImGui::ProgressBar(-1.0f * (float)ImGui::GetTime(), ImVec2(0.0f, 0.0f), "Searching.."); // FIXME
+            } else {
+                float fraction = static_cast<float>(progress->load()) / static_cast<float>(progressTotal->load());
+                ImGui::ProgressBar(fraction, ImVec2(0.0f, 0.0f),
+                                   fmt::format("{}/{}", progress->load(), progressTotal->load()).c_str()); // FIXME
+            }
             ImGui::Separator();
             if (ImGui::Button(languageService.GetUtf8String(v0_2::StringId::CANCEL).c_str())) {
                 doCancel->store(true);
@@ -344,6 +354,7 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
         return finished->load() ? EventAction::FINISH : EventAction::KEEP_ALIVE;
     });
 
+    status->synchronize()->assign(u8"正在统计文件数量..."); // FIXME
     std::vector<std::string> paths;
     for (auto &pathString : pathStrings) {
         if (doCancel->load()) {
@@ -367,13 +378,14 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
 
     std::vector<std::pair<std::string, std::string>> failed; // 失败的文件
     std::vector<std::string> ignored;                        // 忽略的文件
+    progressTotal->store(static_cast<int>(paths.size()));
     for (auto it = paths.begin(); it != paths.end(); it++) {
         if (doCancel->load()) {
             return;
         }
+        progress->store(static_cast<int>(it - paths.begin()));
         auto &filename = *it;
-        status->synchronize()->assign(
-            fmt::format(u8"正在探测字符集({}/{})...", it - paths.begin(), paths.size())); // FIXME
+        status->synchronize()->assign(u8"正在探测字符集..."); // FIXME
 
         try {
             Core::AddItemResult ret = core.AddItem(filename, filterDotExts);
