@@ -12,6 +12,7 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <spdlog/spdlog.h>
+#include <boost/thread/synchronized_value.hpp>
 
 #include <regex>
 
@@ -285,7 +286,7 @@ void MainWindow::CheckAndTraversalIncludeRule(std::function<void(const std::stri
     }
 }
 
-std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pathes) noexcept {
+std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept {
     doCancel = false;
     // 后缀
     std::unordered_set<std::string> filterDotExts;
@@ -312,14 +313,64 @@ std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pa
         assert(0);
     }
 
+    std::shared_ptr<std::atomic<bool>> finished = std::make_shared<std::atomic<bool>>(false);
+    std::shared_ptr<void> defer = std::shared_ptr<void>(nullptr, [finished](...) {
+        finished->store(true);
+    });
+
+    std::shared_ptr<boost::synchronized_value<std::string>> status =
+        std::make_shared<boost::synchronized_value<std::string>>();
+    status->synchronize()->assign(u8"正在统计文件数量..."); // FIXME
+    AddGuiEvent([status, finished]() -> EventAction {
+        // FIXME
+        ImGui::OpenPopup("adding");
+
+        // Always center this window when appearing
+        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+        if (ImGui::BeginPopupModal("adding", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+            std::shared_ptr<void> defer(nullptr, [](...) {
+                ImGui::EndPopup();
+            });
+            ImGui::Text(status->synchronize()->c_str());
+        }
+
+        return finished->load() ? EventAction::FINISH : EventAction::KEEP_ALIVE;
+    });
+
+    std::vector<std::string> paths;
+    for (auto &pathString : pathStrings) {
+        auto path = std::filesystem::u8path(pathString);
+
+        // 如果是目录
+        if (std::filesystem::is_directory(path)) {
+            for (auto p : std::filesystem::recursive_directory_iterator(path)) {
+                paths.push_back(p.path().u8string());
+                status->synchronize()->assign(fmt::format(u8"正在统计文件数量:{}...", paths.size())); // FIXME
+            }
+            continue;
+        }
+
+        // 如果是文件
+        paths.push_back(path.u8string());
+        status->synchronize()->assign(fmt::format(u8"正在统计文件数量:{}...", paths.size())); // FIXME
+    }
+
     std::vector<std::pair<std::string, std::string>> failed; // 失败的文件
     std::vector<std::string> ignored;                        // 忽略的文件
+    for (auto it = paths.begin(); it != paths.end(); it++) {
+        auto &filename = *it;
+        status->synchronize()->assign(
+            fmt::format(u8"正在探测字符集({}/{})...", it - paths.begin(), paths.size())); // FIXME
+        if (doCancel) {
+            break;
+        }
 
-    auto AddItemNoException = [&](const std::string &filename) {
         try {
             Core::AddItemResult ret = core.AddItem(filename, filterDotExts);
             if (ret.isIgnore) {
-                return;
+                continue;
             }
             listView.AddItem(
                 ListView::MyItem{-1, filename, ret.filesize, ret.srcCharset, ret.srcLineBreak, to_utf8(ret.strPiece)});
@@ -330,53 +381,7 @@ std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pa
         } catch (const std::runtime_error &err) {
             failed.push_back({filename, err.what()});
         }
-    };
-
-    std::shared_ptr<std::atomic<bool>> finished = std::make_shared<std::atomic<bool>>(false);
-    std::shared_ptr<void> defer = std::shared_ptr<void>(nullptr, [finished](...) {
-        finished->store(true);
-    });
-
-    std::shared_ptr<std::atomic<std::string>> status;
-    status->store(u8"正在添加文件..."); // FIXME
-    AddGuiEvent([status, finished]() -> EventAction {
-        // FIXME
-        ImGui::OpenPopup("adding");
-
-        // Always center this window when appearing
-        ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-        if (ImGui::BeginPopupModal("adding", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text(status->load().c_str());
-        }
-
-        return finished ? EventAction::FINISH : EventAction::KEEP_ALIVE;
-    });
-
-    for (auto &path : pathes) {
-        // 如果是目录
-        if (std::filesystem::is_directory(path)) {
-            // 遍历指定目录
-            auto filenames = TraversalAllFileNames(path);
-
-            for (auto &filename : filenames) {
-                if (doCancel) {
-                    goto AddItemsAbort;
-                }
-                AddItemNoException(filename);
-            }
-            continue;
-        }
-
-        // 如果是文件
-        if (doCancel) {
-            goto AddItemsAbort;
-        }
-        AddItemNoException(path);
     }
-
-AddItemsAbort:
 
     std::function<EventAction()> callback = [this, failed, ignored]() -> EventAction {
         // FIXME
@@ -408,7 +413,6 @@ AddItemsAbort:
                     fmt::format(languageService.GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), ignored.size())
                         .c_str());
 
-                int count = 0;
                 for (auto &filename : ignored) {
                     ImGui::Text(filename.c_str());
 
