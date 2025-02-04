@@ -286,8 +286,9 @@ void MainWindow::CheckAndTraversalIncludeRule(std::function<void(const std::stri
     }
 }
 
-std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept {
-    doCancel = false;
+void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept {
+    std::shared_ptr<std::atomic<bool>> doCancel = std::make_shared<std::atomic<bool>>(false);
+
     // 后缀
     std::unordered_set<std::string> filterDotExts;
 
@@ -306,7 +307,7 @@ std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pa
             AddGuiEvent([this, err]() -> EventAction {
                 return ::PopupMessageBox(err.what(), languageService.GetUtf8String(v0_2::StringId::MSGBOX_ERROR));
             });
-            return {};
+            return;
         }
         break;
     default:
@@ -321,7 +322,7 @@ std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pa
     std::shared_ptr<boost::synchronized_value<std::string>> status =
         std::make_shared<boost::synchronized_value<std::string>>();
     status->synchronize()->assign(u8"正在统计文件数量..."); // FIXME
-    AddGuiEvent([status, finished]() -> EventAction {
+    AddGuiEvent([this, doCancel, status, finished]() -> EventAction {
         // FIXME
         ImGui::OpenPopup("adding");
 
@@ -334,6 +335,10 @@ std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pa
                 ImGui::EndPopup();
             });
             ImGui::Text(status->synchronize()->c_str());
+            ImGui::Separator();
+            if (ImGui::Button(languageService.GetUtf8String(v0_2::StringId::CANCEL).c_str())) {
+                doCancel->store(true);
+            }
         }
 
         return finished->load() ? EventAction::FINISH : EventAction::KEEP_ALIVE;
@@ -341,6 +346,9 @@ std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pa
 
     std::vector<std::string> paths;
     for (auto &pathString : pathStrings) {
+        if (doCancel->load()) {
+            return;
+        }
         auto path = std::filesystem::u8path(pathString);
 
         // 如果是目录
@@ -360,12 +368,12 @@ std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pa
     std::vector<std::pair<std::string, std::string>> failed; // 失败的文件
     std::vector<std::string> ignored;                        // 忽略的文件
     for (auto it = paths.begin(); it != paths.end(); it++) {
+        if (doCancel->load()) {
+            return;
+        }
         auto &filename = *it;
         status->synchronize()->assign(
             fmt::format(u8"正在探测字符集({}/{})...", it - paths.begin(), paths.size())); // FIXME
-        if (doCancel) {
-            break;
-        }
 
         try {
             Core::AddItemResult ret = core.AddItem(filename, filterDotExts);
@@ -435,5 +443,5 @@ std::vector<std::string> MainWindow::AddItems(const std::vector<std::string> &pa
     };
 
     AddGuiEvent(callback);
-    return ignored;
+    return;
 }
