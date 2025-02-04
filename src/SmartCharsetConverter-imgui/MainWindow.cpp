@@ -413,7 +413,12 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
         // FIXME
         ImGui::OpenPopup("results");
 
+        // 计算父窗口的 80% 宽高
+        ImVec2 parentSize = ImGui::GetMainViewport()->WorkSize;
+        ImVec2 popupSize(parentSize.x * 0.8f, parentSize.y * 0.8f);
+
         // Always center this window when appearing
+        ImGui::SetNextWindowSize(popupSize, ImGuiCond_Appearing);
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
@@ -423,29 +428,53 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
                 ImGui::EndPopup();
             });
 
+            ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter |
+                                    ImGuiTableFlags_BordersV |
+                                    ImGuiTableFlags_ScrollY; //  ImGuiTableFlags_NoBordersInBody |
+            flags = 0;
+
             if (!failed.empty()) {
                 ImGui::Text(languageService.GetUtf8String(v0_2::StringId::FAILED_ADD_BELOW).c_str());
                 ImGui::Separator();
-                for (auto &pr : failed) {
-                    ImGui::Text(
-                        (pr.first + u8" " + languageService.GetUtf8String(v0_2::StringId::REASON) + u8" " + pr.second)
-                            .c_str());
+                if (ImGui::BeginTable("##failed add below", 3, flags)) {
+                    ImGui::TableSetupColumn(u8"index");
+                    ImGui::TableSetupColumn(u8"filename");
+                    ImGui::TableSetupColumn(u8"reason");
+                    ImGui::TableSetupScrollFreeze(0, 1); // Make row always visible
+                    ImGui::TableHeadersRow();
+                    int index = 1;
+                    for (auto &pr : failed) {
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        ImGui::Text(fmt::format("{}", index++).c_str());
+                        ImGui::TableNextColumn();
+                        ImGui::Text(pr.first.c_str());
+                        ImGui::TableNextColumn();
+                        ImGui::Text(pr.second.c_str());
+                    }
+                    ImGui::EndTable();
                 }
             }
             if (!ignored.empty()) {
-                std::string s;
-
                 ImGui::Text(
                     fmt::format(languageService.GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), ignored.size())
                         .c_str());
+                ImGui::Separator();
+                if (ImGui::BeginTable("##non text or no detected", 2, flags)) {
+                    ImGui::TableSetupColumn(u8"index");
+                    ImGui::TableSetupColumn(u8"filename");
+                    ImGui::TableSetupScrollFreeze(0, 1); // Make row always visible
+                    ImGui::TableHeadersRow();
+                    int index = 1;
 
-                for (auto &filename : ignored) {
-                    ImGui::Text(filename.c_str());
-
-                    /*                  if (count >= 5) {
-                                          s += languageService.GetUtf8String(v0_2::StringId::AND_SO_ON); FIXME
-                                          break;
-                                      }*/
+                    for (auto &filename : ignored) {
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        ImGui::Text(fmt::format("{}", index++).c_str());
+                        ImGui::TableNextColumn();
+                        ImGui::Text(filename.c_str());
+                    }
+                    ImGui::EndTable();
                 }
 
                 ImGui::Text(languageService.GetUtf8String(v0_2::StringId::TIPS_USE_NO_FILTER).c_str());
