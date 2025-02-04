@@ -289,6 +289,7 @@ void MainWindow::CheckAndTraversalIncludeRule(std::function<void(const std::stri
 void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept {
     std::shared_ptr<std::atomic<bool>> doCancel = std::make_shared<std::atomic<bool>>(false);
 
+    // =========================================================
     // 后缀
     std::unordered_set<std::string> filterDotExts;
 
@@ -324,6 +325,7 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
     std::shared_ptr<std::atomic<int>> progress = std::make_shared<std::atomic<int>>(-1);
     std::shared_ptr<std::atomic<int>> progressTotal = std::make_shared<std::atomic<int>>(-1);
 
+    // =========================================================
     AddGuiEvent([this, doCancel, status, finished, progress, progressTotal]() -> EventAction {
         // FIXME
         ImGui::OpenPopup("adding");
@@ -354,6 +356,7 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
         return finished->load() ? EventAction::FINISH : EventAction::KEEP_ALIVE;
     });
 
+    // =========================================================
     status->synchronize()->assign(u8"正在统计文件数量..."); // FIXME
     std::vector<std::string> paths;
     for (auto &pathString : pathStrings) {
@@ -376,12 +379,13 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
         status->synchronize()->assign(fmt::format(u8"正在统计文件数量:{}...", paths.size())); // FIXME
     }
 
+    // =========================================================
     std::vector<std::pair<std::string, std::string>> failed; // 失败的文件
     std::vector<std::string> ignored;                        // 忽略的文件
     progressTotal->store(static_cast<int>(paths.size()));
     for (auto it = paths.begin(); it != paths.end(); it++) {
         if (doCancel->load()) {
-            return;
+            break;
         }
         progress->store(static_cast<int>(it - paths.begin()));
         auto &filename = *it;
@@ -403,7 +407,9 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
         }
     }
 
-    std::function<EventAction()> callback = [this, failed, ignored]() -> EventAction {
+    // =========================================================
+    // show results
+    AddGuiEvent([this, failed, ignored]() -> EventAction {
         // FIXME
         ImGui::OpenPopup("results");
 
@@ -412,7 +418,7 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
         bool open = !failed.empty() || !ignored.empty();
-        if (ImGui::BeginPopupModal("results", &open, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (ImGui::BeginPopupModal("results", &open)) {
             std::shared_ptr<void> defer(nullptr, [](...) {
                 ImGui::EndPopup();
             });
@@ -452,8 +458,6 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
             }
         }
         return EventAction::KEEP_ALIVE;
-    };
-
-    AddGuiEvent(callback);
+    });
     return;
 }
