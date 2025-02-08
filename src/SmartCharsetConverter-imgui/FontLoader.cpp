@@ -17,12 +17,14 @@ struct FontInfo {
 
 constexpr char windowsFontDir[] = "C:\\Windows\\Fonts\\";
 
-void LoadFonts(ImFontAtlas *ioFonts) {
-
+void LoadFonts(ImFontAtlas *ioFonts, float scaleFactor) {
     std::vector<FontInfo> fontInfos{
-        FontInfo{std::string(windowsFontDir) + "segoeui.ttf", 20, std::vector<ImWchar>{}},
-        FontInfo{std::string(windowsFontDir) + "msyh.ttc", 20, std::vector<ImWchar>{}},
-        FontInfo{std::string(windowsFontDir) + "simsun.ttc", 20, std::vector<ImWchar>{}},
+        FontInfo{std::string(windowsFontDir) + "segoeui.ttf", static_cast<int>(16.0f * scaleFactor),
+                 std::vector<ImWchar>{}},
+        FontInfo{std::string(windowsFontDir) + "msyh.ttc", static_cast<int>(16.0f * scaleFactor),
+                 std::vector<ImWchar>{}},
+        FontInfo{std::string(windowsFontDir) + "simsun.ttc", static_cast<int>(16.0f * scaleFactor),
+                 std::vector<ImWchar>{}},
     };
 
     ImFontConfig fontConfig;

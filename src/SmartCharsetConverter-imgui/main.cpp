@@ -128,7 +128,12 @@ glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
-    // ImGui::StyleColorsLight();
+
+    // Set DPI: Step 1/2: set global DPI scale factor
+    float xscale = 1.0f, yscale = 1.0f;
+    glfwGetMonitorContentScale(glfwGetPrimaryMonitor(), &xscale, &yscale);
+    float scale = std::max(xscale, yscale);
+    ImGui::GetStyle().ScaleAllSizes(scale);
 
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -140,7 +145,8 @@ glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     bool fontLoaded = false;
 
     FontLoader fontLoader;
-    fontLoader.StartAsyncLoad();
+    // Set DPI: Step 2/2: set font size
+    fontLoader.StartAsyncLoad(scale);
 
     // Our state
     bool show_demo_window = true;
