@@ -212,6 +212,30 @@ void MainWindow::Render() {
                     }
                     ImGui::TreePop();
                 }
+                ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+                if (ImGui::TreeNode(fmt::format(languageService.GetUtf8String(v0_2::StringId::SET_OUTPUT)).c_str())) {
+                    changed |=
+                        ImGui::RadioButton(languageService.GetUtf8String(v0_2::StringId::OUTPUT_TO_ORIGIN).c_str(),
+                                           reinterpret_cast<int *>(&core.GetConfigRef().outputTarget),
+                                           static_cast<int>(Configuration::OutputTarget::ORIGIN));
+                    changed |=
+                        ImGui::RadioButton(languageService.GetUtf8String(v0_2::StringId::OUTPUT_TO_FOLDER).c_str(),
+                                           reinterpret_cast<int *>(&core.GetConfigRef().outputTarget),
+                                           static_cast<int>(Configuration::OutputTarget::TO_DIR));
+
+                    ImGui::BeginDisabled(core.GetConfigRef().outputTarget != Configuration::OutputTarget::TO_DIR);
+                    ImGui::InputText("##", &core.GetConfigRef().outputDir);
+                    ImGui::SameLine();
+                    if (ImGui::Button(languageService.GetUtf8String(v0_2::StringId::SELECT_FOLDER).c_str())) {
+                        TFolderBrowser folderBrowser(glfwGetWin32Window(glfwWindow));
+                        if (folderBrowser.Open(folderBrowserDir)) {
+                            core.SetOutputDir(to_utf8(folderBrowserDir));
+                        }
+                    }
+                    ImGui::EndDisabled();
+
+                    ImGui::TreePop();
+                }
 
                 if (changed) {
                     core.WriteConfigToFile();
