@@ -162,7 +162,44 @@ void MainWindow::Render() {
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                 if (ImGui::TreeNode(
                         fmt::format(languageService.GetUtf8String(v0_2::StringId::ADD_FILES_OR_FOLDER)).c_str())) {
-                    ImGui::Button(languageService.GetUtf8String(v0_2::StringId::ADD_FILES).c_str());
+                    if (ImGui::Button(languageService.GetUtf8String(v0_2::StringId::ADD_FILES).c_str())) {
+                        try {
+                            std::vector<std::pair<std::wstring, std::wstring>> dialogFilter;
+                            switch (core.GetConfig().filterMode) {
+                            case Configuration::FilterMode::NO_FILTER:
+                            case Configuration::FilterMode::SMART: // 智能识别文本
+                                dialogFilter = {
+                                    {languageService.GetWString(v0_2::StringId::ALL_FILES) + L"*.*", L"*.*"}};
+                                break;
+                            case Configuration::FilterMode::ONLY_SOME_EXTANT: {
+                                // 只包括指定后缀
+                                std::wstring filterExtsStr; // dialog的过滤器要求;分割
+                                CheckAndTraversalIncludeRule([&](const std::string &dotExt) {
+                                    filterExtsStr += utf8_to_wstring("*" + dotExt + ";");
+                                });
+
+                                // dialog过滤器
+                                dialogFilter.push_back(make_pair(filterExtsStr, filterExtsStr));
+
+                                break;
+                            }
+                            default:
+                                assert(0);
+                            }
+
+                            // 打开文件对话框
+                            TFileDialog dialog(glfwGetWin32Window(glfwWindow), dialogFilter, true);
+                            if (dialog.Open()) {
+                                auto filenames = to_utf8(dialog.GetResult());
+
+                                pool.detach_task([this, filenames = std::move(filenames)]() {
+                                    AddItems(filenames);
+                                });
+                            }
+                        } catch (const std::runtime_error &err) {
+                            PopupMessageBox(err.what(), languageService.GetUtf8String(v0_2::StringId::MSGBOX_ERROR));
+                        }
+                    }
                     ImGui::SameLine();
                     bool clicked = ImGui::Button(languageService.GetUtf8String(v0_2::StringId::ADD_FOLDER).c_str());
                     if (clicked) {
@@ -435,7 +472,7 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
             std::shared_ptr<void> defer(nullptr, [](...) {
                 ImGui::EndPopup();
             });
-             
+
             ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg |
                                     ImGuiTableFlags_ScrollY; //  ImGuiTableFlags_NoBordersInBody |
             flags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV;
