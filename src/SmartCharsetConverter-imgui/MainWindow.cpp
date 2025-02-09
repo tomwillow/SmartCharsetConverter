@@ -246,26 +246,6 @@ void MainWindow::Render() {
                 if (changed) {
                     core.WriteConfigToFile();
                 }
-
-                ImGui::Text("MyObject: %d", selected);
-                ImGui::Separator();
-                if (ImGui::BeginTabBar("##Tabs", ImGuiTabBarFlags_None)) {
-                    if (ImGui::BeginTabItem("Description")) {
-                        ImGui::TextWrapped("Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do "
-                                           "eiusmod tempor incididunt ut labore et dolore magna aliqua. ");
-                        ImGui::EndTabItem();
-                    }
-                    if (ImGui::BeginTabItem("Details")) {
-                        ImGui::Text("ID: 0123456789");
-                        ImGui::EndTabItem();
-                    }
-                    ImGui::EndTabBar();
-                }
-                ImGui::EndChild();
-                if (ImGui::Button("Revert")) {}
-                ImGui::SameLine();
-                if (ImGui::Button("Save")) {}
-                ImGui::EndGroup();
             }
             // here can catch the drop event at right panel
             HandleDragDrop();
