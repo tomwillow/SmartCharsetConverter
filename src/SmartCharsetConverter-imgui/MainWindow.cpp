@@ -136,8 +136,11 @@ void MainWindow::Render() {
                 ImGui::BeginChild("item view",
                                   ImVec2(0, -ImGui::GetFrameHeightWithSpacing())); // Leave room for 1 line below us
 
+                // whether configuration is changed.
+                // after all the flow, this flag indicates whether the configuration should be wrote to file.
                 bool changed = false;
 
+                // 1. selete filter mode
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                 if (ImGui::TreeNode(
                         fmt::format(languageService.GetUtf8String(v0_2::StringId::SET_FILTER_MODE)).c_str())) {
@@ -159,6 +162,7 @@ void MainWindow::Render() {
                     ImGui::TreePop();
                 }
 
+                // 2. add files or folder
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                 if (ImGui::TreeNode(
                         fmt::format(languageService.GetUtf8String(v0_2::StringId::ADD_FILES_OR_FOLDER)).c_str())) {
@@ -212,6 +216,8 @@ void MainWindow::Render() {
                     }
                     ImGui::TreePop();
                 }
+
+                // 3. select output target
                 ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
                 if (ImGui::TreeNode(fmt::format(languageService.GetUtf8String(v0_2::StringId::SET_OUTPUT)).c_str())) {
                     changed |=
