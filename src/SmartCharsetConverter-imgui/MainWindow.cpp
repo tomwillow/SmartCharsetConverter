@@ -450,10 +450,8 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
 
     // =========================================================
     // show results
-    AddGuiEvent([this, failed, ignored]() -> EventAction {
-        // FIXME
-        ImGui::OpenPopup("results");
-
+    std::shared_ptr<bool> closeButtonNotPressed = std::make_shared<bool>(true);
+    AddGuiEvent([this, failed, ignored, closeButtonNotPressed]() -> EventAction {
         // 计算父窗口的 80% 宽高
         ImVec2 parentSize = ImGui::GetMainViewport()->WorkSize;
 
@@ -467,8 +465,16 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-        bool open = !failed.empty() || !ignored.empty();
-        if (ImGui::BeginPopupModal("results", &open)) {
+        if (failed.empty() && ignored.empty()) {
+            return EventAction::FINISH;
+        }
+
+        if (!*closeButtonNotPressed) {
+            return EventAction::FINISH;
+        }
+        // FIXME
+        ImGui::OpenPopup("results");
+        if (ImGui::BeginPopupModal("results", closeButtonNotPressed.get())) {
             std::shared_ptr<void> defer(nullptr, [](...) {
                 ImGui::EndPopup();
             });
