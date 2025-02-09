@@ -419,10 +419,14 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
 
         // 计算父窗口的 80% 宽高
         ImVec2 parentSize = ImGui::GetMainViewport()->WorkSize;
-        ImVec2 popupSize(parentSize.x * 0.8f, parentSize.y * 0.8f);
 
         // Always center this window when appearing
-        ImGui::SetNextWindowSize(popupSize, ImGuiCond_Appearing);
+        // ImVec2 popupSize(parentSize.x * 0.8f, parentSize.y * 0.8f);
+        // ImGui::SetNextWindowSize(popupSize, ImGuiCond_Appearing);
+        ImVec2 maxPopupSize(parentSize.x * 0.8f, parentSize.y * 0.8f);
+
+        // 设置弹出窗口的大小约束（允许缩小，但最大不超过 80%）
+        ImGui::SetNextWindowSizeConstraints(ImVec2(0, 0), maxPopupSize);
         ImVec2 center = ImGui::GetMainViewport()->GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
@@ -431,17 +435,16 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
             std::shared_ptr<void> defer(nullptr, [](...) {
                 ImGui::EndPopup();
             });
-
-            ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter |
-                                    ImGuiTableFlags_BordersV |
+             
+            ImGuiTableFlags flags = ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg |
                                     ImGuiTableFlags_ScrollY; //  ImGuiTableFlags_NoBordersInBody |
-            flags = 0;
+            flags = ImGuiTableFlags_BordersOuter | ImGuiTableFlags_BordersV;
 
             if (!failed.empty()) {
                 ImGui::Text(languageService.GetUtf8String(v0_2::StringId::FAILED_ADD_BELOW).c_str());
                 ImGui::Separator();
                 if (ImGui::BeginTable("##failed add below", 3, flags)) {
-                    ImGui::TableSetupColumn(u8"index");
+                    ImGui::TableSetupColumn(u8"index", ImGuiTableColumnFlags_WidthFixed);
                     ImGui::TableSetupColumn(u8"filename");
                     ImGui::TableSetupColumn(u8"reason");
                     ImGui::TableSetupScrollFreeze(0, 1); // Make row always visible
@@ -465,7 +468,7 @@ void MainWindow::AddItems(const std::vector<std::string> &pathStrings) noexcept 
                         .c_str());
                 ImGui::Separator();
                 if (ImGui::BeginTable("##non text or no detected", 2, flags)) {
-                    ImGui::TableSetupColumn(u8"index");
+                    ImGui::TableSetupColumn(u8"index", ImGuiTableColumnFlags_WidthFixed);
                     ImGui::TableSetupColumn(u8"filename");
                     ImGui::TableSetupScrollFreeze(0, 1); // Make row always visible
                     ImGui::TableHeadersRow();
