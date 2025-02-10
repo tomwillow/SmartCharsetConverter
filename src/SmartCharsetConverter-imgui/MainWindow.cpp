@@ -243,9 +243,83 @@ void MainWindow::Render() {
                     ImGui::TreePop();
                 }
 
+                // 4. specify output charset
+                ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+                if (ImGui::TreeNode(
+                        fmt::format(languageService.GetUtf8String(v0_2::StringId::SET_OUTPUT_CHARSET)).c_str())) {
+
+                    // shown, outer charset (these charset are not in combo box)
+                    const std::vector<CharsetCode> comboBoxOtherExcludes = {CharsetCode::UTF8, CharsetCode::UTF8BOM,
+                                                                            CharsetCode::GB18030};
+                    // FIXME: move to initializing
+                    std::vector<CharsetCode> comboBoxOthers;
+                    for (int icode = static_cast<int>(CharsetCode::UTF8);
+                         icode < static_cast<int>(CharsetCode::CHARSET_CODE_END); ++icode) {
+                        CharsetCode code = static_cast<CharsetCode>(icode);
+                        if (std::find(comboBoxOtherExcludes.begin(), comboBoxOtherExcludes.end(), code) !=
+                            comboBoxOtherExcludes.end()) {
+                            continue;
+                        }
+                        comboBoxOthers.push_back(code);
+                    }
+
+                    for (auto charset : comboBoxOtherExcludes) {
+                        changed |= ImGui::RadioButton(ToViewCharsetName(charset).c_str(),
+                                                      reinterpret_cast<int *>(&core.GetConfigRef().outputCharset),
+                                                      static_cast<int>(charset));
+                    }
+
+                    bool outputCharsetIsInOthersComboBox =
+                        std::find(comboBoxOtherExcludes.begin(), comboBoxOtherExcludes.end(),
+                                  core.GetConfigRef().outputCharset) == comboBoxOtherExcludes.end();
+                    int selectedOthers = outputCharsetIsInOthersComboBox;
+                    changed |= ImGui::RadioButton(languageService.GetUtf8String(v0_2::StringId::OTHERS).c_str(),
+                                                  &selectedOthers, true);
+
+                    CharsetCode comboSelectionCode;
+                    if (outputCharsetIsInOthersComboBox) {
+                        comboSelectionCode = core.GetConfigRef().outputCharset;
+                    } else {
+                        assert(comboBoxOthers.size() > 0);
+                        comboSelectionCode = comboBoxOthers[0];
+                    }
+
+                    if (!outputCharsetIsInOthersComboBox && selectedOthers) {
+                        core.GetConfigRef().outputCharset = comboSelectionCode;
+                        changed = true;
+                    }
+
+                    ImGui::BeginDisabled(!outputCharsetIsInOthersComboBox);
+
+                    ImGui::SameLine();
+                    if (ImGui::BeginCombo("##combo 1", ToViewCharsetName(comboSelectionCode).c_str())) {
+                        for (auto code : comboBoxOthers) {
+                            if (ImGui::Selectable(ToViewCharsetName(code).c_str(),
+                                                  core.GetConfigRef().outputCharset == code)) {
+                                core.GetConfigRef().outputCharset = code;
+                                changed = true;
+                            }
+
+                            // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                            if (core.GetConfigRef().outputCharset == code) {
+                                ImGui::SetItemDefaultFocus();
+                            }
+                        }
+
+                        ImGui::EndCombo();
+                    }
+
+                    ImGui::EndDisabled();
+
+                    ImGui::TreePop();
+                }
+
                 if (changed) {
                     core.WriteConfigToFile();
                 }
+
+                ImGui::EndChild();
+                ImGui::EndGroup();
             }
             // here can catch the drop event at right panel
             HandleDragDrop();
