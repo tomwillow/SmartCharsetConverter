@@ -7,7 +7,9 @@
 #include <vector>
 
 struct LanguageServiceOption {
-    std::function<std::string(void)> fnGetLanguageFromConfig;
+    // specify the language at starting.
+    // the content should be equal of "language" field data of one of language json files.
+    std::string languageName;
     std::wstring resourceType;
     std::vector<int> resourceIds;
 };

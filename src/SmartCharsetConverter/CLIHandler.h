@@ -3,4 +3,4 @@
 #include <vector>
 #include <string>
 
-int CLIMain(const std::vector<std::wstring> &args) noexcept;
+int CLIMain(const std::vector<std::string> &args) noexcept;

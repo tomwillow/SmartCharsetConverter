@@ -91,7 +91,7 @@ std::tuple<CharsetCode, bool> DetectByCED(const char *buf, int len) {
     // 这里如果CED识别出的名字在CharsetCode中没有定义，将抛出异常
     CharsetCode code;
     try {
-        code = ToCharsetCode(string_to_wstring(EncodingName(encoding)));
+        code = ToCharsetCode(EncodingName(encoding));
 
     } catch (const std::runtime_error &err) {
         (err);
@@ -152,13 +152,13 @@ CharsetCode DetectEncodingPlain(uchardet *det, const char *buf, std::size_t bufS
 
     if (ucsdetConfidence >= 95 && ucsdetResult.find("UTF") != string::npos) {
         // ucsdet如果判定为UTF-8/UTF-16BE|LE等，那么相信它
-        return ToCharsetCodeFinal(ToCharsetCode(string_to_wstring(ucsdetResult)), buf, bufSize);
+        return ToCharsetCodeFinal(ToCharsetCode(ucsdetResult), buf, bufSize);
     }
 
     auto [uchardetResult, uchardetConfidence] = DetectByUCharDet(det, buf, bufSize);
     if (uchardetConfidence >= 95) {
         // uchardet如果有95及以上的信心，那么直接相信它
-        return ToCharsetCodeFinal(ToCharsetCode(string_to_wstring(uchardetResult)), buf, bufSize);
+        return ToCharsetCodeFinal(ToCharsetCode(uchardetResult), buf, bufSize);
     }
 
     // ucsdet和uchardet都没把握

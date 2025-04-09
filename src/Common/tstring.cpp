@@ -84,10 +84,6 @@ std::string to_string(const std::wstring &ws) {
     return wstring_to_string(ws);
 }
 
-std::string to_string(const std::string &s) {
-    return s;
-}
-
 std::wstring to_wstring(const std::string &s) {
     return string_to_wstring(s);
 }
@@ -113,7 +109,14 @@ std::string to_utf8(const std::wstring &wstr) {
     return std::string(buf.get());
 }
 
-std::string to_utf8(const std::string &str) {
+std::string to_utf8(const std::u16string &wstr) {
+#if WIN32
+    const std::wstring &w = reinterpret_cast<const std::wstring &>(wstr);
+    return to_utf8(w);
+#endif
+}
+
+std::string ansi_to_utf8(const std::string &str) {
     int nwLen = MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, NULL, 0);
     unique_ptr<wchar_t[]> pwBuf(new wchar_t[nwLen]);
     MultiByteToWideChar(CP_ACP, 0, str.c_str(), static_cast<int>(str.length()), pwBuf.get(), nwLen);
@@ -123,6 +126,14 @@ std::string to_utf8(const std::string &str) {
     WideCharToMultiByte(CP_UTF8, 0, pwBuf.get(), nwLen, pBuf.get(), nLen, NULL, NULL);
 
     return string(pBuf.get());
+}
+
+std::vector<std::string> to_utf8(const std::vector<std::wstring> &wstrs) {
+    std::vector<std::string> ret;
+    for (const auto &wstr : wstrs) {
+        ret.push_back(to_utf8(wstr));
+    }
+    return ret;
 }
 
 std::string utf8_to_string(const std::string &str) {
@@ -253,9 +264,9 @@ std::tistream &safeGetline(std::tistream &is, std::tstring &t) {
     }
 }
 
-std::vector<std::tstring_view> Split(std::tstring_view s, const std::tstring &dep) noexcept {
-    std::vector<std::tstring_view> ans;
-    tstring::size_type beg = 0;
+std::vector<std::string_view> Split(std::string_view s, const std::string &dep) noexcept {
+    std::vector<std::string_view> ans;
+    string::size_type beg = 0;
     while (1) {
         // beg:  ""->npos " a"->1 "a"->0
         beg = s.find_first_not_of(dep);

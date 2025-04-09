@@ -71,17 +71,19 @@ viet::Encoding CharsetCodeToVietEncoding(CharsetCode code) noexcept;
 
 struct CoreInitOption {
 
-    std::function<void(int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
-                       std::wstring lineBreakStr, std::u16string textPiece)>
-        fnUIUpdateItem = [](int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
-                            std::wstring lineBreakStr, std::u16string textPiece) {};
+    std::function<void(int index, std::string filename, std::string fileSizeStr, std::string charsetStr,
+                       std::string lineBreakStr, std::u16string textPiece)>
+        fnUIUpdateItem = [](int index, std::string filename, std::string fileSizeStr, std::string charsetStr,
+                            std::string lineBreakStr, std::u16string textPiece) {};
 };
 
 class Core {
 public:
-    Core(std::tstring configFileName, CoreInitOption opt);
+    Core(std::string configFileName, CoreInitOption opt);
 
     const Configuration &GetConfig() const noexcept;
+
+    Configuration &GetConfigRef() noexcept;
 
     const std::unique_ptr<uchardet, std::function<void(uchardet *)>> &GetUCharDet() const;
 
@@ -94,6 +96,8 @@ public:
     void SetEnableConvertLineBreak(bool enableLineBreaks);
     void SetLineBreaks(LineBreaks lineBreak);
     void SetLanguage(const std::string &language) noexcept;
+
+    void WriteConfigToFile();
 
     struct AddItemResult {
         bool isIgnore = true; // 是否应该忽略掉
@@ -110,22 +114,22 @@ public:
      * @exception runtime_error ucnv出错。code
      * @exception io_error_ignore 按照配置忽略掉这个文件
      */
-    [[nodiscard]] AddItemResult AddItem(const std::tstring &filename,
-                                        const std::unordered_set<std::tstring> &filterDotExts);
+    [[nodiscard]] AddItemResult AddItem(const std::string &filename,
+                                        const std::unordered_set<std::string> &filterDotExts);
 
     /**
      * 指定文件的字符集。
      * @exception file_io_error 读文件失败
      * @exception runtime_error ucnv出错。code
      */
-    void SpecifyItemCharset(int index, const std::tstring &filename, CharsetCode code);
+    void SpecifyItemCharset(int index, const std::string &filename, CharsetCode code);
 
-    void RemoveItem(const std::tstring &filename);
+    void RemoveItem(const std::string &filename);
 
     void Clear();
 
     struct ConvertFileResult {
-        std::tstring outputFileName;
+        std::string outputFileName;
         std::optional<std::string> errInfo;
         LineBreaks targetLineBreaks;
         std::size_t outputFileSize;
@@ -135,18 +139,16 @@ public:
      * @brief 转换一个文件。
      * @return <输出文件的文件名, 出错信息>
      */
-    ConvertFileResult Convert(const std::tstring &inputFilename, CharsetCode originCode, LineBreaks originLineBreak,
+    ConvertFileResult Convert(const std::string &inputFilename, CharsetCode originCode, LineBreaks originLineBreak,
                               TranslatorBase *translator = nullptr) noexcept;
 
 private:
-    std::tstring configFileName;
+    std::string configFileName;
     CoreInitOption opt;
     Configuration config;
     std::unique_ptr<uchardet, std::function<void(uchardet *)>> det;
 
-    std::unordered_set<std::tstring> listFileNames; // 当前列表中的文件
+    std::unordered_set<std::string> listFileNames; // 当前列表中的文件
 
     void ReadConfigFromFile();
-
-    void WriteConfigToFile();
 };

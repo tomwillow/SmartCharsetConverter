@@ -16,7 +16,7 @@
  * @brief 配置信息
  */
 struct Configuration {
-    enum class FilterMode { NO_FILTER, SMART, ONLY_SOME_EXTANT };
+    enum class FilterMode : int { NO_FILTER, SMART, ONLY_SOME_EXTANT };
     enum class OutputTarget { ORIGIN, TO_DIR };
     static std::unordered_set<CharsetCode> normalCharset;
 

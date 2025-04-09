@@ -19,7 +19,7 @@ LanguageService::LanguageService(LanguageServiceOption option) : option(option) 
 
     LoadLanguageNameFromDir("lang");
 
-    std::string lang = option.fnGetLanguageFromConfig();
+    std::string lang = option.languageName;
     if (lang.empty()) {
         LANGID langId = GetUserDefaultLangID();
 
@@ -61,9 +61,9 @@ void LanguageService::LoadLanguageNameFromInnerRCFile() noexcept {
 
 void LanguageService::LoadLanguageNameFromDir(const std::string &dir) {
     // 得到命令行参数
-    const std::vector<std::wstring> args = GetCommandLineArgs();
-    std::wstring selfPath = args[0];
-    std::filesystem::path exeDir = std::filesystem::u8path(to_utf8(selfPath)).parent_path();
+    const std::vector<std::string> args = GetCommandLineArgs();
+    std::string selfPath = args[0];
+    std::filesystem::path exeDir = std::filesystem::u8path(selfPath).parent_path();
 
     std::filesystem::path langDir = exeDir / dir;
     if (!std::filesystem::is_directory(langDir)) {

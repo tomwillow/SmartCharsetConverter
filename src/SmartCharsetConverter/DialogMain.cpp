@@ -19,7 +19,7 @@
 
 const std::tstring appTitle = TEXT("SmartCharsetConverter v0.9.3 by Tom Willow");
 
-const std::tstring configFileName = TEXT("SmartCharsetConverter.json");
+const std::string configFileName = "SmartCharsetConverter.json";
 
 const std::vector<int> innerLanguageIds = {
     IDR_LANGUAGEJSON_ENGLISH,
@@ -29,16 +29,19 @@ const std::vector<int> innerLanguageIds = {
 
 using namespace std;
 
-DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilenames(filenames) {
+DialogMain::DialogMain(const std::vector<std::string> &filenames) : inputFilenames(filenames) {
 
     CoreInitOption coreOpt;
-    coreOpt.fnUIUpdateItem = [this](int index, std::wstring filename, std::wstring fileSizeStr, std::wstring charsetStr,
-                                    std::wstring lineBreakStr, std::u16string textPiece) {
+    coreOpt.fnUIUpdateItem = [this](int index, std::string filename, std::string fileSizeStr, std::string charsetStr,
+                                    std::string lineBreakStr, std::u16string textPiece) {
         PostUIFunc([=]() {
-            listview.SetItemText(index, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
-            listview.SetItemText(index, static_cast<int>(ListViewColumn::FILESIZE), fileSizeStr.c_str());
-            listview.SetItemText(index, static_cast<int>(ListViewColumn::ENCODING), charsetStr.c_str());
-            listview.SetItemText(index, static_cast<int>(ListViewColumn::LINE_BREAK), lineBreakStr.c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::FILENAME), utf8_to_wstring(filename).c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::FILESIZE),
+                                 utf8_to_wstring(fileSizeStr).c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::ENCODING),
+                                 utf8_to_wstring(charsetStr).c_str());
+            listview.SetItemText(index, static_cast<int>(ListViewColumn::LINE_BREAK),
+                                 utf8_to_wstring(lineBreakStr).c_str());
             listview.SetItemText(index, static_cast<int>(ListViewColumn::TEXT_PIECE),
                                  reinterpret_cast<const wchar_t *>(textPiece.c_str()));
         });
@@ -49,9 +52,7 @@ DialogMain::DialogMain(const std::vector<std::tstring> &filenames) : inputFilena
 
         //
         LanguageServiceOption option;
-        option.fnGetLanguageFromConfig = [this]() -> std::string {
-            return core->GetConfig().language;
-        };
+        option.languageName = core->GetConfig().language;
         option.resourceIds = innerLanguageIds;
         option.resourceType = L"LanguageJson";
 
@@ -156,7 +157,7 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
             continue;
         }
 
-        comboBoxOther.AddString(ToViewCharsetName(code).c_str());
+        comboBoxOther.AddString(utf8_to_wstring(ToViewCharsetName(code)).c_str());
         comboBoxOther.SetItemData(i, static_cast<int>(code));
         i++;
     }
@@ -204,7 +205,7 @@ BOOL DialogMain::OnInitDialog(CWindow wndFocus, LPARAM lInitParam) {
     TMenu &specifyOriginCharsetMenu = rightMenu->SetItemToBeContainer(ID_SPECIFY_ORIGIN_CHARSET);
     for (auto commandId = SPECIFY_ORIGIN_CHARSET_ID_START; commandId < SPECIFY_ORIGIN_CHARSET_ID_END; ++commandId) {
         CharsetCode code = CommandIdToCharsetCode(commandId);
-        specifyOriginCharsetMenu.AppendItem(commandId, ToViewCharsetName(code));
+        specifyOriginCharsetMenu.AppendItem(commandId, utf8_to_wstring(ToViewCharsetName(code)));
     }
 
     selectLanguageMenu = std::make_unique<TPopupMenu>(IDR_MENU_SELECT_LANGUAGES);
@@ -287,9 +288,9 @@ void DialogMain::SetOutputCharset(CharsetCode charset) {
     }
 }
 
-std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &pathes) noexcept {
+std::vector<std::string> DialogMain::AddItems(const std::vector<std::string> &pathes) noexcept {
     // 后缀
-    unordered_set<tstring> filterDotExts;
+    unordered_set<string> filterDotExts;
 
     switch (core->GetConfig().filterMode) {
     case Configuration::FilterMode::NO_FILTER:
@@ -299,12 +300,12 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
     case Configuration::FilterMode::ONLY_SOME_EXTANT:
         // 只包括指定后缀
         try {
-            CheckAndTraversalIncludeRule([&](const tstring &dotExt) {
+            CheckAndTraversalIncludeRule([&](const string &dotExt) {
                 filterDotExts.insert(dotExt);
             });
         } catch (const std::runtime_error &err) {
-            MessageBox(utf8_to_wstring(err.what()).c_str(),
-                       languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(), MB_OK | MB_ICONERROR);
+            MessageBoxW(utf8_to_wstring(err.what()).c_str(),
+                        languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(), MB_OK | MB_ICONERROR);
             return {};
         }
         break;
@@ -312,10 +313,10 @@ std::vector<std::tstring> DialogMain::AddItems(const std::vector<std::tstring> &
         assert(0);
     }
 
-    vector<pair<tstring, string>> failed; // 失败的文件
-    vector<tstring> ignored;              // 忽略的文件
+    vector<pair<string, string>> failed; // 失败的文件
+    vector<string> ignored;              // 忽略的文件
 
-    auto AddItemNoException = [&](const std::tstring &filename) {
+    auto AddItemNoException = [&](const std::string &filename) {
         try {
             Core::AddItemResult ret = core->AddItem(filename, filterDotExts);
             if (ret.isIgnore) {
@@ -360,8 +361,8 @@ AddItemsAbort:
     if (!failed.empty()) {
         string info = languageService->GetUtf8String(v0_2::StringId::FAILED_ADD_BELOW) + u8"\r\n";
         for (auto &pr : failed) {
-            info += to_utf8(pr.first) + u8" " + languageService->GetUtf8String(v0_2::StringId::REASON) + u8" " +
-                    pr.second + u8"\r\n ";
+            info += pr.first + u8" " + languageService->GetUtf8String(v0_2::StringId::REASON) + u8" " + pr.second +
+                    u8"\r\n ";
         }
 
         MyMessage *msg = new MyMessage([this, info]() {
@@ -372,28 +373,27 @@ AddItemsAbort:
     }
 
     if (!ignored.empty()) {
-        stringstream ss;
+        string s;
 
         std::string dest =
-            MyPrintf(languageService->GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), 32LL, ignored.size());
+            fmt::format(languageService->GetUtf8String(v0_2::StringId::NON_TEXT_OR_NO_DETECTED), ignored.size());
 
-        ss << dest << u8"\r\n";
+        s += dest + u8"\r\n";
 
         int count = 0;
         for (auto &filename : ignored) {
-            ss << to_utf8(filename) << u8"\r\n";
+            s += filename + u8"\r\n";
             count++;
 
             if (count >= 5) {
-                ss << languageService->GetUtf8String(v0_2::StringId::AND_SO_ON);
+                s += languageService->GetUtf8String(v0_2::StringId::AND_SO_ON);
                 break;
             }
         }
 
-        ss << u8"\r\n\r\n";
-        ss << languageService->GetUtf8String(v0_2::StringId::TIPS_USE_NO_FILTER);
+        s += u8"\r\n\r\n";
+        s += languageService->GetUtf8String(v0_2::StringId::TIPS_USE_NO_FILTER);
 
-        string s = ss.str();
         PostUIFunc([this, s]() {
             MessageBox(utf8_to_wstring(s).c_str(), languageService->GetWString(v0_2::StringId::PROMPT).c_str(),
                        MB_OK | MB_ICONINFORMATION);
@@ -403,7 +403,7 @@ AddItemsAbort:
     return ignored;
 }
 
-void DialogMain::AddItemsAsync(const std::vector<std::tstring> &filenames) noexcept {
+void DialogMain::AddItemsAsync(const std::vector<std::string> &filenames) noexcept {
     auto restore = SetBusyState();
 
     doCancel = false;
@@ -423,8 +423,8 @@ void DialogMain::AddItemsAsync(const std::vector<std::tstring> &filenames) noexc
             AddItems(filenames);
         } catch (const runtime_error &err) {
             PostUIFunc([this, err]() {
-                MessageBox(utf8_to_wstring(err.what()).c_str(),
-                           languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(), MB_OK | MB_ICONERROR);
+                MessageBoxW(utf8_to_wstring(err.what()).c_str(),
+                            languageService->GetWString(v0_2::StringId::MSGBOX_ERROR).c_str(), MB_OK | MB_ICONERROR);
             });
         }
     });
@@ -455,8 +455,8 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
         }
     }
 
-    vector<pair<tstring, string>> failed; // 失败文件/失败原因
-    vector<tstring> succeed;              // 成功的文件
+    vector<pair<string, string>> failed; // 失败文件/失败原因
+    vector<string> succeed;              // 成功的文件
 
     // 目标编码
     auto targetCode = core->GetConfig().outputCharset;
@@ -493,12 +493,14 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
             if (convertResult.errInfo.has_value()) {
                 return;
             }
-            listview.SetItemText(i, static_cast<int>(ListViewColumn::FILENAME), convertResult.outputFileName.c_str());
+            listview.SetItemText(i, static_cast<int>(ListViewColumn::FILENAME),
+                                 utf8_to_wstring(convertResult.outputFileName).c_str());
             listview.SetItemText(i, static_cast<int>(ListViewColumn::FILESIZE),
-                                 FileSizeToTString(convertResult.outputFileSize).c_str());
-            listview.SetItemText(i, static_cast<int>(ListViewColumn::ENCODING), ToViewCharsetName(targetCode).c_str());
+                                 utf8_to_wstring(FileSizeToHumanString(convertResult.outputFileSize)).c_str());
+            listview.SetItemText(i, static_cast<int>(ListViewColumn::ENCODING),
+                                 utf8_to_wstring(ToViewCharsetName(targetCode)).c_str());
             listview.SetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK),
-                                 LineBreaksToViewName(convertResult.targetLineBreaks).c_str());
+                                 utf8_to_wstring(LineBreaksToViewName(convertResult.targetLineBreaks)).c_str());
         });
     }
 
@@ -506,22 +508,20 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
 
     // 如果有失败的
     if (failed.empty() == false) {
-        stringstream ss;
+        string s;
 
         std::string dest =
-            MyPrintf(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), 32LL, succeed.size());
+            fmt::format(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), succeed.size());
 
-        ss << dest << u8"\r\n\r\n";
-        ss << languageService->GetUtf8String(v0_2::StringId::FAILED_CONVERT_BELOW) + u8"\r\n";
+        s += dest + u8"\r\n\r\n";
+        s += languageService->GetUtf8String(v0_2::StringId::FAILED_CONVERT_BELOW) + u8"\r\n";
         for (auto &pr : failed) {
-            ss << to_utf8(pr.first) << u8" " << languageService->GetUtf8String(v0_2::StringId::REASON) << pr.second
-               << u8"\r\n";
+            s += pr.first + u8" " + languageService->GetUtf8String(v0_2::StringId::REASON) + pr.second + u8"\r\n";
         }
         if (doCancel) {
-            ss << u8"\r\n\r\n" << languageService->GetUtf8String(v0_2::StringId::NO_DEAL_DUE_TO_CANCEL);
+            s += u8"\r\n\r\n" + languageService->GetUtf8String(v0_2::StringId::NO_DEAL_DUE_TO_CANCEL);
         }
 
-        string s = ss.str();
         PostUIFunc([this, s]() {
             MessageBox(utf8_to_wstring(s).c_str(), languageService->GetWString(v0_2::StringId::CONVERT_RESULT).c_str(),
                        MB_OK | MB_ICONERROR);
@@ -530,7 +530,7 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
         // 全部成功之后
         stringstream ss;
         std::string dest =
-            MyPrintf(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), 32LL, succeed.size());
+            fmt::format(languageService->GetUtf8String(v0_2::StringId::SUCCEED_SOME_FILES), succeed.size());
         ss << dest << u8"\r\n\r\n";
 
         if (targetCode == CharsetCode::GB18030) {
@@ -606,12 +606,12 @@ LRESULT DialogMain::OnBnClickedRadioOther(WORD /*wNotifyCode*/, WORD /*wID*/, HW
     return 0;
 }
 
-void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstring &dotExt)> fn) {
+void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::string &dotExt)> fn) {
     // 后缀字符串
-    auto &extsStr = utf8_to_wstring(core->GetConfig().includeRule);
+    auto &extsStr = core->GetConfig().includeRule;
 
     // 切分
-    auto exts = Split(extsStr, TEXT(" ,|"));
+    auto exts = Split(extsStr, u8" ,|");
 
     string filterExampleStr = languageService->GetUtf8String(v0_2::StringId::SUPPORT_FORMAT_BELOW) +
                               u8"\r\n *.h *.hpp *.c *.cpp *.txt\r\n h hpp c cpp txt\r\n h|hpp|c|cpp\r\n" +
@@ -625,16 +625,16 @@ void DialogMain::CheckAndTraversalIncludeRule(std::function<void(const std::tstr
 
     // 逐个检查
     for (auto s : exts) {
-        tstring extStr(s);
-        wstring pattern = TEXT(R"((\*\.|\.|)(\w+))"); // 匹配*.xxx/.xxx/xxx的正则
-        wregex r(pattern);
-        wsmatch results;
+        string extStr(s);
+        string pattern = u8R"((\*\.|\.|)(\w+))"; // 匹配*.xxx/.xxx/xxx的正则
+        regex r(pattern);
+        smatch results;
         if (regex_match(extStr, results, r) == false) {
-            throw runtime_error(languageService->GetUtf8String(v0_2::StringId::INVALID_EXTEND_FILTER) +
-                                to_string(extStr) + u8"\r\n\r\n" + filterExampleStr);
+            throw runtime_error(languageService->GetUtf8String(v0_2::StringId::INVALID_EXTEND_FILTER) + extStr +
+                                u8"\r\n\r\n" + filterExampleStr);
         }
 
-        fn(tolower(TEXT(".") + results.str(2)));
+        fn(tolower(u8"." + results.str(2)));
     }
 }
 
@@ -649,8 +649,8 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
     case Configuration::FilterMode::ONLY_SOME_EXTANT: {
         // 只包括指定后缀
         tstring filterExtsStr; // dialog的过滤器要求;分割
-        CheckAndTraversalIncludeRule([&](const tstring &dotExt) {
-            filterExtsStr += TEXT("*") + dotExt + TEXT(";");
+        CheckAndTraversalIncludeRule([&](const string &dotExt) {
+            filterExtsStr += utf8_to_wstring("*" + dotExt + ";");
         });
 
         // dialog过滤器
@@ -665,7 +665,7 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
     // 打开文件对话框
     TFileDialog dialog(*this, dialogFilter, true);
     if (dialog.Open()) {
-        auto filenames = dialog.GetResult();
+        auto filenames = to_utf8(dialog.GetResult());
 
         AddItemsAsync(filenames);
     }
@@ -678,11 +678,11 @@ LRESULT DialogMain::OnBnClickedButtonAddFiles(WORD /*wNotifyCode*/, WORD /*wID*/
 
 LRESULT DialogMain::OnBnClickedButtonAddDir(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/,
                                             BOOL & /*bHandled*/) try {
-    static tstring dir; // 可用于赋予TFolderBrowser初始路径
+    static wstring dir; // 可用于赋予TFolderBrowser初始路径
 
     TFolderBrowser folderBrowser(*this);
     if (folderBrowser.Open(dir)) {
-        AddItemsAsync({dir});
+        AddItemsAsync(to_utf8(std::vector<std::wstring>{dir}));
     }
 
     return 0;
@@ -704,10 +704,10 @@ LRESULT DialogMain::OnBnClickedButtonStart(WORD /*wNotifyCode*/, WORD /*wID*/, H
 
     vector<Item> items;
     for (int i = 0; i < listview.GetItemCount(); ++i) {
-        auto filename = listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME));
-        auto originCode = ToCharsetCode(listview.GetItemText(i, static_cast<int>(ListViewColumn::ENCODING)));
+        auto filename = to_utf8(listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME)));
+        auto originCode = ToCharsetCode(to_utf8(listview.GetItemText(i, static_cast<int>(ListViewColumn::ENCODING))));
         auto originLineBreak =
-            ViewNameToLineBreaks(listview.GetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK)));
+            ViewNameToLineBreaks(to_utf8(listview.GetItemText(i, static_cast<int>(ListViewColumn::LINE_BREAK))));
         items.push_back({filename, originCode, originLineBreak});
     }
 
@@ -782,7 +782,7 @@ LRESULT DialogMain::OnRemoveItem(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
     // 选中的序号，倒序遍历
     for (auto itor = selectedItems.rbegin(); itor != selectedItems.rend(); ++itor) {
         int i = *itor;
-        auto filename = listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME));
+        auto filename = to_utf8(listview.GetItemText(i, static_cast<int>(ListViewColumn::FILENAME)));
         listview.DeleteItem(i);
         core->RemoveItem(filename);
     }
@@ -800,24 +800,23 @@ LRESULT DialogMain::OnSpecifyOriginCharset(WORD /*wNotifyCode*/, WORD wID, HWND 
 
     auto selectedItems = listview.GetSelectedItems();
 
-    vector<pair<tstring, tstring>> failed; // 失败文件/失败原因
+    vector<pair<string, string>> failed; // 失败文件/失败原因
     for (auto itor = selectedItems.begin(); itor != selectedItems.end(); ++itor) {
         int index = *itor;
-        auto filename = listview.GetItemText(index, static_cast<int>(ListViewColumn::FILENAME));
+        auto filename = to_utf8(listview.GetItemText(index, static_cast<int>(ListViewColumn::FILENAME)));
         try {
             core->SpecifyItemCharset(index, filename, code);
         } catch (const MyRuntimeError &err) {
-            failed.push_back({filename, utf8_to_wstring(err.ToLocalString(languageService.get()))});
+            failed.push_back({filename, err.ToLocalString(languageService.get())});
         } catch (const std::runtime_error &err) {
-            failed.push_back({filename, utf8_to_wstring(err.what())});
+            failed.push_back({filename, err.what()});
         }
     }
 
     if (!failed.empty()) {
         string info = languageService->GetUtf8String(v0_2::StringId::FAILED_TO_SET_CHARSET_MANUALLY) + u8"\r\n";
         for (auto &pr : failed) {
-            info += to_utf8(pr.first) + u8" " + languageService->GetUtf8String(v0_2::StringId::REASON) +
-                    to_utf8(pr.second) + u8"\r\n";
+            info += pr.first + u8" " + languageService->GetUtf8String(v0_2::StringId::REASON) + pr.second + u8"\r\n";
         }
 
         MyMessage *msg = new MyMessage([this, info]() {
@@ -912,12 +911,12 @@ LRESULT DialogMain::OnBnClickedRadioCr(WORD /*wNotifyCode*/, WORD /*wID*/, HWND 
 LRESULT DialogMain::OnDropFiles(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled) try {
     HDROP hDrop = reinterpret_cast<HDROP>(wParam);
 
-    vector<tstring> filenames;
-    UINT nFileNum = DragQueryFile(hDrop, 0xFFFFFFFF, NULL, 0); // 拖拽文件个数
+    vector<string> filenames;
+    UINT nFileNum = DragQueryFileW(hDrop, 0xFFFFFFFF, NULL, 0); // 拖拽文件个数
     TCHAR strFileName[MAX_PATH];
     for (UINT i = 0; i < nFileNum; i++) {
-        DragQueryFile(hDrop, i, strFileName, MAX_PATH); // 获得拖曳的文件名
-        filenames.push_back(strFileName);
+        DragQueryFileW(hDrop, i, strFileName, MAX_PATH); // 获得拖曳的文件名
+        filenames.push_back(to_utf8(strFileName));
     }
     DragFinish(hDrop); // 释放hDrop
 
@@ -971,14 +970,17 @@ void DialogMain::RestoreReadyState(const std::vector<std::pair<int, bool>> &rest
     GetDlgItem(IDC_BUTTON_START).SetWindowTextW(languageService->GetWString(v0_2::StringId::START_CONVERT).c_str());
 }
 
-void DialogMain::AppendListViewItem(std::wstring filename, uint64_t fileSize, CharsetCode charset, LineBreaks lineBreak,
+void DialogMain::AppendListViewItem(std::string filename, uint64_t fileSize, CharsetCode charset, LineBreaks lineBreak,
                                     std::u16string textPiece) noexcept {
     auto count = listview.GetItemCount();
     listview.AddItem(count, static_cast<int>(ListViewColumn::INDEX), to_tstring(count + 1).c_str());
-    listview.AddItem(count, static_cast<int>(ListViewColumn::FILENAME), filename.c_str());
-    listview.AddItem(count, static_cast<int>(ListViewColumn::FILESIZE), FileSizeToTString(fileSize).c_str());
-    listview.AddItem(count, static_cast<int>(ListViewColumn::ENCODING), ToViewCharsetName(charset).c_str());
-    listview.AddItem(count, static_cast<int>(ListViewColumn::LINE_BREAK), LineBreaksToViewName(lineBreak).c_str());
+    listview.AddItem(count, static_cast<int>(ListViewColumn::FILENAME), utf8_to_wstring(filename).c_str());
+    listview.AddItem(count, static_cast<int>(ListViewColumn::FILESIZE),
+                     utf8_to_wstring(FileSizeToHumanString(fileSize)).c_str());
+    listview.AddItem(count, static_cast<int>(ListViewColumn::ENCODING),
+                     utf8_to_wstring(ToViewCharsetName(charset)).c_str());
+    listview.AddItem(count, static_cast<int>(ListViewColumn::LINE_BREAK),
+                     utf8_to_wstring(LineBreaksToViewName(lineBreak)).c_str());
     listview.AddItem(count, static_cast<int>(ListViewColumn::TEXT_PIECE),
                      reinterpret_cast<const wchar_t *>(textPiece.c_str()));
 
