@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "memory_leak_detection.h"
+#include "Helper.h"
 
 #include <Core/Core.h>
 #include <Core/Detect.h>
@@ -28,24 +29,8 @@ TEST(Core, EncodeWithUnassignedChars) {
 TEST(Core, DetectEncodingMulti) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
 
-    const std::string uchardetSampleDir = std::string(SmartCharsetConverter_TEST_DIR) + "/expect_pass";
-
-    std::unordered_map<std::string, CharsetCode> table; // filename, expect encoding
-    for (auto path : std::filesystem::recursive_directory_iterator(uchardetSampleDir)) {
-        if (path.is_directory()) {
-            continue;
-        }
-
-        std::string stem = path.path().stem().u8string();
-        std::regex r(R"(\[([\S]+)\].*)");
-        std::smatch ret;
-        bool ok = std::regex_match(stem, ret, r);
-        if (!ok) {
-            throw std::runtime_error("encoding description not found in filename: " + path.path().string() +
-                                     "\nfor example: [encoding]file_original_name.txt");
-        }
-        table[path.path().u8string()] = ToCharsetCode(ret[1]);
-    }
+    auto table =
+        helper::ScanDirectoryForExpectedEncodingTable(std::string(SmartCharsetConverter_TEST_DIR) + "/expect_pass");
 
     CoreInitOption opt;
     Core core("temp.json", opt);

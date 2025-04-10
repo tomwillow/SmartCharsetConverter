@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "memory_leak_detection.h"
+#include "Helper.h"
 
 #include <Core/Core.h>
 #include <Core/Detect.h>
@@ -16,20 +17,13 @@ TEST(Core, uchardet_sample_test) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
 
     const std::string uchardetSampleDir = std::string(SmartCharsetConverter_TEST_DIR) + "/uchardet_test_samples";
-
-    std::unordered_map<std::string, CharsetCode> table; // filename, expect encoding
-    for (auto path : std::filesystem::recursive_directory_iterator(uchardetSampleDir)) {
-        if (path.is_directory()) {
-            continue;
-        }
-        std::string expectEncoding = path.path().stem().u8string();
-        try {
-            table[path.path().u8string()] = ToCharsetCode(expectEncoding);
-        } catch (const std::runtime_error &err) {
-            std::cout << err.what() << std::endl;
-            EXPECT_TRUE(0);
-        }
-    }
+    auto table = helper::ScanDirectoryForExpectedEncodingTable(uchardetSampleDir, R"((.*))");
+    auto expectPassTable =
+        helper::ScanDirectoryForExpectedEncodingTable(std::string(SmartCharsetConverter_TEST_DIR) + "/expect_pass");
+    auto notPassYetTable =
+        helper::ScanDirectoryForExpectedEncodingTable(std::string(SmartCharsetConverter_TEST_DIR) + "/not_pass_yet");
+    table.merge(std::move(expectPassTable));
+    table.merge(std::move(notPassYetTable));
 
     CoreInitOption opt;
     Core core(u8"temp.json", opt);
@@ -55,4 +49,7 @@ TEST(Core, uchardet_sample_test) {
 
     double rate = static_cast<double>(passed) / static_cast<double>(table.size());
     std::cout << "PASSED: " << rate * 100.0 << "% \n";
+
+    // any changes to charset detection should increase this rate, not decrease it
+    ASSERT_TRUE(rate > 0.337);
 }

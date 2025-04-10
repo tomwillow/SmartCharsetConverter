@@ -46,6 +46,11 @@ std::tuple<std::string, int> DetectByUCSDet(const char *buf, int32_t bufSize) {
     DealWithUCNVError(status);
 
     const UCharsetMatch *ucm = ucsdet_detect(csd.get(), &status);
+    if (status == U_INVALID_CHAR_FOUND) {
+        // if this error code occurred while detecting, one possible situation is that input is a binary file.
+        // we just return unknown as result.
+        return {"unknown", 0};
+    }
     DealWithUCNVError(status);
 
     int32_t confidence = ucsdet_getConfidence(ucm, &status);
