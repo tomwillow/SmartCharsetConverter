@@ -22,7 +22,7 @@ TEST(Core, uchardet_sample_test) {
         if (path.is_directory()) {
             continue;
         }
-        std::wstring expectEncoding = path.path().stem().wstring();
+        std::string expectEncoding = path.path().stem().u8string();
         try {
             table[path.path().u8string()] = ToCharsetCode(expectEncoding);
         } catch (const std::runtime_error &err) {
@@ -32,11 +32,11 @@ TEST(Core, uchardet_sample_test) {
     }
 
     CoreInitOption opt;
-    Core core(L"temp.json", opt);
+    Core core(u8"temp.json", opt);
 
     int passed = 0;
     for (auto [filename, expectedEncoding] : table) {
-        auto [buf, len] = ReadFileToBuffer(utf8_to_wstring(filename));
+        auto [buf, len] = ReadFileToBuffer(filename);
         auto charsetCode = DetectEncoding(core.GetUCharDet().get(), buf.get(), len);
 
         if (charsetCode == expectedEncoding) {
@@ -46,8 +46,8 @@ TEST(Core, uchardet_sample_test) {
 
         std::cout << std::string(20, '=') << std::endl;
         std::cout << "file: " << filename << std::endl;
-        std::cout << "detect: " << to_utf8(ToViewCharsetName(charsetCode)) << std::endl;
-        std::cout << "expected: " << to_utf8(ToViewCharsetName(expectedEncoding)) << std::endl;
+        std::cout << "detect: " << ToViewCharsetName(charsetCode) << std::endl;
+        std::cout << "expected: " << ToViewCharsetName(expectedEncoding) << std::endl;
         std::cout << std::endl;
 
         // EXPECT_EQ(charsetCode, expectedEncoding);  // not pass now

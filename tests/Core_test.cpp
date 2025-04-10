@@ -44,14 +44,14 @@ TEST(Core, DetectEncodingMulti) {
             throw std::runtime_error("encoding description not found in filename: " + path.path().string() +
                                      "\nfor example: [encoding]file_original_name.txt");
         }
-        table[path.path().u8string()] = ToCharsetCode(utf8_to_wstring(ret[1]));
+        table[path.path().u8string()] = ToCharsetCode(ret[1]);
     }
 
     CoreInitOption opt;
-    Core core(L"temp.json", opt);
+    Core core("temp.json", opt);
 
     for (auto [filename, expectedEncoding] : table) {
-        auto [buf, len] = ReadFileToBuffer(utf8_to_wstring(filename));
+        auto [buf, len] = ReadFileToBuffer(filename);
         auto charsetCode = DetectEncoding(core.GetUCharDet().get(), buf.get(), len);
 
         if (charsetCode == expectedEncoding) {
@@ -59,8 +59,8 @@ TEST(Core, DetectEncodingMulti) {
         }
         std::cout << std::string(20, '=') << std::endl;
         std::cout << "file: " << filename << std::endl;
-        std::cout << "detect: " << to_utf8(ToViewCharsetName(charsetCode)) << std::endl;
-        std::cout << "expected: " << to_utf8(ToViewCharsetName(expectedEncoding)) << std::endl;
+        std::cout << "detect: " << ToViewCharsetName(charsetCode) << std::endl;
+        std::cout << "expected: " << ToViewCharsetName(expectedEncoding) << std::endl;
         std::cout << std::endl;
         EXPECT_EQ(charsetCode, expectedEncoding);
 

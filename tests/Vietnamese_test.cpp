@@ -15,7 +15,7 @@ TEST(Vietnamese, CheckEncoding) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
     viet::Init();
 
-    std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
+    std::string inputFilename = std::string(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-tcvn.txt";
 
     auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
 
@@ -29,13 +29,13 @@ TEST(Vietnamese, BuiltinConvertToUtf8) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
     viet::Init();
 
-    std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
+    std::string inputFilename = std::string(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-tcvn.txt";
     auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
     std::string utf8Str = viet::ConvertToUtf8(std::string_view(buf.get(), bufSize), viet::Encoding::TCVN3);
-    // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-got.txt", utf8Str.c_str(),
+    // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-got.txt", utf8Str.c_str(),
     //                    utf8Str.size());
 
-    std::wstring expectFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-utf8.txt";
+    std::string expectFilename = std::string(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-utf8.txt";
     auto [utf8Buf, utf8BufSize] = ReadFileToBuffer(expectFilename);
     std::string utf8ExpectStr(utf8Buf.get(), utf8BufSize);
 
@@ -47,13 +47,13 @@ TEST(Vietnamese, BuiltinConvertToUtf16LE) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
     viet::Init();
 
-    std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
+    std::string inputFilename = std::string(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-tcvn.txt";
     auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
     std::u16string utf16LEStr = viet::ConvertToUtf16LE(std::string_view(buf.get(), bufSize), viet::Encoding::TCVN3);
-    // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-got.txt", utf8Str.c_str(),
+    // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-got.txt", utf8Str.c_str(),
     //                    utf8Str.size());
 
-    std::wstring expectFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-utf16le.txt";
+    std::string expectFilename = std::string(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-utf16le.txt";
     auto [utf16LEBuf, utf16LEBufSize] = ReadFileToBuffer(expectFilename);
     std::size_t utf16LEBufPsudoCharNums = utf16LEBufSize / sizeof(char16_t);
     std::u16string utf16LEExpectStr(reinterpret_cast<char16_t const *>(utf16LEBuf.get()), utf16LEBufPsudoCharNums);
@@ -66,13 +66,13 @@ TEST(Vietnamese, BuiltinConvertFromUtf8) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
     viet::Init();
 
-    std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-utf8.txt";
+    std::string inputFilename = std::string(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-utf8.txt";
     auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
     std::string tcvn3StrGot = viet::ConvertFromUtf8(std::string_view(buf.get(), bufSize), viet::Encoding::TCVN3);
-    // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-got.txt", utf8Str.c_str(),
+    // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-got.txt", utf8Str.c_str(),
     //                    utf8Str.size());
 
-    std::wstring expectFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
+    std::string expectFilename = std::string(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-tcvn.txt";
     auto [tcvn3BufExpected, tcvn3BufExpectedSize] = ReadFileToBuffer(expectFilename);
     std::string tcvn3StrExpected(tcvn3BufExpected.get(), tcvn3BufExpectedSize);
 
@@ -84,15 +84,15 @@ TEST(Vietnamese, BuiltinConvertFromUtf16LE) {
     SetConsoleOutputCP(65001); // 设置代码页为UTF-8
     viet::Init();
 
-    std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-utf16le.txt";
+    std::string inputFilename = std::string(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-utf16le.txt";
     auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
     std::string tcvn3StrGot = viet::ConvertFromUtf16LE(
         std::u16string_view(reinterpret_cast<const char16_t *>(buf.get()), bufSize / sizeof(char16_t)),
         viet::Encoding::TCVN3);
-    // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-got.txt", utf8Str.c_str(),
+    // WriteFileFromBuffer(utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-got.txt", utf8Str.c_str(),
     //                    utf8Str.size());
 
-    std::wstring expectFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
+    std::string expectFilename = std::string(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-tcvn.txt";
     auto [tcvn3BufExpected, tcvn3BufExpectedSize] = ReadFileToBuffer(expectFilename);
     std::string tcvn3StrExpected(tcvn3BufExpected.get(), tcvn3BufExpectedSize);
 
@@ -107,7 +107,7 @@ TEST(Vietnamese, BuiltinConvertFromUtf16LE) {
 void TestBuiltinConvertOtherToOther(viet::Encoding middleEncoding) {
     viet::Init();
 
-    std::wstring inputFilename = utf8_to_wstring(SmartCharsetConverter_TEST_DIR) + L"/tcvn/demo1-tcvn.txt";
+    std::string inputFilename = std::string(SmartCharsetConverter_TEST_DIR) + u8"/tcvn/demo1-tcvn.txt";
     auto [buf, bufSize] = ReadFileToBuffer(inputFilename);
 
     std::string vniStr;
