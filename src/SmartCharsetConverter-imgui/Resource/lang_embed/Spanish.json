@@ -18,6 +18,7 @@
 		[11,"Fallo al abrir el archivo: {}"],
 		[12,"Se encontraron datos dañados mientras se intentaba decodificar como {}. posición: {} contenido (en hexadecimal, mostrando como máximo {} bytes): {}"],
 		[13,"No se admite la conversión al conjunto de caracteres {}"],
+		[14,"Sin permisos. Consejo: Es posible que el archivo sea de solo lectura: {}"],
 		[101,"#"],
 		[102,"Archivo"],
 		[103,"Tamaño"],

@@ -594,6 +594,9 @@ Core::ConvertFileResult Core::Convert(const std::string &inputFilename, CharsetC
                 // 写入文件
                 FILE *fp = nullptr;
                 errno_t err = _wfopen_s(&fp, utf8_to_wstring(ret.outputFileName).c_str(), L"wb");
+                if (err == EACCES) {
+                    throw FileIOError(MessageId::NO_PERMISSION, ret.outputFileName);
+                }
                 if (fp == nullptr) {
                     throw FileIOError(MessageId::FAILED_TO_OPEN_FILE, ret.outputFileName);
                 }

@@ -144,7 +144,7 @@ public:
     FileIOError(MessageId mid, const std::string &filename) noexcept
         : MyRuntimeError(mid, fmt::format(MessageIdToBasicString(mid), filename)), filename(filename) {
         assert(mid == MessageId::FAILED_TO_WRITE_FILE || mid == MessageId::FILE_SIZE_OUT_OF_LIMIT ||
-               mid == MessageId::FAILED_TO_OPEN_FILE);
+               mid == MessageId::FAILED_TO_OPEN_FILE || mid == MessageId::NO_PERMISSION);
     }
 
     virtual const std::string ToLocalString(TranslatorBase *translator) const noexcept {

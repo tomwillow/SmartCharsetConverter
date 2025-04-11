@@ -18,6 +18,7 @@
 		[11,"Failed to open file: {}"],
 		[12,"Corrupted data found while decode as {}. position: {} content(in hex, shown {} bytes at most): {}"],
 		[13,"Conversion to the {} charset is not supported"],
+		[14,"No permission. Tip: The file might be read-only: {}"],
 		[101,"Index"],
 		[102,"File Name"],
 		[103,"Size"],

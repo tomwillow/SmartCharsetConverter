@@ -20,6 +20,7 @@ enum class MessageId {
     CORRUPTED_DATA,         // "Corrupted data found while decode as {}. position: {} content(in hex, shown {} bytes at
                             // most): {}"
     CANNOT_CONVERT_CHARSET, // "Conversion to the {} charset is not supported"
+    NO_PERMISSION,          // "No permission. Tip: The file might be read-only: {}"
     END,
 };
 
@@ -54,6 +55,8 @@ inline std::string MessageIdToBasicString(MessageId mid) noexcept {
                "{}";
     case MessageId::CANNOT_CONVERT_CHARSET:
         return "Conversion to the {} charset is not supported";
+    case MessageId::NO_PERMISSION:
+        return "No permission. Tip: The file might be read-only: {}";
     default:
         assert(0);
     }
