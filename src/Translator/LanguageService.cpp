@@ -59,7 +59,7 @@ void LanguageService::LoadLanguageNameFromInnerRCFile() noexcept {
     }
 }
 
-void LanguageService::LoadLanguageNameFromDir(const std::string &dir) {
+void LanguageService::LoadLanguageNameFromDir(const std::filesystem::path &dir) {
     // 得到命令行参数
     const std::vector<std::string> args = GetCommandLineArgs();
     std::string selfPath = args[0];

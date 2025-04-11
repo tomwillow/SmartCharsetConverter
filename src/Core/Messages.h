@@ -23,6 +23,8 @@ enum class MessageId {
     END,
 };
 
+static_assert(static_cast<int>(MessageId::END) < 100);
+
 inline std::string MessageIdToBasicString(MessageId mid) noexcept {
     switch (mid) {
     case MessageId::WILL_LOST_CHARACTERS:

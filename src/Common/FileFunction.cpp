@@ -313,8 +313,9 @@ uint64_t GetFileSize(FILE *fp) {
 uint64_t GetFileSize(std::string fileName) {
     std::wstring wfilename = utf8_to_wstring(fileName);
     FILE *fp = _wfopen(wfilename.c_str(), L"rb");
-    if (fp == nullptr)
+    if (fp == nullptr) {
         throw file_io_error(string("\"") + fileName + "\" can't open.", fileName);
+    }
     uint64_t sz = GetFileSize(fp);
     fclose(fp);
     return sz;

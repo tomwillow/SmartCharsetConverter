@@ -172,8 +172,10 @@ int CLIMain(const std::vector<std::string> &args) noexcept {
             i = args.size(); // 让最外层循环退出
             break;
         case 20: // --input xxx
+        {
             setInput = true;
-            if (std::filesystem::is_regular_file(arg) || std::filesystem::is_directory(arg)) {
+            std::filesystem::path path = std::filesystem::u8path(arg);
+            if (std::filesystem::is_regular_file(path) || std::filesystem::is_directory(path)) {
                 inputPathes.push_back(arg);
                 break;
             }
@@ -185,6 +187,7 @@ int CLIMain(const std::vector<std::string> &args) noexcept {
 
             ssErr << u8"错误：无效路径：" << arg << u8"\n";
             break;
+        }
         case 30:
             setTargetCharset = true;
             try {
@@ -337,12 +340,12 @@ int CLIMain(const std::vector<std::string> &args) noexcept {
 
     std::vector<std::string> inputFileNames;
     for (auto &inputPath : inputPathes) {
-        if (std::filesystem::is_regular_file(inputPath)) {
+        if (std::filesystem::is_regular_file(std::filesystem::u8path(inputPath))) {
             inputFileNames.push_back(inputPath);
             continue;
         }
 
-        for (auto &path : std::filesystem::recursive_directory_iterator(inputPath)) {
+        for (auto &path : std::filesystem::recursive_directory_iterator(std::filesystem::u8path(inputPath))) {
             if (std::filesystem::is_regular_file(path)) {
                 inputFileNames.push_back(path.path().u8string());
                 continue;

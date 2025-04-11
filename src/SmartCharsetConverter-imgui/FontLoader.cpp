@@ -36,7 +36,7 @@ void LoadFonts(ImFontAtlas *ioFonts, float scaleFactor) {
         }
 
         auto &fontInfo = fontInfos[i];
-        if (!std::filesystem::is_regular_file(fontInfo.fontPath)) {
+        if (!std::filesystem::is_regular_file(std::filesystem::u8path(fontInfo.fontPath))) {
             continue;
         }
 

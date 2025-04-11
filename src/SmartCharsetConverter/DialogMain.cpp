@@ -325,18 +325,14 @@ std::vector<std::string> DialogMain::AddItems(const std::vector<std::string> &pa
             PostUIFunc([filename, ret, this]() {
                 AppendListViewItem(filename, ret.filesize, ret.srcCharset, ret.srcLineBreak, ret.strPiece);
             });
-        } catch (io_error_ignore) {
-            ignored.push_back(filename);
-        } catch (const MyRuntimeError &err) {
+        } catch (io_error_ignore) { ignored.push_back(filename); } catch (const MyRuntimeError &err) {
             failed.push_back({filename, err.ToLocalString(languageService.get())});
-        } catch (const runtime_error &err) {
-            failed.push_back({filename, err.what()});
-        }
+        } catch (const runtime_error &err) { failed.push_back({filename, err.what()}); }
     };
 
     for (auto &path : pathes) {
         // 如果是目录
-        if (std::filesystem::is_directory(path)) {
+        if (std::filesystem::is_directory(std::filesystem::u8path(path))) {
             // 遍历指定目录
             auto filenames = TraversalAllFileNames(path);
 
@@ -480,7 +476,7 @@ void DialogMain::StartConvert(const std::vector<std::pair<int, bool>> &restore, 
             listview.SelectItem(i);
         });
 
-        auto convertResult = core->Convert(filename, originCode, originLineBreak);
+        auto convertResult = core->Convert(filename, originCode, originLineBreak, languageService.get());
         if (convertResult.errInfo.has_value()) {
             failed.push_back({filename, convertResult.errInfo.value()});
         } else {
@@ -808,9 +804,7 @@ LRESULT DialogMain::OnSpecifyOriginCharset(WORD /*wNotifyCode*/, WORD wID, HWND 
             core->SpecifyItemCharset(index, filename, code);
         } catch (const MyRuntimeError &err) {
             failed.push_back({filename, err.ToLocalString(languageService.get())});
-        } catch (const std::runtime_error &err) {
-            failed.push_back({filename, err.what()});
-        }
+        } catch (const std::runtime_error &err) { failed.push_back({filename, err.what()}); }
     }
 
     if (!failed.empty()) {

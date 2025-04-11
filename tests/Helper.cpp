@@ -20,7 +20,7 @@ std::unordered_map<std::string, CharsetCode> ScanDirectoryForExpectedEncodingTab
 
     std::unordered_map<std::string, CharsetCode> table; // filename, expect encoding
     std::regex r(pattern);
-    for (auto path : std::filesystem::recursive_directory_iterator(dir)) {
+    for (auto path : std::filesystem::recursive_directory_iterator(std::filesystem::u8path(dir))) {
         if (path.is_directory()) {
             continue;
         }

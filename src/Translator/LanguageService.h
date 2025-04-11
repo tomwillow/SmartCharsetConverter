@@ -57,7 +57,7 @@ private:
 
     void LoadLanguageNameFromInnerRCFile() noexcept;
 
-    void LoadLanguageNameFromDir(const std::string &dir);
+    void LoadLanguageNameFromDir(const std::filesystem::path &dir);
 
     bool HasLanguagePack(const std::string &lang) const noexcept;
 
