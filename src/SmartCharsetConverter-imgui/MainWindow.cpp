@@ -314,6 +314,12 @@ void MainWindow::Render() {
                     ImGui::TreePop();
                 }
 
+                if (ImGui::Button(languageService.GetUtf8String(v0_2::StringId::START_CONVERT).c_str())) {}
+                ImGui::SameLine();
+                if (ImGui::Button(languageService.GetUtf8String(v0_2::StringId::CLEAR_LISTS).c_str())) {
+                    listView.Clear();
+                }
+
                 if (changed) {
                     core.WriteConfigToFile();
                 }

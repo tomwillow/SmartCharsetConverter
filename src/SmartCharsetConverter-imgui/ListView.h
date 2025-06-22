@@ -32,12 +32,23 @@ public:
 
     void Render();
 
+    /**
+     * thread-safe.
+     */
     void AddItem(MyItem myItem);
+
+    /**
+     * thread-safe.
+     */
+    void Clear();
 
 private:
     LanguageService &languageService;
 
     std::mutex itemsLock;
-    std::vector<MyItem> itemsQueue;
+    std::vector<MyItem> toAddItems;
+    std::atomic<bool> toClearAllItems;
+
+    // not thread-safe. only used in main thread.
     std::vector<MyItem> items;
 };

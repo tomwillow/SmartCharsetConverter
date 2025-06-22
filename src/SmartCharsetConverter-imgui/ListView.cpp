@@ -81,7 +81,8 @@ bool CompareWithSortSpecs(ImGuiTableSortSpecs *sort_specs, const ListView::MyIte
     return false;
 }
 
-ListView::ListView(LanguageService &languageService) noexcept : languageService(languageService) {
+ListView::ListView(LanguageService &languageService) noexcept
+    : languageService(languageService), toClearAllItems(false) {
 
     static const char *template_items_names[] = {u8"香蕉", u8"苹果", u8"樱桃",   u8"西瓜", u8"葡萄柚",
                                                  u8"草莓", u8"芒果", u8"猕猴桃", u8"橙子", u8"菠萝",
@@ -102,10 +103,14 @@ ListView::ListView(LanguageService &languageService) noexcept : languageService(
 }
 
 void ListView::Render() {
+    if (toClearAllItems.exchange(false)) {
+        items.clear();
+    }
+
     std::vector<MyItem> itemsTemp;
     {
         std::unique_lock ul(itemsLock);
-        itemsTemp.swap(itemsQueue);
+        itemsTemp.swap(toAddItems);
     }
     items.insert(items.end(), itemsTemp.begin(), itemsTemp.end());
 
@@ -216,5 +221,9 @@ void ListView::Render() {
 
 void ListView::AddItem(MyItem myItem) {
     std::unique_lock ul(itemsLock);
-    itemsQueue.push_back(std::move(myItem));
+    toAddItems.push_back(std::move(myItem));
+}
+
+void ListView::Clear() {
+    toClearAllItems = true;
 }
